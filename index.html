@@ -456,6 +456,14 @@
           </div>
         </div>
 
+        <div class="field">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <label for="gameDiscordId" style="margin:0;">Discord account <span style="color:var(--text-3);font-weight:400;">(optional)</span></label>
+            <span class="link-msg-btn" id="gameDiscordLookupLink" style="cursor:pointer;">Look up</span>
+          </div>
+          <input type="text" id="gameDiscordId" placeholder="e.g. 123456789012345678">
+        </div>
+
         <div class="history-box" id="historyBox"></div>
 
         <details class="bg-section">
@@ -936,6 +944,10 @@
 <div class="confirm-overlay" id="editOverlay">
   <div class="confirm-box" style="max-width:480px;">
     <h3 style="font-size:15px;font-weight:600;margin:0 0 14px;">Edit case <span id="editCaseLabel"></span></h3>
+    <div class="field" id="editDiscordField">
+      <label for="editDiscordId">Discord account <span style="color:var(--text-3);font-weight:400;">(optional)</span></label>
+      <input type="text" id="editDiscordId" placeholder="e.g. 123456789012345678">
+    </div>
     <div class="field">
       <label for="editReason">Reason</label>
       <textarea id="editReason"></textarea>
@@ -992,7 +1004,7 @@
   ['gearBtn','settingsPanel','serverNameInput','webhookInput','ticketLinkInput','saveSettingsBtn','testWebhookBtn','exportBtn','importBtn','importFile',
    'sideNavBrand',
    'settingsStatus','serverNameOut','adminNameInput','addAdminBtn','adminList','actionToggle','durationBlock','durationToggle','durationRow','durationValue','durationUnit',
-   'playerName','steamId','steamIdLabel','acctCreatedLabel','steamStatsRow','historyBox','joinTime','acctCreated','vacBans','gameBans','daysSinceBan','bgNotes',
+   'playerName','steamId','steamIdLabel','acctCreatedLabel','steamStatsRow','gameDiscordId','gameDiscordLookupLink','historyBox','joinTime','acctCreated','vacBans','gameBans','daysSinceBan','bgNotes',
    'reasonInput','templateRow','resolutionBlock','scopeField','banScope','appealToggle',
    'addImageBtn','addLinkBtn','linkInlineRow','linkInlineInput','linkInlineAdd','linkInlineCancel','fileInput','proofList',
    'internalNotes','adminInput','publishBtn','formMsg','searchInput','filterSelect','ledgerList','clearAllBtn',
@@ -1013,7 +1025,7 @@
    'ovOpen','ovPending','ovSolved','ovWeek','ovTotal','recentFeed',
    'auditList','clearAuditBtn',
    'dlUserId','dlLookupBtn','dlMsg','dlResult','dlAvatar','dlUsername','dlTag','dlCreated','dlId',
-   'editOverlay','editCaseLabel','editReason','editDurationField','editDuration','editResolutionField','editBanScope','editAppealToggle','editInternalNotes','editMsg','editCancel','editSave'
+   'editOverlay','editCaseLabel','editDiscordField','editDiscordId','editReason','editDurationField','editDuration','editResolutionField','editBanScope','editAppealToggle','editInternalNotes','editMsg','editCancel','editSave'
   ].forEach(function(id){ els[id] = document.getElementById(id); });
 
   var LABEL = { ban:'Ban', kick:'Kick', warn:'Warning', dban:'Discord ban', dkick:'Discord kick' };
@@ -1063,6 +1075,8 @@
     if (!entry) return;
     EDIT_ID = id;
     els.editCaseLabel.textContent = '#'+entry.caseNo+' \u2014 '+entry.player;
+    els.editDiscordField.style.display = isDiscordType(entry.action) ? 'none' : 'block';
+    els.editDiscordId.value = entry.discordId || '';
     els.editReason.value = entry.reason || '';
     els.editInternalNotes.value = entry.internalNotes || '';
     els.editMsg.textContent = '';
@@ -1088,6 +1102,7 @@
     var entry = STATE.entries.find(function(x){ return x.id===EDIT_ID; });
     if (!entry) return;
 
+    if (!isDiscordType(entry.action)) entry.discordId = els.editDiscordId.value.trim();
     entry.reason = els.editReason.value.trim();
     entry.internalNotes = els.editInternalNotes.value.trim();
     if (isBanType(entry.action)){
@@ -1244,15 +1259,21 @@
   });
 
   var SECTION_IDS = { dashboard:'sectionDashboard', game:'sectionGame', discord:'sectionDiscord', ann:'sectionAnn', ledger:'sectionLedger', audit:'sectionAudit', lookup:'sectionLookup', settings:'sectionSettings' };
-  document.querySelectorAll('.nav-item').forEach(function(btn){
-    btn.addEventListener('click', function(){
-      document.querySelectorAll('.nav-item').forEach(function(b){ b.classList.toggle('active', b===btn); });
-      var target = btn.dataset.section;
-      Object.keys(SECTION_IDS).forEach(function(key){
-        var el = document.getElementById(SECTION_IDS[key]);
-        if (el) el.style.display = (key===target) ? 'block' : 'none';
-      });
+  function switchSection(target){
+    document.querySelectorAll('.nav-item').forEach(function(b){ b.classList.toggle('active', b.dataset.section===target); });
+    Object.keys(SECTION_IDS).forEach(function(key){
+      var el = document.getElementById(SECTION_IDS[key]);
+      if (el) el.style.display = (key===target) ? 'block' : 'none';
     });
+  }
+  document.querySelectorAll('.nav-item').forEach(function(btn){
+    btn.addEventListener('click', function(){ switchSection(btn.dataset.section); });
+  });
+
+  els.gameDiscordLookupLink.addEventListener('click', function(){
+    var id = els.gameDiscordId.value.trim();
+    switchSection('lookup');
+    if (id){ els.dlUserId.value = id; }
   });
 
   // ---------- storage (localStorage: works on a static host like Netlify) ----------
@@ -1589,6 +1610,7 @@
 
       var bgParts = [];
       if (e.steamId) bgParts.push((isDiscordType(e.action)?'Discord ID ':'SteamID64 ')+e.steamId);
+      if (!isDiscordType(e.action) && e.discordId) bgParts.push('Discord: '+e.discordId);
       if (e.joinTime) bgParts.push('joined '+e.joinTime);
       if (e.acctCreated) bgParts.push('account created '+e.acctCreated);
       if (e.vacBans) bgParts.push(e.vacBans+' VAC ban(s)');
@@ -1788,6 +1810,10 @@
       { name:'Issued by', value: entry.admin || 'Unknown', inline:true }
     ];
 
+    if (!isDiscordType(entry.action) && entry.discordId){
+      fields.push({ name:'Discord account', value: '<@'+entry.discordId+'>', inline:true });
+    }
+
     if (isBanType(entry.action)){
       var durVal = '**'+(entry.durationText || 'Permanent')+'**';
       if (entry.expiresAt){
@@ -1956,6 +1982,7 @@
       id: Date.now()+'-'+Math.random().toString(36).slice(2,8),
       caseNo: null,
       action: action, player: player, steamId: els.steamId.value.trim(),
+      discordId: els.gameDiscordId.value.trim(),
       reason: reason, admin: admin,
       durationText: isBanType(action) ? durText : null,
       expiresAt: isBanType(action) ? (function(){ var ms = durationMs(); return ms ? Date.now()+ms : null; })() : null,
@@ -1980,7 +2007,7 @@
     function proceed(){
       entry.caseNo = nextCaseNumber();
       publishEntry(entry, els.publishBtn, setFormMsg, function(){
-        els.playerName.value=''; els.steamId.value=''; els.reasonInput.value='';
+        els.playerName.value=''; els.steamId.value=''; els.gameDiscordId.value=''; els.reasonInput.value='';
         els.joinTime.value=''; els.acctCreated.value=''; els.vacBans.value=''; els.gameBans.value=''; els.daysSinceBan.value=''; els.bgNotes.value='';
         els.internalNotes.value=''; els.durationValue.value='';
         STATE.proofs = []; renderProofList();
