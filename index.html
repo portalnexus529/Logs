@@ -240,6 +240,12 @@
   .status-select.active{background:rgba(91,141,239,0.12);border-color:var(--accent);color:var(--accent);}
   .status-select.pending{background:var(--warn-bg);border-color:var(--warn);color:#fde047;}
   .status-select.solved{background:rgba(74,222,128,0.12);border-color:#4ade80;color:#86efac;}
+
+  .link-msg-row{margin-top:4px;}
+  .link-msg-btn{background:none;border:none;color:var(--accent);font-size:11px;cursor:pointer;padding:2px 0;text-decoration:underline;}
+  .link-msg-inline{display:none;gap:6px;margin-top:6px;}
+  .link-msg-inline.show{display:flex;}
+  .link-msg-inline input{flex:1;font-size:12px;padding:6px 8px;}
 </style>
 </head>
 <body>
@@ -709,6 +715,16 @@
       }).join('');
       var statusSelectHtml = '<select class="status-select '+status+'" data-status="'+e.id+'">'+statusOptions+'</select>';
 
+      var linkMsgHtml = !e.discordMessageId ? (
+        '<div class="link-msg-row">' +
+          '<button type="button" class="link-msg-btn" data-linkmsg="'+e.id+'">Link this to its Discord message</button>' +
+          '<div class="link-msg-inline" id="linkmsg-'+e.id+'">' +
+            '<input type="url" placeholder="Paste the Discord message link" data-linkinput="'+e.id+'">' +
+            '<button type="button" class="btn small primary" data-linksave="'+e.id+'">Save</button>' +
+          '</div>' +
+        '</div>'
+      ) : '';
+
       return (
         '<div class="entry">' + thumb +
           '<div class="entry-body">' +
@@ -720,10 +736,35 @@
             '<div class="entry-reason">'+escapeHtml(e.reason)+'</div>' +
             internalLine +
             proofBlock +
+            linkMsgHtml +
           '</div>' +
         '</div>'
       );
     }).join('');
+
+    els.ledgerList.querySelectorAll('[data-linkmsg]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        document.getElementById('linkmsg-'+btn.dataset.linkmsg).classList.add('show');
+      });
+    });
+    els.ledgerList.querySelectorAll('[data-linksave]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var id = btn.dataset.linksave;
+        var input = els.ledgerList.querySelector('[data-linkinput="'+id+'"]');
+        var url = input.value.trim();
+        var match = url.match(/(\d{15,25})\s*$/);
+        if (!match){
+          showToast('That doesn\'t look like a Discord message link', 'err');
+          return;
+        }
+        var entry = STATE.entries.find(function(x){ return x.id===id; });
+        if (!entry) return;
+        entry.discordMessageId = match[1];
+        saveLedger();
+        renderLedger();
+        showToast('Linked. Status changes will now update that message.', 'ok');
+      });
+    });
 
     els.ledgerList.querySelectorAll('[data-status]').forEach(function(sel){
       sel.addEventListener('change', async function(){
