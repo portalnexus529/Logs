@@ -25,6 +25,8 @@
     --kick-bg:rgba(255,169,77,0.14);
     --warn:#ffd43b;
     --warn-bg:rgba(255,212,59,0.16);
+    --discord:#5865F2;
+    --discord-bg:rgba(88,101,242,0.16);
     --radius:10px;
     --radius-sm:7px;
   }
@@ -60,6 +62,7 @@
   .chip .n{font-size:18px;font-weight:600;line-height:1.1;}
   .chip .l{font-size:10.5px;color:var(--text-3);margin-top:2px;}
   .chip.ban .n{color:var(--ban);} .chip.kick .n{color:var(--kick);} .chip.warn .n{color:var(--warn);}
+  .chip.dban .n{color:var(--discord);} .chip.dkick .n{color:var(--discord);}
 
   .icon-btn{
     width:36px;height:36px;border-radius:var(--radius-sm);border:1px solid var(--border-soft);background:var(--panel);
@@ -109,10 +112,11 @@
   .panel-body{padding:18px;}
 
   /* Segmented action control */
-  .seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:16px;}
+  .seg{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;}
   .seg button{
     background:var(--field);border:1px solid var(--border);color:var(--text-2);border-radius:var(--radius-sm);
-    padding:9px 4px;font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;
+    padding:11px 4px;font-size:15px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;
+    flex:1 1 30%;min-width:100px;
   }
   .seg button .dot{width:6px;height:6px;border-radius:50%;background:var(--text-3);}
   .seg button[data-a="ban"].active{background:var(--ban-bg);border-color:var(--ban);color:#fca5a5;}
@@ -121,6 +125,10 @@
   .seg button[data-a="kick"].active .dot{background:var(--kick);}
   .seg button[data-a="warn"].active{background:var(--warn-bg);border-color:var(--warn);color:#fde047;}
   .seg button[data-a="warn"].active .dot{background:var(--warn);}
+  .seg button[data-a="dban"].active{background:var(--discord-bg);border-color:var(--discord);color:#c7ccfb;}
+  .seg button[data-a="dban"].active .dot{background:var(--discord);}
+  .seg button[data-a="dkick"].active{background:var(--discord-bg);border-color:var(--discord);color:#c7ccfb;}
+  .seg button[data-a="dkick"].active .dot{background:var(--discord);}
 
   /* Duration */
   #durationBlock{display:none;margin-bottom:15px;}
@@ -170,6 +178,8 @@
   .badge.ban{background:var(--ban-bg);color:#fca5a5;}
   .badge.kick{background:var(--kick-bg);color:#fdba74;}
   .badge.warn{background:var(--warn-bg);color:#fde047;}
+  .badge.dban{background:var(--discord-bg);color:#c7ccfb;}
+  .badge.dkick{background:var(--discord-bg);color:#c7ccfb;}
   .entry-time{font-size:11px;color:var(--text-3);}
   .entry-player{font-size:14px;font-weight:600;margin-bottom:3px;}
   .entry-meta{font-size:12px;color:var(--text-2);margin-bottom:5px;}
@@ -303,6 +313,8 @@
       <div class="chip ban"><div class="n" id="statBan">0</div><div class="l">Bans</div></div>
       <div class="chip kick"><div class="n" id="statKick">0</div><div class="l">Kicks</div></div>
       <div class="chip warn"><div class="n" id="statWarn">0</div><div class="l">Warnings</div></div>
+      <div class="chip dban"><div class="n" id="statDban">0</div><div class="l">Discord bans</div></div>
+      <div class="chip dkick"><div class="n" id="statDkick">0</div><div class="l">Discord kicks</div></div>
       <button class="icon-btn" id="gearBtn" aria-label="Settings" title="Settings">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       </button>
@@ -357,6 +369,8 @@
           <button type="button" data-a="ban" class="active"><span class="dot"></span>Ban</button>
           <button type="button" data-a="kick"><span class="dot"></span>Kick</button>
           <button type="button" data-a="warn"><span class="dot"></span>Warning</button>
+          <button type="button" data-a="dban"><span class="dot"></span>Discord ban</button>
+          <button type="button" data-a="dkick"><span class="dot"></span>Discord kick</button>
         </div>
 
         <div class="two-col">
@@ -365,7 +379,7 @@
             <input type="text" id="playerName" placeholder="e.g. Ghost">
           </div>
           <div class="field">
-            <label for="steamId">SteamID64</label>
+            <label for="steamId" id="steamIdLabel">SteamID64</label>
             <input type="text" id="steamId" placeholder="7656119...">
           </div>
         </div>
@@ -381,11 +395,11 @@
                 <input type="text" id="joinTime" placeholder="e.g. 14:32 server time">
               </div>
               <div class="field">
-                <label for="acctCreated">Steam account created</label>
+                <label for="acctCreated" id="acctCreatedLabel">Steam account created</label>
                 <input type="text" id="acctCreated" placeholder="e.g. 2016-04-02">
               </div>
             </div>
-            <div class="two-col">
+            <div class="two-col" id="steamStatsRow">
               <div class="field">
                 <label for="vacBans">VAC bans</label>
                 <input type="number" id="vacBans" min="0" placeholder="0">
@@ -489,6 +503,8 @@
             <option value="ban">Bans</option>
             <option value="kick">Kicks</option>
             <option value="warn">Warnings</option>
+            <option value="dban">Discord bans</option>
+            <option value="dkick">Discord kicks</option>
           </select>
         </div>
         <div class="ledger-list" id="ledgerList">
@@ -523,15 +539,17 @@
   var els = {};
   ['gearBtn','settingsPanel','serverNameInput','webhookInput','ticketLinkInput','saveSettingsBtn','testWebhookBtn','exportBtn','importBtn','importFile',
    'settingsStatus','serverNameOut','adminNameInput','addAdminBtn','adminList','actionToggle','durationBlock','durationToggle','durationRow','durationValue','durationUnit',
-   'playerName','steamId','historyBox','joinTime','acctCreated','vacBans','gameBans','daysSinceBan','bgNotes',
+   'playerName','steamId','steamIdLabel','acctCreatedLabel','steamStatsRow','historyBox','joinTime','acctCreated','vacBans','gameBans','daysSinceBan','bgNotes',
    'reasonInput','templateRow','resolutionBlock','scopeField','banScope','appealToggle',
    'addImageBtn','addLinkBtn','linkInlineRow','linkInlineInput','linkInlineAdd','linkInlineCancel','fileInput','proofList',
    'internalNotes','adminInput','publishBtn','formMsg','searchInput','filterSelect','ledgerList','clearAllBtn',
-   'statBan','statKick','statWarn','toast','toastMsg','caseTag','confirmOverlay','confirmMsg','confirmCancel','confirmOk'
+   'statBan','statKick','statWarn','statDban','statDkick','toast','toastMsg','caseTag','confirmOverlay','confirmMsg','confirmCancel','confirmOk'
   ].forEach(function(id){ els[id] = document.getElementById(id); });
 
-  var LABEL = { ban:'Ban', kick:'Kick', warn:'Warning' };
-  var COLOR_HEX = { ban:0xFF5C5C, kick:0xFFA94D, warn:0xFFD43B };
+  var LABEL = { ban:'Ban', kick:'Kick', warn:'Warning', dban:'Discord ban', dkick:'Discord kick' };
+  var COLOR_HEX = { ban:0xFF5C5C, kick:0xFFA94D, warn:0xFFD43B, dban:0x5865F2, dkick:0x5865F2 };
+  function isBanType(a){ return a==='ban' || a==='dban'; }
+  function isDiscordType(a){ return a==='dban' || a==='dkick'; }
 
   function escapeHtml(s){
     return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; });
@@ -564,9 +582,19 @@
   function setAction(a){
     STATE.action = a;
     els.actionToggle.querySelectorAll('button').forEach(function(b){ b.classList.toggle('active', b.dataset.a===a); });
-    els.durationBlock.style.display = (a==='ban') ? 'block' : 'none';
-    els.resolutionBlock.style.display = (a==='ban') ? 'block' : 'none';
+    els.durationBlock.style.display = isBanType(a) ? 'block' : 'none';
+    els.resolutionBlock.style.display = isBanType(a) ? 'block' : 'none';
     els.scopeField.style.display = (a==='ban') ? 'block' : 'none';
+    els.steamStatsRow.style.display = isDiscordType(a) ? 'none' : 'grid';
+    if (isDiscordType(a)){
+      els.steamIdLabel.textContent = 'Discord user ID';
+      els.steamId.placeholder = 'e.g. 123456789012345678';
+      els.acctCreatedLabel.textContent = 'Discord account created';
+    } else {
+      els.steamIdLabel.textContent = 'SteamID64';
+      els.steamId.placeholder = '7656119...';
+      els.acctCreatedLabel.textContent = 'Steam account created';
+    }
     els.publishBtn.textContent = 'Publish ' + LABEL[a].toLowerCase() + ' report';
   }
   els.actionToggle.addEventListener('click', function(e){
@@ -789,9 +817,13 @@
   });
 
   function updateStats(){
-    var b=0,k=0,w=0;
-    STATE.entries.forEach(function(e){ if(e.action==='ban')b++; else if(e.action==='kick')k++; else if(e.action==='warn')w++; });
+    var b=0,k=0,w=0,db=0,dk=0;
+    STATE.entries.forEach(function(e){
+      if(e.action==='ban')b++; else if(e.action==='kick')k++; else if(e.action==='warn')w++;
+      else if(e.action==='dban')db++; else if(e.action==='dkick')dk++;
+    });
     els.statBan.textContent=b; els.statKick.textContent=k; els.statWarn.textContent=w;
+    els.statDban.textContent=db; els.statDkick.textContent=dk;
   }
 
   function renderLedger(){
@@ -809,7 +841,7 @@
     els.ledgerList.innerHTML = list.map(function(e){
       var d = new Date(e.ts);
       var dateStr = d.toLocaleDateString(undefined,{month:'short',day:'numeric'}) + ' &middot; ' + d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
-      var durText = (e.action==='ban') ? (e.durationText || 'Permanent') : '';
+      var durText = isBanType(e.action) ? (e.durationText || 'Permanent') : '';
       var proofs = e.proofs || [];
       var firstImg = proofs.find(function(p){ return p.type==='image'; });
       var thumb = firstImg ? '<img class="entry-thumb" src="'+escapeHtml(firstImg.url)+'" alt="Proof thumbnail">' : '<div class="entry-thumb"></div>';
@@ -817,8 +849,8 @@
       var badges = '<div class="badge-line"><span class="badge '+e.action+'">'+LABEL[e.action]+'</span>';
       if (e.caseNo) badges += '<span class="badge scope">Case #'+e.caseNo+'</span>';
       if (e.action==='ban' && e.banScope) badges += '<span class="badge scope">'+({game:'Game ban',discord:'Discord ban',both:'Game + Discord'})[e.banScope]+'</span>';
-      if (e.action==='ban' && e.appeal) badges += '<span class="badge '+(e.appeal==='yes'?'appeal-yes':'appeal-no')+'">'+(e.appeal==='yes'?'Appealable':'Not appealable')+'</span>';
-      if (e.action==='ban' && e.expiresAt){
+      if (isBanType(e.action) && e.appeal) badges += '<span class="badge '+(e.appeal==='yes'?'appeal-yes':'appeal-no')+'">'+(e.appeal==='yes'?'Appealable':'Not appealable')+'</span>';
+      if (isBanType(e.action) && e.expiresAt){
         var msLeft = e.expiresAt - Date.now();
         if (msLeft <= 0){
           badges += '<span class="badge expiry-due">Expired '+Math.ceil(-msLeft/86400000)+'d ago</span>';
@@ -831,7 +863,7 @@
       badges += '</div>';
 
       var bgParts = [];
-      if (e.steamId) bgParts.push('SteamID64 '+e.steamId);
+      if (e.steamId) bgParts.push((isDiscordType(e.action)?'Discord ID ':'SteamID64 ')+e.steamId);
       if (e.joinTime) bgParts.push('joined '+e.joinTime);
       if (e.acctCreated) bgParts.push('account created '+e.acctCreated);
       if (e.vacBans) bgParts.push(e.vacBans+' VAC ban(s)');
@@ -992,7 +1024,7 @@
   });
 
   function durationText(){
-    if (STATE.action!=='ban' || STATE.durationMode==='perm') return 'Permanent';
+    if (!isBanType(STATE.action) || STATE.durationMode==='perm') return 'Permanent';
     var v = Number(els.durationValue.value);
     if (!v) return null;
     var unit = els.durationUnit.value;
@@ -1003,7 +1035,7 @@
 
   var UNIT_MS = { minutes:60000, hours:3600000, days:86400000 };
   function durationMs(){
-    if (STATE.action!=='ban' || STATE.durationMode==='perm') return null;
+    if (!isBanType(STATE.action) || STATE.durationMode==='perm') return null;
     var v = Number(els.durationValue.value);
     if (!v) return null;
     return v * (UNIT_MS[els.durationUnit.value] || UNIT_MS.days);
@@ -1016,17 +1048,19 @@
   function buildFields(entry){
     var fields = [
       { name:'Player', value: '**'+(entry.player||'Unknown')+'**', inline:true },
-      { name:'SteamID64', value: entry.steamId ? '`'+entry.steamId+'`' : '—', inline:true },
+      { name: isDiscordType(entry.action) ? 'Discord user ID' : 'SteamID64', value: entry.steamId ? '`'+entry.steamId+'`' : '—', inline:true },
       { name:'Issued by', value: entry.admin || 'Unknown', inline:true }
     ];
 
-    if (entry.action==='ban'){
+    if (isBanType(entry.action)){
       var durVal = '**'+(entry.durationText || 'Permanent')+'**';
       if (entry.expiresAt){
         durVal += ' (expires ' + new Date(entry.expiresAt).toLocaleString(undefined,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) + ')';
       }
       fields.push({ name:'Duration', value: durVal, inline:true });
-      fields.push({ name:'Ban scope', value: '**'+(SCOPE_LABEL[entry.banScope] || 'Game only')+'**', inline:true });
+      if (entry.action==='ban'){
+        fields.push({ name:'Ban scope', value: '**'+(SCOPE_LABEL[entry.banScope] || 'Game only')+'**', inline:true });
+      }
       fields.push({ name:'Appeal eligible', value: entry.appeal==='yes' ? '**Yes**' : '**No**', inline:true });
     }
 
@@ -1053,8 +1087,8 @@
       fields.push({ name:'Proof links', value: linkProofs.map(function(p,i){ return (i+1)+'. '+p.url; }).join('\n') });
     }
 
-    if ((entry.action!=='ban' || entry.appeal==='yes') && STATE.settings.ticketLink){
-      fields.push({ name:'Think this was a mistake?', value: 'Open a ticket to dispute this: ' + STATE.settings.ticketLink });
+    if ((!isBanType(entry.action) || entry.appeal==='yes') && STATE.settings.ticketLink){
+      fields.push({ name:'Think this was a mistake?', value: 'Open a ticket to appeal: ' + STATE.settings.ticketLink });
     }
 
     return fields;
@@ -1177,7 +1211,7 @@
     if (!STATE.settings.webhookUrl){ setFormMsg('No Discord webhook saved yet. Open settings first.', 'err'); return; }
 
     var durText = null;
-    if (action==='ban'){
+    if (isBanType(action)){
       durText = durationText();
       if (STATE.durationMode==='temp' && !durText){ setFormMsg('Enter how long the temporary ban should last.', 'err'); return; }
     }
@@ -1187,10 +1221,10 @@
       caseNo: null,
       action: action, player: player, steamId: els.steamId.value.trim(),
       reason: reason, admin: admin,
-      durationText: action==='ban' ? durText : null,
-      expiresAt: action==='ban' ? (function(){ var ms = durationMs(); return ms ? Date.now()+ms : null; })() : null,
+      durationText: isBanType(action) ? durText : null,
+      expiresAt: isBanType(action) ? (function(){ var ms = durationMs(); return ms ? Date.now()+ms : null; })() : null,
       banScope: action==='ban' ? els.banScope.value : null,
-      appeal: action==='ban' ? STATE.appeal : null,
+      appeal: isBanType(action) ? STATE.appeal : null,
       joinTime: els.joinTime.value.trim(),
       acctCreated: els.acctCreated.value.trim(),
       vacBans: els.vacBans.value ? Number(els.vacBans.value) : null,
