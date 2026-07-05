@@ -306,16 +306,22 @@
   .confirm-box p{font-size:15px!important;}
 
   .page-shell{display:grid;grid-template-columns:1fr minmax(0,1180px) 1fr;gap:24px;max-width:1900px;margin:0 auto;align-items:start;}
-  .side-panel{position:sticky;top:28px;width:100%;max-width:280px;}
-  .side-panel.side-left{justify-self:end;}
-  .side-panel.side-right{justify-self:start;}
-  @media (max-width:1550px){
-    .page-shell{grid-template-columns:1fr;max-width:none;}
-    .side-panel{display:none;}
+
+  .dash-body{display:grid;grid-template-columns:200px 1fr;gap:24px;align-items:start;}
+  @media (max-width:800px){.dash-body{grid-template-columns:1fr;} .side-nav{flex-direction:row;flex-wrap:wrap;position:static;}}
+  .side-nav{display:flex;flex-direction:column;gap:4px;position:sticky;top:28px;}
+  .nav-item{
+    background:none;border:none;color:var(--text-2);text-align:left;padding:11px 14px;font-size:14.5px;font-weight:500;
+    border-radius:var(--radius-sm);cursor:pointer;
   }
-  .side-stats{display:flex;flex-direction:column;gap:12px;}
-  .side-stat-row{display:flex;justify-content:space-between;align-items:center;font-size:13.5px;color:var(--text-2);}
-  .side-stat-row b{font-size:19px;font-weight:700;color:var(--text);}
+  .nav-item:hover{background:var(--panel-2);color:var(--text);}
+  .nav-item.active{background:var(--accent-bg);color:var(--accent);font-weight:600;}
+  .dash-section{display:block;}
+  .dash-cards{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;}
+  @media (max-width:1100px){.dash-cards{grid-template-columns:repeat(2,1fr);}}
+  .dash-card .panel-body{padding:18px;}
+  .dash-card-label{font-size:12.5px;color:var(--text-2);font-weight:600;margin-bottom:8px;}
+  .dash-card-num{font-size:30px;font-weight:700;color:var(--text);}
   .recent-feed{display:flex;flex-direction:column;gap:10px;max-height:70vh;overflow-y:auto;}
   .recent-item{border-left:2px solid var(--border);padding:6px 0 6px 10px;}
   .recent-item .rt{font-size:10.5px;color:var(--text-3);}
@@ -328,21 +334,6 @@
 </style>
 </head>
 <body>
-<div class="page-shell">
-
-  <aside class="side-panel side-left">
-    <div class="panel">
-      <div class="panel-head"><h2>Overview</h2></div>
-      <div class="panel-body side-stats">
-        <div class="side-stat-row"><span>Open cases</span><b id="ovOpen">0</b></div>
-        <div class="side-stat-row"><span>Pending review</span><b id="ovPending">0</b></div>
-        <div class="side-stat-row"><span>Solved</span><b id="ovSolved">0</b></div>
-        <div class="side-stat-row"><span>Filed this week</span><b id="ovWeek">0</b></div>
-        <div class="side-stat-row"><span>Total logged</span><b id="ovTotal">0</b></div>
-      </div>
-    </div>
-  </aside>
-
 <div class="wrap">
 
   <div class="topbar">
@@ -429,18 +420,40 @@
     </div>
   </div>
 
-  <div class="grid">
+  <div class="dash-body">
 
-    <div class="panel">
-      <div class="panel-head tabs-head">
-        <div class="tab-switch">
-          <button type="button" class="tab-btn active" data-tab="game">New report</button>
-          <button type="button" class="tab-btn" data-tab="discord">Discord actions</button>
-          <button type="button" class="tab-btn" data-tab="ann">Announcements</button>
+    <nav class="side-nav">
+      <button type="button" class="nav-item active" data-section="dashboard">Dashboard</button>
+      <button type="button" class="nav-item" data-section="game">New report</button>
+      <button type="button" class="nav-item" data-section="discord">Discord actions</button>
+      <button type="button" class="nav-item" data-section="ann">Announcements</button>
+      <button type="button" class="nav-item" data-section="ledger">Ledger</button>
+    </nav>
+
+    <div class="dash-main">
+
+      <div id="sectionDashboard" class="dash-section">
+        <div class="dash-cards">
+          <div class="panel dash-card"><div class="panel-body"><div class="dash-card-label">Open cases</div><div class="dash-card-num" id="ovOpen">0</div></div></div>
+          <div class="panel dash-card"><div class="panel-body"><div class="dash-card-label">Pending review</div><div class="dash-card-num" id="ovPending">0</div></div></div>
+          <div class="panel dash-card"><div class="panel-body"><div class="dash-card-label">Solved</div><div class="dash-card-num" id="ovSolved">0</div></div></div>
+          <div class="panel dash-card"><div class="panel-body"><div class="dash-card-label">Filed this week</div><div class="dash-card-num" id="ovWeek">0</div></div></div>
+          <div class="panel dash-card"><div class="panel-body"><div class="dash-card-label">Total logged</div><div class="dash-card-num" id="ovTotal">0</div></div></div>
         </div>
-        <span class="case-tag" id="caseTag">Next case #0001</span>
+        <div class="panel" style="margin-top:20px;">
+          <div class="panel-head"><h2>Recent activity</h2></div>
+          <div class="panel-body">
+            <div class="recent-feed" id="recentFeed">
+              <div class="empty-state">Nothing logged yet.</div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="panel-body">
+
+      <div id="sectionGame" class="dash-section" style="display:none;">
+        <div class="panel">
+          <div class="panel-head"><h2>New report</h2><span class="case-tag" id="caseTag">Next case #0001</span></div>
+          <div class="panel-body">
         <div id="gameFormBody">
         <div class="seg" id="actionToggle">
           <button type="button" data-a="ban" class="active"><span class="dot"></span>Ban</button>
@@ -566,8 +579,15 @@
         <button class="btn primary" id="publishBtn">Publish ban report</button>
         <div id="formMsg"></div>
         </div>
+          </div>
+        </div>
+      </div>
 
-        <div id="discFormBody" style="display:none;">
+      <div id="sectionDiscord" class="dash-section" style="display:none;">
+        <div class="panel">
+          <div class="panel-head"><h2>Discord actions</h2><span class="case-tag" id="discCaseTag">Next case #0001</span></div>
+          <div class="panel-body">
+        <div id="discFormBody">
 
         <div class="seg" id="discActionToggle">
           <button type="button" data-da="dban" class="active"><span class="dot"></span>Discord ban</button>
@@ -654,8 +674,15 @@
         <button class="btn primary" id="discPublishBtn">Publish Discord ban report</button>
         <div id="discFormMsg"></div>
         </div>
+          </div>
+        </div>
+      </div>
 
-        <div id="annFormBody" style="display:none;">
+      <div id="sectionAnn" class="dash-section" style="display:none;">
+        <div class="panel">
+          <div class="panel-head"><h2>Announcements</h2></div>
+          <div class="panel-body">
+        <div id="annFormBody">
 
           <div class="field">
             <label for="annWebhookSelect">Send to</label>
@@ -775,10 +802,12 @@
           <button class="btn primary" id="annPublishBtn">Send announcement</button>
           <div id="annFormMsg"></div>
         </div>
+          </div>
+        </div>
       </div>
-    </div>
 
-    <div class="panel">
+      <div id="sectionLedger" class="dash-section" style="display:none;">
+        <div class="panel">
       <div class="panel-head"><h2>Ledger</h2><button class="btn ghost small" id="clearAllBtn">Clear all</button></div>
       <div class="panel-body">
         <div class="search-row">
@@ -797,21 +826,10 @@
         </div>
       </div>
     </div>
-
-  </div>
-</div>
-
-  <aside class="side-panel side-right">
-    <div class="panel">
-      <div class="panel-head"><h2>Recent activity</h2></div>
-      <div class="panel-body">
-        <div class="recent-feed" id="recentFeed">
-          <div class="empty-state">Nothing logged yet.</div>
-        </div>
       </div>
-    </div>
-  </aside>
 
+    </div>
+  </div>
 </div>
 
 <div class="toast" id="toast">
@@ -1015,13 +1033,15 @@
 
   els.gearBtn.addEventListener('click', function(){ els.settingsPanel.classList.toggle('open'); });
 
-  document.querySelectorAll('.tab-btn').forEach(function(btn){
+  var SECTION_IDS = { dashboard:'sectionDashboard', game:'sectionGame', discord:'sectionDiscord', ann:'sectionAnn', ledger:'sectionLedger' };
+  document.querySelectorAll('.nav-item').forEach(function(btn){
     btn.addEventListener('click', function(){
-      document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.toggle('active', b===btn); });
-      var tab = btn.dataset.tab;
-      els.gameFormBody.style.display = (tab==='game') ? 'block' : 'none';
-      els.discFormBody.style.display = (tab==='discord') ? 'block' : 'none';
-      els.annFormBody.style.display = (tab==='ann') ? 'block' : 'none';
+      document.querySelectorAll('.nav-item').forEach(function(b){ b.classList.toggle('active', b===btn); });
+      var target = btn.dataset.section;
+      Object.keys(SECTION_IDS).forEach(function(key){
+        var el = document.getElementById(SECTION_IDS[key]);
+        if (el) el.style.display = (key===target) ? 'block' : 'none';
+      });
     });
   });
 
