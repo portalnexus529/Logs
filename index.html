@@ -103,8 +103,8 @@
   button.btn.small{padding:6px 12px;font-size:12.5px;}
 
   /* ---------- MAIN GRID ---------- */
-  .grid{display:grid;grid-template-columns:380px 1fr;gap:20px;align-items:start;}
-  @media (max-width:860px){.grid{grid-template-columns:1fr;}}
+  .grid{display:grid;grid-template-columns:380px 380px 1fr;gap:20px;align-items:start;}
+  @media (max-width:1180px){.grid{grid-template-columns:1fr;}}
 
   .panel{background:var(--panel);border:1px solid var(--border-soft);border-radius:var(--radius);}
   .panel-head{padding:15px 18px;border-bottom:1px solid var(--border-soft);display:flex;justify-content:space-between;align-items:center;}
@@ -369,8 +369,6 @@
           <button type="button" data-a="ban" class="active"><span class="dot"></span>Ban</button>
           <button type="button" data-a="kick"><span class="dot"></span>Kick</button>
           <button type="button" data-a="warn"><span class="dot"></span>Warning</button>
-          <button type="button" data-a="dban"><span class="dot"></span>Discord ban</button>
-          <button type="button" data-a="dkick"><span class="dot"></span>Discord kick</button>
         </div>
 
         <div class="two-col">
@@ -494,6 +492,85 @@
     </div>
 
     <div class="panel">
+      <div class="panel-head"><h2>Discord actions</h2><span class="case-tag" id="discCaseTag">Next case #0001</span></div>
+      <div class="panel-body">
+
+        <div class="seg" id="discActionToggle">
+          <button type="button" data-da="dban" class="active"><span class="dot"></span>Discord ban</button>
+          <button type="button" data-da="dkick"><span class="dot"></span>Discord kick</button>
+        </div>
+
+        <div class="two-col">
+          <div class="field">
+            <label for="discPlayerName">Discord username</label>
+            <input type="text" id="discPlayerName" placeholder="e.g. Ghost#0001">
+          </div>
+          <div class="field">
+            <label for="discUserId">Discord user ID</label>
+            <input type="text" id="discUserId" placeholder="e.g. 123456789012345678">
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="discReasonInput">Reason</label>
+          <div class="template-row" id="discTemplateRow"></div>
+          <textarea id="discReasonInput" placeholder="What happened, which rule was broken"></textarea>
+        </div>
+
+        <div id="discResolutionBlock">
+          <label>Resolution</label>
+          <div class="seg2" id="discDurationToggle">
+            <button type="button" data-dd="perm" class="active">Permanent</button>
+            <button type="button" data-dd="temp">Temporary</button>
+          </div>
+          <div class="duration-row" id="discDurationRow" style="display:none;">
+            <input type="number" id="discDurationValue" min="1" placeholder="e.g. 3">
+            <select id="discDurationUnit">
+              <option value="minutes">Minutes</option>
+              <option value="hours">Hours</option>
+              <option value="days" selected>Days</option>
+            </select>
+          </div>
+          <div style="margin-top:10px;">
+            <label style="font-size:11.5px;">Appeal eligible</label>
+            <div class="toggle-row" id="discAppealToggle">
+              <button type="button" data-dv="yes" class="active">Yes</button>
+              <button type="button" data-dv="no">No</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Proof</label>
+          <div class="proof-add-row">
+            <button type="button" class="btn small" id="discAddImageBtn">+ Add image</button>
+            <button type="button" class="btn small" id="discAddLinkBtn">+ Add link</button>
+          </div>
+          <div class="proof-link-inline" id="discLinkInlineRow">
+            <input type="url" id="discLinkInlineInput" placeholder="https://...">
+            <button type="button" class="btn small primary" id="discLinkInlineAdd">Add</button>
+            <button type="button" class="btn small" id="discLinkInlineCancel">Cancel</button>
+          </div>
+          <input type="file" id="discFileInput" accept="image/*" multiple style="display:none;">
+          <div class="proof-list" id="discProofList"></div>
+        </div>
+
+        <div class="field">
+          <label for="discInternalNotes">Internal notes <span style="color:var(--text-3);font-weight:400;">(not sent to Discord)</span></label>
+          <textarea id="discInternalNotes" placeholder="Notes for other admins only"></textarea>
+        </div>
+
+        <div class="field">
+          <label for="discAdminInput">Issued by (admin)</label>
+          <input type="text" id="discAdminInput" placeholder="Your admin name">
+        </div>
+
+        <button class="btn primary" id="discPublishBtn">Publish Discord ban report</button>
+        <div id="discFormMsg"></div>
+      </div>
+    </div>
+
+    <div class="panel">
       <div class="panel-head"><h2>Ledger</h2><button class="btn ghost small" id="clearAllBtn">Clear all</button></div>
       <div class="panel-body">
         <div class="search-row">
@@ -543,7 +620,11 @@
    'reasonInput','templateRow','resolutionBlock','scopeField','banScope','appealToggle',
    'addImageBtn','addLinkBtn','linkInlineRow','linkInlineInput','linkInlineAdd','linkInlineCancel','fileInput','proofList',
    'internalNotes','adminInput','publishBtn','formMsg','searchInput','filterSelect','ledgerList','clearAllBtn',
-   'statBan','statKick','statWarn','statDban','statDkick','toast','toastMsg','caseTag','confirmOverlay','confirmMsg','confirmCancel','confirmOk'
+   'statBan','statKick','statWarn','statDban','statDkick','toast','toastMsg','caseTag','confirmOverlay','confirmMsg','confirmCancel','confirmOk',
+   'discActionToggle','discPlayerName','discUserId','discReasonInput','discTemplateRow','discResolutionBlock',
+   'discDurationToggle','discDurationRow','discDurationValue','discDurationUnit','discAppealToggle',
+   'discAddImageBtn','discAddLinkBtn','discLinkInlineRow','discLinkInlineInput','discLinkInlineAdd','discLinkInlineCancel',
+   'discFileInput','discProofList','discInternalNotes','discAdminInput','discPublishBtn','discFormMsg','discCaseTag'
   ].forEach(function(id){ els[id] = document.getElementById(id); });
 
   var LABEL = { ban:'Ban', kick:'Kick', warn:'Warning', dban:'Discord ban', dkick:'Discord kick' };
@@ -620,9 +701,9 @@
   });
 
   // ---------- player history lookup ----------
-  function findMatches(){
-    var name = els.playerName.value.trim().toLowerCase();
-    var sid = els.steamId.value.trim();
+  function findMatches(nameOverride, sidOverride){
+    var name = (nameOverride!==undefined ? nameOverride : els.playerName.value).trim().toLowerCase();
+    var sid = (sidOverride!==undefined ? sidOverride : els.steamId.value).trim();
     if (!name && !sid) return [];
     return STATE.entries.filter(function(e){
       if (sid && e.steamId && e.steamId===sid) return true;
@@ -778,7 +859,9 @@
     try{ localStorage.setItem('modlog:entries', JSON.stringify(STATE.entries)); }catch(e){}
   }
   function updateCaseTag(){
-    els.caseTag.textContent = 'Next case #' + String(STATE.caseSeq+1).padStart(4,'0');
+    var text = 'Next case #' + String(STATE.caseSeq+1).padStart(4,'0');
+    els.caseTag.textContent = text;
+    if (els.discCaseTag) els.discCaseTag.textContent = text;
   }
   function nextCaseNumber(){
     STATE.caseSeq += 1;
@@ -1171,9 +1254,9 @@
     setTimeout(function(){ els.settingsStatus.textContent=''; }, 3200);
   });
 
-  async function doPublish(entry){
-    els.publishBtn.disabled = true;
-    setFormMsg('Publishing...', '');
+  async function publishEntry(entry, btnEl, msgSetter, onSuccess){
+    btnEl.disabled = true;
+    msgSetter('Publishing...', '');
 
     try{
       var result = await postToDiscord(entry);
@@ -1183,20 +1266,19 @@
       saveLedger();
       renderLedger();
       showToast('Published to Discord', 'ok');
-      setFormMsg('Added to the ledger as case #' + entry.caseNo + '.', 'ok');
-
-      els.playerName.value=''; els.steamId.value=''; els.reasonInput.value='';
-      els.joinTime.value=''; els.acctCreated.value=''; els.vacBans.value=''; els.gameBans.value=''; els.daysSinceBan.value=''; els.bgNotes.value='';
-      els.internalNotes.value=''; els.durationValue.value='';
-      STATE.proofs = []; renderProofList();
-      renderHistoryBox();
+      msgSetter('Added to the ledger as case #' + entry.caseNo + '.', 'ok');
+      onSuccess();
     }catch(err){
       STATE.caseSeq -= 1; try{ localStorage.setItem('modlog:caseSeq', String(STATE.caseSeq)); }catch(e){} updateCaseTag();
-      setFormMsg(err.message || 'Could not publish. Try again.', 'err');
+      msgSetter(err.message || 'Could not publish. Try again.', 'err');
       showToast(err.message || 'Publish failed', 'err');
     }finally{
-      els.publishBtn.disabled = false;
+      btnEl.disabled = false;
     }
+  }
+
+  function setDiscFormMsg(text, kind){
+    els.discFormMsg.textContent = text||''; els.discFormMsg.className = kind||'';
   }
 
   els.publishBtn.addEventListener('click', async function(){
@@ -1243,7 +1325,13 @@
 
     function proceed(){
       entry.caseNo = nextCaseNumber();
-      doPublish(entry);
+      publishEntry(entry, els.publishBtn, setFormMsg, function(){
+        els.playerName.value=''; els.steamId.value=''; els.reasonInput.value='';
+        els.joinTime.value=''; els.acctCreated.value=''; els.vacBans.value=''; els.gameBans.value=''; els.daysSinceBan.value=''; els.bgNotes.value='';
+        els.internalNotes.value=''; els.durationValue.value='';
+        STATE.proofs = []; renderProofList();
+        renderHistoryBox();
+      });
     }
 
     if (openCase){
@@ -1255,6 +1343,154 @@
 
   loadSettings();
   loadLedger();
+
+  // ==================== Discord actions panel ====================
+  var DISC_STATE = { action:'dban', durationMode:'perm', appeal:'yes', proofs:[] };
+
+  function setDiscAction(a){
+    DISC_STATE.action = a;
+    els.discActionToggle.querySelectorAll('button').forEach(function(b){ b.classList.toggle('active', b.dataset.da===a); });
+    els.discResolutionBlock.style.display = (a==='dban') ? 'block' : 'none';
+    els.discPublishBtn.textContent = 'Publish ' + LABEL[a].toLowerCase() + ' report';
+  }
+  els.discActionToggle.addEventListener('click', function(e){
+    var b = e.target.closest('button[data-da]'); if (b) setDiscAction(b.dataset.da);
+  });
+  setDiscAction('dban');
+
+  els.discDurationToggle.addEventListener('click', function(e){
+    var b = e.target.closest('button[data-dd]'); if (!b) return;
+    DISC_STATE.durationMode = b.dataset.dd;
+    els.discDurationToggle.querySelectorAll('button').forEach(function(x){ x.classList.toggle('active', x===b); });
+    els.discDurationRow.style.display = (DISC_STATE.durationMode==='temp') ? 'grid' : 'none';
+  });
+
+  els.discAppealToggle.addEventListener('click', function(e){
+    var b = e.target.closest('button[data-dv]'); if (!b) return;
+    DISC_STATE.appeal = b.dataset.dv;
+    els.discAppealToggle.querySelectorAll('button').forEach(function(x){ x.classList.toggle('active', x===b); });
+  });
+
+  els.discTemplateRow.innerHTML = REASON_TEMPLATES.map(function(t){ return '<span class="template-chip" data-tpl="'+escapeHtml(t)+'">'+escapeHtml(t)+'</span>'; }).join('');
+  els.discTemplateRow.addEventListener('click', function(e){
+    var chip = e.target.closest('[data-tpl]'); if (!chip) return;
+    var current = els.discReasonInput.value.trim();
+    els.discReasonInput.value = current ? (current + '; ' + chip.dataset.tpl) : chip.dataset.tpl;
+    els.discReasonInput.focus();
+  });
+
+  function discDurationText(){
+    if (DISC_STATE.action!=='dban' || DISC_STATE.durationMode==='perm') return 'Permanent';
+    var v = Number(els.discDurationValue.value);
+    if (!v) return null;
+    var unit = els.discDurationUnit.value;
+    var label = unit.charAt(0).toUpperCase()+unit.slice(1);
+    if (v===1) label = label.slice(0,-1);
+    return v + ' ' + label.toLowerCase();
+  }
+  function discDurationMs(){
+    if (DISC_STATE.action!=='dban' || DISC_STATE.durationMode==='perm') return null;
+    var v = Number(els.discDurationValue.value);
+    if (!v) return null;
+    return v * (UNIT_MS[els.discDurationUnit.value] || UNIT_MS.days);
+  }
+
+  function renderDiscProofList(){
+    if (DISC_STATE.proofs.length===0){ els.discProofList.innerHTML=''; return; }
+    els.discProofList.innerHTML = DISC_STATE.proofs.map(function(p, i){
+      var thumb = p.type==='image'
+        ? '<img src="'+p.previewUrl+'" alt="">'
+        : '<div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11.5 4.5"/><path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07l1.36-1.36"/></svg></div>';
+      var label = p.type==='image' ? p.name : p.url;
+      return '<div class="proof-item">' + thumb + '<span class="label">'+escapeHtml(label)+'</span><button type="button" class="rm" data-drm="'+i+'">&times;</button></div>';
+    }).join('');
+    els.discProofList.querySelectorAll('[data-drm]').forEach(function(btn){
+      btn.addEventListener('click', function(){ DISC_STATE.proofs.splice(Number(btn.dataset.drm),1); renderDiscProofList(); });
+    });
+  }
+
+  els.discAddImageBtn.addEventListener('click', function(){ els.discFileInput.click(); });
+  els.discFileInput.addEventListener('change', function(){
+    Array.from(this.files).forEach(function(file){
+      if (!file.type.startsWith('image/')){ setDiscFormMsg('Only image files are supported for upload.', 'err'); return; }
+      if (file.size > 8*1024*1024){ setDiscFormMsg('"'+file.name+'" is over 8MB and was skipped.', 'err'); return; }
+      var reader = new FileReader();
+      reader.onload = function(e){
+        DISC_STATE.proofs.push({ type:'image', file:file, name:file.name, previewUrl:e.target.result });
+        renderDiscProofList();
+      };
+      reader.readAsDataURL(file);
+    });
+    els.discFileInput.value = '';
+  });
+
+  els.discAddLinkBtn.addEventListener('click', function(){
+    els.discLinkInlineRow.classList.add('show'); els.discLinkInlineInput.focus();
+  });
+  els.discLinkInlineCancel.addEventListener('click', function(){
+    els.discLinkInlineRow.classList.remove('show'); els.discLinkInlineInput.value='';
+  });
+  els.discLinkInlineAdd.addEventListener('click', function(){
+    var url = els.discLinkInlineInput.value.trim();
+    if (!url) return;
+    DISC_STATE.proofs.push({ type:'link', url:url });
+    renderDiscProofList();
+    els.discLinkInlineInput.value=''; els.discLinkInlineRow.classList.remove('show');
+  });
+
+  els.discPublishBtn.addEventListener('click', async function(){
+    var player = els.discPlayerName.value.trim();
+    var userId = els.discUserId.value.trim();
+    var reason = els.discReasonInput.value.trim();
+    var admin = els.discAdminInput.value.trim();
+    var action = DISC_STATE.action;
+
+    if (!player){ setDiscFormMsg('Add the Discord username.', 'err'); return; }
+    if (!reason){ setDiscFormMsg('Add a reason for this action.', 'err'); return; }
+    if (!admin){ setDiscFormMsg('Add the admin filing this report.', 'err'); return; }
+    if (!STATE.settings.webhookUrl){ setDiscFormMsg('No Discord webhook saved yet. Open settings first.', 'err'); return; }
+
+    var durText = null;
+    if (action==='dban'){
+      durText = discDurationText();
+      if (DISC_STATE.durationMode==='temp' && !durText){ setDiscFormMsg('Enter how long the temporary ban should last.', 'err'); return; }
+    }
+
+    var entry = {
+      id: Date.now()+'-'+Math.random().toString(36).slice(2,8),
+      caseNo: null,
+      action: action, player: player, steamId: userId,
+      reason: reason, admin: admin,
+      durationText: action==='dban' ? durText : null,
+      expiresAt: action==='dban' ? (function(){ var ms = discDurationMs(); return ms ? Date.now()+ms : null; })() : null,
+      banScope: null,
+      appeal: action==='dban' ? DISC_STATE.appeal : null,
+      joinTime:'', acctCreated:'', vacBans:null, gameBans:null, daysSinceBan:null, bgNotes:'',
+      internalNotes: els.discInternalNotes.value.trim(),
+      proofs: DISC_STATE.proofs.slice(),
+      status: 'active',
+      investigator: null,
+      discordMessageId: null,
+      ts: Date.now()
+    };
+
+    var openCase = findMatches(player, userId).find(function(m){ return (m.status||'active')==='active'; });
+
+    function proceed(){
+      entry.caseNo = nextCaseNumber();
+      publishEntry(entry, els.discPublishBtn, setDiscFormMsg, function(){
+        els.discPlayerName.value=''; els.discUserId.value=''; els.discReasonInput.value='';
+        els.discInternalNotes.value=''; els.discDurationValue.value='';
+        DISC_STATE.proofs = []; renderDiscProofList();
+      });
+    }
+
+    if (openCase){
+      askConfirm('This user already has an open case (#'+openCase.caseNo+', '+LABEL[openCase.action]+'). Publish this report anyway?', proceed);
+    } else {
+      proceed();
+    }
+  });
 })();
 </script>
 </body>
