@@ -192,6 +192,44 @@
 
   .ledger-list::-webkit-scrollbar{width:8px;}
   .ledger-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+
+  .case-tag{font-size:11.5px;color:var(--text-3);font-family:'JetBrains Mono',monospace;}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  details.bg-section{border:1px solid var(--border-soft);border-radius:var(--radius-sm);margin-bottom:15px;background:var(--field);}
+  details.bg-section summary{padding:10px 12px;font-size:13px;font-weight:500;color:var(--text-2);cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;}
+  details.bg-section summary::-webkit-details-marker{display:none;}
+  details.bg-section summary::before{content:'\203A';display:inline-block;transition:transform .15s;color:var(--text-3);}
+  details.bg-section[open] summary::before{transform:rotate(90deg);}
+  details.bg-section .bg-body{padding:0 12px 12px;}
+
+  .toggle-row{display:flex;gap:6px;}
+  .toggle-row button{flex:1;background:var(--field);border:1px solid var(--border);color:var(--text-2);border-radius:var(--radius-sm);padding:8px 4px;font-size:12.5px;cursor:pointer;}
+  .toggle-row button.active{background:var(--accent-bg);border-color:var(--accent);color:var(--accent);}
+
+  .proof-add-row{display:flex;gap:8px;margin-bottom:10px;}
+  .proof-link-inline{display:none;gap:8px;margin-bottom:10px;}
+  .proof-link-inline.show{display:flex;}
+  .proof-link-inline input{flex:1;}
+
+  .proof-list{display:flex;flex-direction:column;gap:6px;}
+  .proof-item{display:flex;align-items:center;gap:8px;border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 8px;background:var(--field);}
+  .proof-item img{width:30px;height:30px;object-fit:cover;border-radius:5px;}
+  .proof-item .icon{width:30px;height:30px;border-radius:5px;background:var(--panel-2);display:flex;align-items:center;justify-content:center;color:var(--text-3);flex-shrink:0;}
+  .proof-item .icon svg{width:14px;height:14px;}
+  .proof-item .label{flex:1;font-size:12px;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .proof-item .rm{background:none;border:none;color:var(--text-3);cursor:pointer;font-size:15px;padding:2px 6px;}
+  .proof-item .rm:hover{color:var(--ban);}
+
+  .badge-line{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:5px;}
+  .badge.scope{background:var(--panel);color:var(--text-2);border:1px solid var(--border);}
+  .badge.appeal-yes{background:rgba(74,222,128,0.12);color:#86efac;}
+  .badge.appeal-no{background:var(--ban-bg);color:#fca5a5;}
+  .entry-bg{font-size:11.5px;color:var(--text-3);margin-bottom:5px;line-height:1.5;}
+  .entry-internal{font-size:12px;color:var(--text-2);background:var(--field);border-left:2px solid var(--text-3);padding:6px 8px;margin-bottom:5px;border-radius:0 6px 6px 0;}
+  .entry-internal b{color:var(--text-3);font-weight:600;font-size:10.5px;text-transform:uppercase;display:block;margin-bottom:2px;}
+  .entry-proofs{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;}
+  .entry-proofs img{width:36px;height:36px;object-fit:cover;border-radius:5px;}
+  .entry-proofs a.link-chip{font-size:11px;color:var(--accent);text-decoration:none;background:var(--field);border:1px solid var(--border);padding:6px 8px;border-radius:5px;}
 </style>
 </head>
 <body>
@@ -240,7 +278,7 @@
   <div class="grid">
 
     <div class="panel">
-      <div class="panel-head"><h2>New report</h2></div>
+      <div class="panel-head"><h2>New report</h2><span class="case-tag" id="caseTag">Next case #0001</span></div>
       <div class="panel-body">
 
         <div class="seg" id="actionToggle">
@@ -249,55 +287,111 @@
           <button type="button" data-a="warn"><span class="dot"></span>Warning</button>
         </div>
 
-        <div class="field">
-          <label for="playerName">Player name / SteamID64</label>
-          <input type="text" id="playerName" placeholder="e.g. Ghost // 7656119...">
+        <div class="two-col">
+          <div class="field">
+            <label for="playerName">Player name</label>
+            <input type="text" id="playerName" placeholder="e.g. Ghost">
+          </div>
+          <div class="field">
+            <label for="steamId">SteamID64</label>
+            <input type="text" id="steamId" placeholder="7656119...">
+          </div>
         </div>
 
-        <div id="durationBlock">
-          <label>Duration</label>
-          <div class="seg2" id="durationToggle">
-            <button type="button" data-d="perm" class="active">Permanent</button>
-            <button type="button" data-d="temp">Temporary</button>
+        <details class="bg-section">
+          <summary>Player background (optional)</summary>
+          <div class="bg-body">
+            <div class="two-col">
+              <div class="field">
+                <label for="joinTime">Joined at</label>
+                <input type="text" id="joinTime" placeholder="e.g. 14:32 server time">
+              </div>
+              <div class="field">
+                <label for="acctCreated">Steam account created</label>
+                <input type="text" id="acctCreated" placeholder="e.g. 2016-04-02">
+              </div>
+            </div>
+            <div class="two-col">
+              <div class="field">
+                <label for="vacBans">VAC bans</label>
+                <input type="number" id="vacBans" min="0" placeholder="0">
+              </div>
+              <div class="field">
+                <label for="gameBans">Game bans</label>
+                <input type="number" id="gameBans" min="0" placeholder="0">
+              </div>
+            </div>
+            <div class="field">
+              <label for="daysSinceBan">Days since last ban</label>
+              <input type="number" id="daysSinceBan" min="0" placeholder="e.g. 340">
+            </div>
+            <div class="field" style="margin-bottom:0;">
+              <label for="bgNotes">Other background notes</label>
+              <textarea id="bgNotes" placeholder="Anything else worth recording about this account"></textarea>
+            </div>
           </div>
-          <div class="duration-row" id="durationRow" style="display:none;">
-            <input type="number" id="durationValue" min="1" placeholder="e.g. 3">
-            <select id="durationUnit">
-              <option value="minutes">Minutes</option>
-              <option value="hours">Hours</option>
-              <option value="days" selected>Days</option>
-            </select>
-          </div>
-        </div>
+        </details>
 
         <div class="field">
           <label for="reasonInput">Reason</label>
           <textarea id="reasonInput" placeholder="What happened, which rule was broken"></textarea>
         </div>
 
+        <div id="resolutionBlock">
+          <label>Resolution</label>
+
+          <div id="durationBlock">
+            <div class="seg2" id="durationToggle">
+              <button type="button" data-d="perm" class="active">Permanent</button>
+              <button type="button" data-d="temp">Temporary</button>
+            </div>
+            <div class="duration-row" id="durationRow" style="display:none;">
+              <input type="number" id="durationValue" min="1" placeholder="e.g. 3">
+              <select id="durationUnit">
+                <option value="minutes">Minutes</option>
+                <option value="hours">Hours</option>
+                <option value="days" selected>Days</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="two-col" style="margin-bottom:10px;">
+            <div id="scopeField">
+              <label style="font-size:11.5px;">Ban scope</label>
+              <select id="banScope">
+                <option value="game">Game only</option>
+                <option value="discord">Discord only</option>
+                <option value="both">Both</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:11.5px;">Appeal eligible</label>
+              <div class="toggle-row" id="appealToggle">
+                <button type="button" data-v="yes" class="active">Yes</button>
+                <button type="button" data-v="no">No</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="field">
           <label>Proof</label>
-          <div class="proof-tabs">
-            <span class="proof-tab active" data-p="upload">Upload image</span>
-            <span class="proof-tab" data-p="link">Paste link</span>
+          <div class="proof-add-row">
+            <button type="button" class="btn small" id="addImageBtn">+ Add image</button>
+            <button type="button" class="btn small" id="addLinkBtn">+ Add link</button>
           </div>
+          <div class="proof-link-inline" id="linkInlineRow">
+            <input type="url" id="linkInlineInput" placeholder="https://...">
+            <button type="button" class="btn small primary" id="linkInlineAdd">Add</button>
+            <button type="button" class="btn small" id="linkInlineCancel">Cancel</button>
+          </div>
+          <input type="file" id="fileInput" accept="image/*" multiple style="display:none;">
+          <div class="proof-list" id="proofList"></div>
+        </div>
 
-          <div id="proofUpload">
-            <div class="dropzone" id="dropzone">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              <p>Drag and drop an image, or <span>browse</span></p>
-            </div>
-            <div class="dz-preview" id="dzPreview">
-              <img id="dzImg" alt="">
-              <span class="name" id="dzName"></span>
-              <button type="button" class="dz-remove" id="dzRemove">&times;</button>
-            </div>
-            <input type="file" id="fileInput" accept="image/*" style="display:none;">
-          </div>
-
-          <div id="proofLink" style="display:none;">
-            <input type="url" id="proofUrlInput" placeholder="https://...">
-          </div>
+        <div class="field">
+          <label for="internalNotes">Internal notes <span style="color:var(--text-3);font-weight:400;">(not sent to Discord)</span></label>
+          <textarea id="internalNotes" placeholder="Notes for other admins only"></textarea>
         </div>
 
         <div class="field">
@@ -338,14 +432,17 @@
 
 <script>
 (function(){
-  var STATE = { action:'ban', durationMode:'perm', proofMode:'upload', file:null, entries:[], settings:{ serverName:'Community server', webhookUrl:'' } };
+  var STATE = { action:'ban', durationMode:'perm', appeal:'yes', proofs:[], entries:[], caseSeq:0,
+    settings:{ serverName:'Community server', webhookUrl:'' } };
 
   var els = {};
   ['gearBtn','settingsPanel','serverNameInput','webhookInput','saveSettingsBtn','testWebhookBtn','exportBtn','importBtn','importFile',
    'settingsStatus','serverNameOut','actionToggle','durationBlock','durationToggle','durationRow','durationValue','durationUnit',
-   'playerName','reasonInput','adminInput','publishBtn','formMsg','searchInput','filterSelect','ledgerList',
-   'statBan','statKick','statWarn','dropzone','dzPreview','dzImg','dzName','dzRemove','fileInput','proofUpload','proofLink','proofUrlInput',
-   'toast','toastMsg'
+   'playerName','steamId','joinTime','acctCreated','vacBans','gameBans','daysSinceBan','bgNotes',
+   'reasonInput','resolutionBlock','scopeField','banScope','appealToggle',
+   'addImageBtn','addLinkBtn','linkInlineRow','linkInlineInput','linkInlineAdd','linkInlineCancel','fileInput','proofList',
+   'internalNotes','adminInput','publishBtn','formMsg','searchInput','filterSelect','ledgerList',
+   'statBan','statKick','statWarn','toast','toastMsg','caseTag'
   ].forEach(function(id){ els[id] = document.getElementById(id); });
 
   var LABEL = { ban:'Ban', kick:'Kick', warn:'Warning' };
@@ -369,6 +466,8 @@
     STATE.action = a;
     els.actionToggle.querySelectorAll('button').forEach(function(b){ b.classList.toggle('active', b.dataset.a===a); });
     els.durationBlock.style.display = (a==='ban') ? 'block' : 'none';
+    els.resolutionBlock.style.display = (a==='ban') ? 'block' : 'none';
+    els.scopeField.style.display = (a==='ban') ? 'block' : 'none';
     els.publishBtn.textContent = 'Publish ' + LABEL[a].toLowerCase() + ' report';
   }
   els.actionToggle.addEventListener('click', function(e){
@@ -383,46 +482,54 @@
     els.durationRow.style.display = (STATE.durationMode==='temp') ? 'grid' : 'none';
   });
 
-  // ---------- proof tabs ----------
-  document.querySelectorAll('.proof-tab').forEach(function(tab){
-    tab.addEventListener('click', function(){
-      STATE.proofMode = tab.dataset.p;
-      document.querySelectorAll('.proof-tab').forEach(function(t){ t.classList.toggle('active', t===tab); });
-      els.proofUpload.style.display = (STATE.proofMode==='upload') ? 'block' : 'none';
-      els.proofLink.style.display = (STATE.proofMode==='link') ? 'block' : 'none';
-    });
+  els.appealToggle.addEventListener('click', function(e){
+    var b = e.target.closest('button[data-v]'); if (!b) return;
+    STATE.appeal = b.dataset.v;
+    els.appealToggle.querySelectorAll('button').forEach(function(x){ x.classList.toggle('active', x===b); });
   });
 
-  function setFile(file){
-    if (!file) return;
-    if (!file.type.startsWith('image/')){ setFormMsg('Only image files are supported for upload.', 'err'); return; }
-    if (file.size > 8*1024*1024){ setFormMsg('That image is over 8MB. Compress it or paste a link instead.', 'err'); return; }
-    STATE.file = file;
-    var reader = new FileReader();
-    reader.onload = function(e){
-      els.dzImg.src = e.target.result;
-      els.dzName.textContent = file.name;
-      els.dzPreview.classList.add('show');
-      els.dropzone.style.display = 'none';
-    };
-    reader.readAsDataURL(file);
+  // ---------- proof list ----------
+  function renderProofList(){
+    if (STATE.proofs.length===0){ els.proofList.innerHTML=''; return; }
+    els.proofList.innerHTML = STATE.proofs.map(function(p, i){
+      var thumb = p.type==='image'
+        ? '<img src="'+p.previewUrl+'" alt="">'
+        : '<div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11.5 4.5"/><path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07l1.36-1.36"/></svg></div>';
+      var label = p.type==='image' ? p.name : p.url;
+      return '<div class="proof-item">' + thumb + '<span class="label">'+escapeHtml(label)+'</span><button type="button" class="rm" data-rm="'+i+'">&times;</button></div>';
+    }).join('');
+    els.proofList.querySelectorAll('[data-rm]').forEach(function(btn){
+      btn.addEventListener('click', function(){ STATE.proofs.splice(Number(btn.dataset.rm),1); renderProofList(); });
+    });
   }
 
-  els.dropzone.addEventListener('click', function(){ els.fileInput.click(); });
-  els.fileInput.addEventListener('change', function(){ setFile(this.files[0]); });
-  ['dragover','dragenter'].forEach(function(evt){
-    els.dropzone.addEventListener(evt, function(e){ e.preventDefault(); els.dropzone.classList.add('drag'); });
+  els.addImageBtn.addEventListener('click', function(){ els.fileInput.click(); });
+  els.fileInput.addEventListener('change', function(){
+    Array.from(this.files).forEach(function(file){
+      if (!file.type.startsWith('image/')){ setFormMsg('Only image files are supported for upload.', 'err'); return; }
+      if (file.size > 8*1024*1024){ setFormMsg('"'+file.name+'" is over 8MB and was skipped.', 'err'); return; }
+      var reader = new FileReader();
+      reader.onload = function(e){
+        STATE.proofs.push({ type:'image', file:file, name:file.name, previewUrl:e.target.result });
+        renderProofList();
+      };
+      reader.readAsDataURL(file);
+    });
+    els.fileInput.value = '';
   });
-  ['dragleave','drop'].forEach(function(evt){
-    els.dropzone.addEventListener(evt, function(e){ e.preventDefault(); els.dropzone.classList.remove('drag'); });
+
+  els.addLinkBtn.addEventListener('click', function(){
+    els.linkInlineRow.classList.add('show'); els.linkInlineInput.focus();
   });
-  els.dropzone.addEventListener('drop', function(e){
-    var f = e.dataTransfer.files[0]; if (f) setFile(f);
+  els.linkInlineCancel.addEventListener('click', function(){
+    els.linkInlineRow.classList.remove('show'); els.linkInlineInput.value='';
   });
-  els.dzRemove.addEventListener('click', function(e){
-    e.stopPropagation();
-    STATE.file = null; els.fileInput.value = '';
-    els.dzPreview.classList.remove('show'); els.dropzone.style.display = 'block';
+  els.linkInlineAdd.addEventListener('click', function(){
+    var url = els.linkInlineInput.value.trim();
+    if (!url) return;
+    STATE.proofs.push({ type:'link', url:url });
+    renderProofList();
+    els.linkInlineInput.value=''; els.linkInlineRow.classList.remove('show');
   });
 
   els.gearBtn.addEventListener('click', function(){ els.settingsPanel.classList.toggle('open'); });
@@ -457,10 +564,23 @@
       var raw = localStorage.getItem('modlog:entries');
       if (raw) STATE.entries = JSON.parse(raw);
     }catch(e){ STATE.entries = []; }
+    try{
+      STATE.caseSeq = Number(localStorage.getItem('modlog:caseSeq')) || 0;
+    }catch(e){ STATE.caseSeq = 0; }
+    updateCaseTag();
     renderLedger();
   }
   function saveLedger(){
     try{ localStorage.setItem('modlog:entries', JSON.stringify(STATE.entries)); }catch(e){}
+  }
+  function updateCaseTag(){
+    els.caseTag.textContent = 'Next case #' + String(STATE.caseSeq+1).padStart(4,'0');
+  }
+  function nextCaseNumber(){
+    STATE.caseSeq += 1;
+    try{ localStorage.setItem('modlog:caseSeq', String(STATE.caseSeq)); }catch(e){}
+    updateCaseTag();
+    return String(STATE.caseSeq).padStart(4,'0');
   }
 
   els.exportBtn.addEventListener('click', function(){
@@ -513,18 +633,47 @@
     els.ledgerList.innerHTML = list.map(function(e){
       var d = new Date(e.ts);
       var dateStr = d.toLocaleDateString(undefined,{month:'short',day:'numeric'}) + ' &middot; ' + d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
-      var durText = '';
-      if (e.action==='ban') durText = e.durationText || 'Permanent';
-      var thumb = (e.proofType==='image' && e.proof) ? '<img class="entry-thumb" src="'+escapeHtml(e.proof)+'" alt="Proof thumbnail">' : '<div class="entry-thumb"></div>';
-      var proofLine = e.proof ? '<div class="entry-proof"><a href="'+escapeHtml(e.proof)+'" target="_blank" rel="noopener">View proof</a></div>' : '';
+      var durText = (e.action==='ban') ? (e.durationText || 'Permanent') : '';
+      var proofs = e.proofs || [];
+      var firstImg = proofs.find(function(p){ return p.type==='image'; });
+      var thumb = firstImg ? '<img class="entry-thumb" src="'+escapeHtml(firstImg.url)+'" alt="Proof thumbnail">' : '<div class="entry-thumb"></div>';
+
+      var badges = '<div class="badge-line"><span class="badge '+e.action+'">'+LABEL[e.action]+'</span>';
+      if (e.caseNo) badges += '<span class="badge scope">Case #'+e.caseNo+'</span>';
+      if (e.action==='ban' && e.banScope) badges += '<span class="badge scope">'+({game:'Game ban',discord:'Discord ban',both:'Game + Discord'})[e.banScope]+'</span>';
+      if (e.action==='ban' && e.appeal) badges += '<span class="badge '+(e.appeal==='yes'?'appeal-yes':'appeal-no')+'">'+(e.appeal==='yes'?'Appealable':'Not appealable')+'</span>';
+      badges += '</div>';
+
+      var bgParts = [];
+      if (e.steamId) bgParts.push('SteamID64 '+e.steamId);
+      if (e.joinTime) bgParts.push('joined '+e.joinTime);
+      if (e.acctCreated) bgParts.push('account created '+e.acctCreated);
+      if (e.vacBans) bgParts.push(e.vacBans+' VAC ban(s)');
+      if (e.gameBans) bgParts.push(e.gameBans+' game ban(s)');
+      if (e.daysSinceBan) bgParts.push(e.daysSinceBan+' days since last ban');
+      var bgLine = bgParts.length ? '<div class="entry-bg">'+escapeHtml(bgParts.join(' &middot; '))+'</div>' : '';
+      var bgNotesLine = e.bgNotes ? '<div class="entry-bg">'+escapeHtml(e.bgNotes)+'</div>' : '';
+
+      var internalLine = e.internalNotes ? '<div class="entry-internal"><b>Internal note</b>'+escapeHtml(e.internalNotes)+'</div>' : '';
+
+      var proofChips = proofs.map(function(p){
+        return p.type==='image'
+          ? '<img src="'+escapeHtml(p.url)+'" alt="Proof">'
+          : '<a class="link-chip" href="'+escapeHtml(p.url)+'" target="_blank" rel="noopener">Link</a>';
+      }).join('');
+      var proofBlock = proofs.length ? '<div class="entry-proofs">'+proofChips+'</div>' : '';
+
       return (
         '<div class="entry">' + thumb +
           '<div class="entry-body">' +
-            '<div class="entry-top"><span class="badge '+e.action+'">'+LABEL[e.action]+'</span><span class="entry-time">'+dateStr+'</span></div>' +
+            badges +
+            '<div class="entry-top" style="margin-bottom:2px;"><span class="entry-time">'+dateStr+'</span></div>' +
             '<div class="entry-player">'+escapeHtml(e.player)+'</div>' +
             '<div class="entry-meta">Issued by '+escapeHtml(e.admin)+(durText ? ' &middot; '+durText : '')+'</div>' +
+            bgLine + bgNotesLine +
             '<div class="entry-reason">'+escapeHtml(e.reason)+'</div>' +
-            proofLine +
+            internalLine +
+            proofBlock +
           '</div>' +
         '</div>'
       );
@@ -543,7 +692,9 @@
     return v + ' ' + label.toLowerCase();
   }
 
-  async function postToDiscord(entry, file){
+  var SCOPE_LABEL = { game:'Game only', discord:'Discord only', both:'Game and Discord' };
+
+  async function postToDiscord(entry){
     var webhook = STATE.settings.webhookUrl;
     if (!webhook) throw new Error('No webhook URL saved. Open settings and add one.');
 
@@ -551,28 +702,58 @@
       { name:'Player', value: entry.player || 'Unknown', inline:true },
       { name:'Issued by', value: entry.admin || 'Unknown', inline:true }
     ];
-    if (entry.action==='ban') fields.push({ name:'Duration', value: entry.durationText || 'Permanent', inline:true });
+    if (entry.steamId) fields.push({ name:'SteamID64', value: entry.steamId, inline:true });
+    if (entry.action==='ban'){
+      fields.push({ name:'Duration', value: entry.durationText || 'Permanent', inline:true });
+      fields.push({ name:'Ban scope', value: SCOPE_LABEL[entry.banScope] || 'Game only', inline:true });
+      fields.push({ name:'Appeal eligible', value: entry.appeal==='yes' ? 'Yes' : 'No', inline:true });
+    }
     fields.push({ name:'Reason', value: entry.reason || 'No reason given' });
 
-    var embed = { title: LABEL[entry.action]+' issued', color: COLOR_HEX[entry.action], fields: fields,
-      footer:{ text: STATE.settings.serverName || 'Community server' }, timestamp: new Date(entry.ts).toISOString() };
+    var bgParts = [];
+    if (entry.joinTime) bgParts.push('Joined at: ' + entry.joinTime);
+    if (entry.acctCreated) bgParts.push('Account created: ' + entry.acctCreated);
+    if (entry.vacBans) bgParts.push('VAC bans: ' + entry.vacBans);
+    if (entry.gameBans) bgParts.push('Game bans: ' + entry.gameBans);
+    if (entry.daysSinceBan) bgParts.push('Days since last ban: ' + entry.daysSinceBan);
+    if (entry.bgNotes) bgParts.push(entry.bgNotes);
+    if (bgParts.length) fields.push({ name:'Player background', value: bgParts.join('\n') });
 
-    if (file){
-      var safeName = file.name.replace(/\s+/g,'_');
-      embed.image = { url: 'attachment://' + safeName };
+    var linkProofs = entry.proofs.filter(function(p){ return p.type==='link'; });
+    if (linkProofs.length){
+      fields.push({ name:'Proof links', value: linkProofs.map(function(p,i){ return (i+1)+'. '+p.url; }).join('\n') });
+    }
+
+    var mainEmbed = {
+      title: LABEL[entry.action] + ' issued \u2014 Case #' + entry.caseNo,
+      color: COLOR_HEX[entry.action],
+      fields: fields,
+      footer:{ text: STATE.settings.serverName || 'Community server' },
+      timestamp: new Date(entry.ts).toISOString()
+    };
+
+    var imageProofs = entry.proofs.filter(function(p){ return p.type==='image'; });
+
+    if (imageProofs.length){
       var fd = new FormData();
-      fd.append('files[0]', file, safeName);
-      fd.append('payload_json', JSON.stringify({ embeds:[embed] }));
+      var embeds = [mainEmbed];
+      imageProofs.forEach(function(p, i){
+        var safeName = p.file.name.replace(/\s+/g,'_');
+        fd.append('files['+i+']', p.file, safeName);
+        embeds.push({ color: COLOR_HEX[entry.action], image:{ url:'attachment://'+safeName } });
+      });
+      fd.append('payload_json', JSON.stringify({ embeds: embeds }));
       var res = await fetch(webhook + '?wait=true', { method:'POST', body: fd });
       if (!res.ok) throw new Error('Discord rejected the message (status '+res.status+'). Check the webhook URL.');
       var data = await res.json();
-      var url = data.attachments && data.attachments[0] && data.attachments[0].url;
-      return { proof: url || '', proofType: url ? 'image' : '' };
+      var urls = (data.attachments||[]).map(function(a){ return a.url; });
+      var resultProofs = imageProofs.map(function(p, i){ return { type:'image', url: urls[i] || '' }; })
+        .concat(linkProofs.map(function(p){ return { type:'link', url:p.url }; }));
+      return resultProofs;
     } else {
-      if (entry.proof) fields.push({ name:'Proof', value: entry.proof });
-      var res2 = await fetch(webhook + '?wait=true', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ embeds:[embed] }) });
+      var res2 = await fetch(webhook + '?wait=true', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ embeds:[mainEmbed] }) });
       if (!res2.ok) throw new Error('Discord rejected the message (status '+res2.status+'). Check the webhook URL.');
-      return { proof: entry.proof || '', proofType: entry.proof ? 'link' : '' };
+      return linkProofs.map(function(p){ return { type:'link', url:p.url }; });
     }
   }
 
@@ -597,7 +778,7 @@
     var admin = els.adminInput.value.trim();
     var action = STATE.action;
 
-    if (!player){ setFormMsg('Add the player name or SteamID64.', 'err'); return; }
+    if (!player){ setFormMsg('Add the player name.', 'err'); return; }
     if (!reason){ setFormMsg('Add a reason for this action.', 'err'); return; }
     if (!admin){ setFormMsg('Add the admin filing this report.', 'err'); return; }
     if (!STATE.settings.webhookUrl){ setFormMsg('No Discord webhook saved yet. Open settings first.', 'err'); return; }
@@ -608,32 +789,44 @@
       if (STATE.durationMode==='temp' && !durText){ setFormMsg('Enter how long the temporary ban should last.', 'err'); return; }
     }
 
-    var linkProof = (STATE.proofMode==='link') ? els.proofUrlInput.value.trim() : '';
-
     var entry = {
       id: Date.now()+'-'+Math.random().toString(36).slice(2,8),
-      action: action, player: player, reason: reason, admin: admin,
+      caseNo: null,
+      action: action, player: player, steamId: els.steamId.value.trim(),
+      reason: reason, admin: admin,
       durationText: action==='ban' ? durText : null,
-      proof: linkProof, proofType: '',
+      banScope: action==='ban' ? els.banScope.value : null,
+      appeal: action==='ban' ? STATE.appeal : null,
+      joinTime: els.joinTime.value.trim(),
+      acctCreated: els.acctCreated.value.trim(),
+      vacBans: els.vacBans.value ? Number(els.vacBans.value) : null,
+      gameBans: els.gameBans.value ? Number(els.gameBans.value) : null,
+      daysSinceBan: els.daysSinceBan.value ? Number(els.daysSinceBan.value) : null,
+      bgNotes: els.bgNotes.value.trim(),
+      internalNotes: els.internalNotes.value.trim(),
+      proofs: STATE.proofs.slice(),
       ts: Date.now()
     };
+    entry.caseNo = nextCaseNumber();
 
     els.publishBtn.disabled = true;
     setFormMsg('Publishing...', '');
 
     try{
-      var result = await postToDiscord(entry, STATE.proofMode==='upload' ? STATE.file : null);
-      entry.proof = result.proof; entry.proofType = result.proofType;
+      var resultProofs = await postToDiscord(entry);
+      entry.proofs = resultProofs;
       STATE.entries.push(entry);
       saveLedger();
       renderLedger();
       showToast('Published to Discord', 'ok');
-      setFormMsg('Added to the ledger.', 'ok');
+      setFormMsg('Added to the ledger as case #' + entry.caseNo + '.', 'ok');
 
-      els.playerName.value=''; els.reasonInput.value=''; els.proofUrlInput.value='';
-      els.durationValue.value=''; STATE.file=null; els.fileInput.value='';
-      els.dzPreview.classList.remove('show'); els.dropzone.style.display='block';
+      els.playerName.value=''; els.steamId.value=''; els.reasonInput.value='';
+      els.joinTime.value=''; els.acctCreated.value=''; els.vacBans.value=''; els.gameBans.value=''; els.daysSinceBan.value=''; els.bgNotes.value='';
+      els.internalNotes.value=''; els.durationValue.value='';
+      STATE.proofs = []; renderProofList();
     }catch(err){
+      STATE.caseSeq -= 1; try{ localStorage.setItem('modlog:caseSeq', String(STATE.caseSeq)); }catch(e){} updateCaseTag();
       setFormMsg(err.message || 'Could not publish. Try again.', 'err');
       showToast(err.message || 'Publish failed', 'err');
     }finally{
