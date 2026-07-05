@@ -166,8 +166,8 @@
 
   #publishBtn{width:100%;margin-top:6px;padding:11px;font-size:14px;}
   #formMsg{font-size:12.5px;margin-top:10px;min-height:14px;}
-  #formMsg.err{color:var(--ban);}
-  #formMsg.ok{color:#4ade80;}
+  #formMsg.err, .err{color:var(--ban);}
+  #formMsg.ok, .ok{color:#4ade80;}
 
   /* ---------- LEDGER ---------- */
   .search-row{display:flex;gap:10px;margin-bottom:14px;}
@@ -330,18 +330,15 @@
   .audit-tag{font-size:11px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;color:var(--accent);}
   .audit-detail{color:var(--text-2);}
   .audit-detail b{color:var(--text);font-weight:600;}
+  .public-field-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border-soft);font-size:13.5px;}
+  .public-field-row:last-child{border-bottom:none;}
+  .public-field-row label{color:var(--text-3);font-weight:500;text-transform:none;letter-spacing:0;font-size:13px;}
+  .public-field-row span{color:var(--text);font-weight:600;}
+  .public-field-row span.mono{font-family:'JetBrains Mono',monospace;font-size:12px;}
+  .flag-yes{color:var(--ban)!important;}
+  .flag-no{color:#4ade80!important;}
   @media (max-width:700px){.audit-row{grid-template-columns:1fr;gap:2px;}}
 
-  .public-view{display:none;min-height:100vh;align-items:center;justify-content:center;padding:20px;}
-  .public-view.show{display:flex;}
-  .public-card{max-width:520px;width:100%;background:var(--panel);border:1px solid var(--border-soft);border-radius:var(--radius);padding:28px 26px;}
-  .public-card h1{font-size:20px;margin:0 0 4px;}
-  .public-card .pc-sub{font-size:13px;color:var(--text-3);margin-bottom:20px;}
-  .public-field{margin-bottom:16px;}
-  .public-field label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-3);font-weight:700;margin-bottom:5px;}
-  .public-field .val{font-size:15px;color:var(--text);}
-  .public-appeal{margin-top:20px;padding:14px;background:var(--accent-bg);border:1px solid var(--accent);border-radius:var(--radius-sm);font-size:13.5px;color:var(--text);}
-  .public-appeal a{color:var(--accent);font-weight:600;}
   .dash-section{display:block;}
   .dash-cards{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;}
   @media (max-width:1100px){.dash-cards{grid-template-columns:repeat(2,1fr);}}
@@ -360,12 +357,6 @@
 </style>
 </head>
 <body>
-<div class="public-view" id="publicView">
-  <div class="public-card" id="publicCard">
-    <div class="empty-state">Loading report status...</div>
-  </div>
-</div>
-
 <div class="wrap" id="adminWrap">
 
   <div class="topbar">
@@ -410,6 +401,11 @@
       <button type="button" class="nav-item" data-section="audit">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
         Audit logs
+      </button>
+      <div class="nav-divider"></div>
+      <button type="button" class="nav-item" data-section="lookup">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Lookups
       </button>
       <div class="nav-divider"></div>
       <button type="button" class="nav-item" data-section="settings">
@@ -828,6 +824,35 @@
         </div>
       </div>
 
+      <div id="sectionLookup" class="dash-section" style="display:none;">
+        <div style="max-width:420px;">
+
+          <div class="panel">
+            <div class="panel-head"><h2>Discord account lookup</h2></div>
+            <div class="panel-body">
+              <div class="field">
+                <label for="dlUserId">Discord user ID</label>
+                <input type="text" id="dlUserId" placeholder="e.g. 123456789012345678">
+              </div>
+              <button class="btn primary" id="dlLookupBtn" style="width:100%;">Look up</button>
+              <div id="dlMsg" style="font-size:12.5px;margin-top:8px;"></div>
+              <div id="dlResult" style="display:none;margin-top:16px;">
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+                  <img id="dlAvatar" src="" alt="" style="width:56px;height:56px;border-radius:50%;background:var(--field);">
+                  <div>
+                    <div id="dlUsername" style="font-size:16px;font-weight:700;"></div>
+                    <div id="dlTag" style="font-size:12.5px;color:var(--text-3);"></div>
+                  </div>
+                </div>
+                <div class="public-field-row"><label>Account created</label><span id="dlCreated"></span></div>
+                <div class="public-field-row"><label>User ID</label><span id="dlId" class="mono"></span></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
       <div id="sectionSettings" class="dash-section" style="display:none;">
         <div class="panel">
           <div class="panel-head"><h2>Settings</h2></div>
@@ -987,6 +1012,7 @@
    'discDmMessage','discGenerateDmBtn','discSendDmToggle',
    'ovOpen','ovPending','ovSolved','ovWeek','ovTotal','recentFeed',
    'auditList','clearAuditBtn',
+   'dlUserId','dlLookupBtn','dlMsg','dlResult','dlAvatar','dlUsername','dlTag','dlCreated','dlId',
    'editOverlay','editCaseLabel','editReason','editDurationField','editDuration','editResolutionField','editBanScope','editAppealToggle','editInternalNotes','editMsg','editCancel','editSave'
   ].forEach(function(id){ els[id] = document.getElementById(id); });
 
@@ -1077,7 +1103,6 @@
       els.editOverlay.classList.remove('show');
       showToast('Case updated locally (no linked Discord message to update)', 'ok');
       logAudit('Case edited', 'Case #'+entry.caseNo+' edited (not synced to Discord)');
-      syncCaseToWorker(entry);
       EDIT_ID = null;
       return;
     }
@@ -1088,7 +1113,6 @@
       els.editOverlay.classList.remove('show');
       showToast('Case updated and published live', 'ok');
       logAudit('Case edited', 'Case #'+entry.caseNo+' edited and republished live');
-      syncCaseToWorker(entry);
       EDIT_ID = null;
     }catch(err){
       els.editMsg.textContent = err.message || 'Could not update Discord.';
@@ -1219,7 +1243,7 @@
     els.linkInlineInput.value=''; els.linkInlineRow.classList.remove('show');
   });
 
-  var SECTION_IDS = { dashboard:'sectionDashboard', game:'sectionGame', discord:'sectionDiscord', ann:'sectionAnn', ledger:'sectionLedger', audit:'sectionAudit', settings:'sectionSettings' };
+  var SECTION_IDS = { dashboard:'sectionDashboard', game:'sectionGame', discord:'sectionDiscord', ann:'sectionAnn', ledger:'sectionLedger', audit:'sectionAudit', lookup:'sectionLookup', settings:'sectionSettings' };
   document.querySelectorAll('.nav-item').forEach(function(btn){
     btn.addEventListener('click', function(){
       document.querySelectorAll('.nav-item').forEach(function(b){ b.classList.toggle('active', b===btn); });
@@ -1402,6 +1426,48 @@
       showToast('Audit log cleared', 'ok');
     });
   });
+
+  // ---------- account lookups ----------
+  function requireWorkerConfig(msgSetter){
+    if (!STATE.settings.workerUrl || !STATE.settings.workerKey){
+      msgSetter('Bot action settings are not configured. Open Settings and fill in Worker URL and admin key.', 'err');
+      return false;
+    }
+    return true;
+  }
+
+  els.dlLookupBtn.addEventListener('click', async function(){
+    var id = els.dlUserId.value.trim();
+    els.dlResult.style.display = 'none';
+    els.dlMsg.textContent = '';
+    if (!id){ els.dlMsg.textContent = 'Enter a Discord user ID.'; els.dlMsg.className = 'err'; return; }
+    if (!requireWorkerConfig(function(t,k){ els.dlMsg.textContent=t; els.dlMsg.className=k; })) return;
+
+    els.dlLookupBtn.disabled = true;
+    els.dlMsg.textContent = 'Looking up...'; els.dlMsg.className = '';
+    try{
+      var res = await fetch(STATE.settings.workerUrl + '/discord-lookup', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ adminKey: STATE.settings.workerKey, userId: id })
+      });
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Lookup failed (status '+res.status+')');
+
+      els.dlAvatar.src = data.avatarUrl || '';
+      els.dlUsername.textContent = data.globalName || data.username || 'Unknown';
+      els.dlTag.textContent = '@' + (data.username || 'unknown');
+      els.dlCreated.textContent = new Date(data.createdAt).toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'});
+      els.dlId.textContent = id;
+      els.dlResult.style.display = 'block';
+      els.dlMsg.textContent = '';
+      logAudit('Lookup', 'Discord lookup for user ID <b>'+escapeHtml(id)+'</b>');
+    }catch(err){
+      els.dlMsg.textContent = err.message || 'Lookup failed.'; els.dlMsg.className = 'err';
+    }finally{
+      els.dlLookupBtn.disabled = false;
+    }
+  });
+
 
   function updateCaseTag(){
     var text = 'Next case #' + String(STATE.caseSeq+1).padStart(4,'0');
@@ -1623,7 +1689,6 @@
           await editDiscordMessage(entry);
           showToast('Discord message updated', 'ok');
           logAudit('Status changed', 'Case #'+entry.caseNo+' status changed to <b>'+newStatus+'</b>');
-          syncCaseToWorker(entry);
         }catch(err){
           entry.status = oldStatus;
           saveLedger();
@@ -1753,11 +1818,6 @@
       if (entry.bgNotes) fields.push({ name:'Notes', value: entry.bgNotes });
     }
 
-    if (STATE.settings.workerUrl){
-      var statusUrl = window.location.origin + window.location.pathname + '?case=' + entry.caseNo + '&w=' + encodeURIComponent(STATE.settings.workerUrl);
-      fields.push({ name:'View status of report', value: '[Click here to view full details](' + statusUrl + ')' });
-    }
-
     var linkProofs = (entry.proofs||[]).filter(function(p){ return p.type==='link'; });
     if (linkProofs.length){
       fields.push({ name:'Proof links', value: linkProofs.map(function(p,i){ return (i+1)+'. '+p.url; }).join('\n') });
@@ -1861,7 +1921,6 @@
       showToast('Published to Discord', 'ok');
       msgSetter('Added to the ledger as case #' + entry.caseNo + '.', 'ok');
       logAudit('Case filed', '<b>'+escapeHtml(entry.admin)+'</b> filed '+LABEL[entry.action]+' case #'+entry.caseNo+' for <b>'+escapeHtml(entry.player)+'</b>');
-      syncCaseToWorker(entry);
       onSuccess();
     }catch(err){
       STATE.caseSeq -= 1; try{ localStorage.setItem('modlog:caseSeq', String(STATE.caseSeq)); }catch(e){} updateCaseTag();
@@ -2337,62 +2396,6 @@
       els.annPublishBtn.disabled = false;
     }
   });
-  // ==================== Public case-status view ====================
-  function syncCaseToWorker(entry){
-    if (!STATE.settings.workerUrl || !STATE.settings.workerKey) return;
-    var publicData = {
-      action: entry.action, player: entry.player, reason: entry.reason,
-      status: entry.status, durationText: entry.durationText, expiresAt: entry.expiresAt,
-      appeal: entry.appeal, ts: entry.ts, serverName: STATE.settings.serverName,
-      ticketLink: STATE.settings.ticketLink
-    };
-    fetch(STATE.settings.workerUrl + '/case', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ adminKey: STATE.settings.workerKey, caseNo: entry.caseNo, data: publicData })
-    }).catch(function(){ /* best-effort; local ledger and Discord remain the source of truth */ });
-  }
-
-  function checkPublicView(){
-    var params = new URLSearchParams(location.search);
-    var caseId = params.get('case');
-    if (!caseId) return;
-    var workerUrl = params.get('w');
-    document.getElementById('adminWrap').style.display = 'none';
-    var pv = document.getElementById('publicView');
-    pv.classList.add('show');
-    var card = document.getElementById('publicCard');
-    if (!workerUrl){
-      card.innerHTML = '<div class="empty-state">This report link is not fully configured. Contact server staff.</div>';
-      return;
-    }
-    fetch(workerUrl + '/case?id=' + encodeURIComponent(caseId))
-      .then(function(res){
-        if (!res.ok) throw new Error(res.status===404 ? 'No report found with that case number.' : 'Could not load report status.');
-        return res.json();
-      })
-      .then(function(d){ renderPublicCase(caseId, d, card); })
-      .catch(function(err){
-        card.innerHTML = '<div class="empty-state">'+ escapeHtml(err.message || 'Could not load report status.') +'</div>';
-      });
-  }
-
-  function renderPublicCase(caseId, d, card){
-    var statusLabel = { active:'Active', pending:'Pending', solved:'Solved' }[d.status] || 'Active';
-    var actionLabel = { ban:'Ban', kick:'Kick', warn:'Warning', dban:'Discord ban', dkick:'Discord kick' }[d.action] || d.action;
-    var html = '<h1>Case #'+escapeHtml(caseId)+'</h1><div class="pc-sub">'+escapeHtml(d.serverName||'Server')+' &middot; Filed '+new Date(d.ts).toLocaleDateString()+'</div>';
-    html += '<div class="public-field"><label>Action</label><div class="val">'+actionLabel+'</div></div>';
-    html += '<div class="public-field"><label>Status</label><div class="val">'+statusLabel+'</div></div>';
-    if (d.durationText){
-      html += '<div class="public-field"><label>Duration</label><div class="val">'+escapeHtml(d.durationText)+(d.expiresAt ? ' (expires '+new Date(d.expiresAt).toLocaleString()+')' : '')+'</div></div>';
-    }
-    html += '<div class="public-field"><label>Reason</label><div class="val">'+escapeHtml(d.reason||'')+'</div></div>';
-    if (d.appeal==='yes' && d.ticketLink){
-      html += '<div class="public-appeal">Think this was a mistake? <a href="'+escapeHtml(d.ticketLink)+'" target="_blank" rel="noopener">Open a ticket to appeal</a>.</div>';
-    }
-    card.innerHTML = html;
-  }
-
-  checkPublicView();
 })();
 </script>
 </body>
