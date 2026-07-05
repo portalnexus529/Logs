@@ -358,6 +358,16 @@
         </div>
         <div class="proof-list" id="adminList"></div>
       </div>
+
+      <div class="settings-note" style="border-top:1px solid var(--border-soft);padding-top:12px;">
+        <label style="margin-bottom:8px;">Saved webhooks (for announcements)</label>
+        <div class="two-col" style="margin-bottom:8px;">
+          <input type="text" id="webhookNameInput" placeholder="Label, e.g. Announcements">
+          <input type="url" id="webhookUrlInput" placeholder="https://discord.com/api/webhooks/...">
+        </div>
+        <button class="btn small" id="addWebhookBtn" style="margin-bottom:10px;">Add webhook</button>
+        <div class="proof-list" id="webhookListUI"></div>
+      </div>
       <p class="settings-note">
         The webhook URL and ledger are stored in this browser only (localStorage) &mdash; a static site like Netlify has no shared database behind it, so each admin's device keeps its own local copy. Every publish still posts to your Discord channel, which stays the permanent shared record for the whole team. Use export/import to back up or move your local ledger between devices.
       </p>
@@ -371,6 +381,7 @@
         <div class="tab-switch">
           <button type="button" class="tab-btn active" data-tab="game">New report</button>
           <button type="button" class="tab-btn" data-tab="discord">Discord actions</button>
+          <button type="button" class="tab-btn" data-tab="ann">Announcements</button>
         </div>
         <span class="case-tag" id="caseTag">Next case #0001</span>
       </div>
@@ -576,6 +587,127 @@
         <button class="btn primary" id="discPublishBtn">Publish Discord ban report</button>
         <div id="discFormMsg"></div>
         </div>
+
+        <div id="annFormBody" style="display:none;">
+
+          <div class="field">
+            <label for="annWebhookSelect">Send to</label>
+            <select id="annWebhookSelect">
+              <option value="__custom">Custom URL for this message only</option>
+            </select>
+          </div>
+          <div class="field" id="annCustomWebhookField">
+            <input type="url" id="annCustomWebhookInput" placeholder="https://discord.com/api/webhooks/...">
+          </div>
+
+          <div class="two-col" style="margin-bottom:14px;">
+            <button type="button" class="btn small" id="annSaveTemplateBtn">Save as template</button>
+            <select id="annTemplateSelect">
+              <option value="">Load a template...</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="annTitle">Title</label>
+            <input type="text" id="annTitle" placeholder="Announcement title">
+          </div>
+
+          <div class="field">
+            <label for="annDescription">Description</label>
+            <textarea id="annDescription" placeholder="Write your announcement here" style="min-height:110px;"></textarea>
+          </div>
+
+          <div class="two-col">
+            <div class="field">
+              <label for="annAuthorName">Author name (optional)</label>
+              <input type="text" id="annAuthorName" placeholder="e.g. Server Team">
+            </div>
+            <div class="field">
+              <label for="annColor">Color</label>
+              <input type="color" id="annColor" value="#5865f2" style="height:42px;padding:4px;">
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="annAuthorIcon">Author icon URL (optional)</label>
+            <input type="url" id="annAuthorIcon" placeholder="https://...">
+          </div>
+
+          <div class="field">
+            <label>Thumbnail (small icon)</label>
+            <div class="proof-tabs">
+              <span class="proof-tab active" data-annimg="thumb-upload">Upload</span>
+              <span class="proof-tab" data-annimg="thumb-link">Paste link</span>
+            </div>
+            <div id="annThumbUpload">
+              <div class="dropzone" id="annThumbDropzone">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <p>Drag and drop, or <span>browse</span></p>
+              </div>
+              <div class="dz-preview" id="annThumbPreview">
+                <img id="annThumbImg" alt=""><span class="name" id="annThumbName"></span>
+                <button type="button" class="dz-remove" id="annThumbRemove">&times;</button>
+              </div>
+              <input type="file" id="annThumbFile" accept="image/*" style="display:none;">
+            </div>
+            <div id="annThumbLink" style="display:none;">
+              <input type="url" id="annThumbUrlInput" placeholder="https://...">
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Banner image (large)</label>
+            <div class="proof-tabs">
+              <span class="proof-tab active" data-annimg="image-upload">Upload</span>
+              <span class="proof-tab" data-annimg="image-link">Paste link</span>
+            </div>
+            <div id="annImageUpload">
+              <div class="dropzone" id="annImageDropzone">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <p>Drag and drop, or <span>browse</span></p>
+              </div>
+              <div class="dz-preview" id="annImagePreview">
+                <img id="annImageImg" alt=""><span class="name" id="annImageName"></span>
+                <button type="button" class="dz-remove" id="annImageRemove">&times;</button>
+              </div>
+              <input type="file" id="annImageFile" accept="image/*" style="display:none;">
+            </div>
+            <div id="annImageLink" style="display:none;">
+              <input type="url" id="annImageUrlInput" placeholder="https://...">
+            </div>
+          </div>
+
+          <div class="two-col">
+            <div class="field">
+              <label for="annFooter">Footer text (optional)</label>
+              <input type="text" id="annFooter" placeholder="e.g. The Watchers">
+            </div>
+            <div>
+              <label style="font-size:11.5px;">Include timestamp</label>
+              <div class="toggle-row" id="annTimestampToggle">
+                <button type="button" data-ts="yes">Yes</button>
+                <button type="button" data-ts="no" class="active">No</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="annPingType">Ping</label>
+            <select id="annPingType">
+              <option value="none">No ping</option>
+              <option value="everyone">@everyone</option>
+              <option value="here">@here</option>
+              <option value="role">Specific role</option>
+            </select>
+          </div>
+          <div class="field" id="annRoleField" style="display:none;">
+            <label for="annRoleId">Role ID</label>
+            <input type="text" id="annRoleId" placeholder="e.g. 123456789012345678">
+          </div>
+
+          <button class="btn primary" id="annPublishBtn">Send announcement</button>
+          <div id="annFormMsg"></div>
+        </div>
       </div>
     </div>
 
@@ -620,7 +752,7 @@
 <script>
 (function(){
   var STATE = { action:'ban', durationMode:'perm', appeal:'yes', proofs:[], entries:[], caseSeq:0,
-    settings:{ serverName:'Community server', webhookUrl:'', ticketLink:'https://discord.gg/26UfjmMTA3', investigators:[] } };
+    settings:{ serverName:'Community server', webhookUrl:'', ticketLink:'https://discord.gg/26UfjmMTA3', investigators:[], webhooks:[], announcementTemplates:[] } };
 
   var els = {};
   ['gearBtn','settingsPanel','serverNameInput','webhookInput','ticketLinkInput','saveSettingsBtn','testWebhookBtn','exportBtn','importBtn','importFile',
@@ -634,7 +766,13 @@
    'discDurationToggle','discDurationRow','discDurationValue','discDurationUnit','discAppealToggle',
    'discAddImageBtn','discAddLinkBtn','discLinkInlineRow','discLinkInlineInput','discLinkInlineAdd','discLinkInlineCancel',
    'discFileInput','discProofList','discInternalNotes','discAdminInput','discPublishBtn','discFormMsg','discCaseTag',
-   'gameFormBody','discFormBody'
+   'gameFormBody','discFormBody','annFormBody',
+   'annWebhookSelect','annCustomWebhookField','annCustomWebhookInput','annSaveTemplateBtn','annTemplateSelect',
+   'annTitle','annDescription','annAuthorName','annColor','annAuthorIcon',
+   'annThumbDropzone','annThumbPreview','annThumbImg','annThumbName','annThumbRemove','annThumbFile','annThumbUpload','annThumbLink','annThumbUrlInput',
+   'annImageDropzone','annImagePreview','annImageImg','annImageName','annImageRemove','annImageFile','annImageUpload','annImageLink','annImageUrlInput',
+   'annFooter','annTimestampToggle','annPingType','annRoleField','annRoleId','annPublishBtn','annFormMsg',
+   'webhookNameInput','webhookUrlInput','addWebhookBtn','webhookListUI'
   ].forEach(function(id){ els[id] = document.getElementById(id); });
 
   var LABEL = { ban:'Ban', kick:'Kick', warn:'Warning', dban:'Discord ban', dkick:'Discord kick' };
@@ -800,6 +938,7 @@
       var tab = btn.dataset.tab;
       els.gameFormBody.style.display = (tab==='game') ? 'block' : 'none';
       els.discFormBody.style.display = (tab==='discord') ? 'block' : 'none';
+      els.annFormBody.style.display = (tab==='ann') ? 'block' : 'none';
     });
   });
 
@@ -814,7 +953,12 @@
     els.ticketLinkInput.value = STATE.settings.ticketLink || '';
     els.serverNameOut.textContent = STATE.settings.serverName || 'Community server';
     if (!STATE.settings.investigators) STATE.settings.investigators = [];
+    if (!STATE.settings.webhooks) STATE.settings.webhooks = [];
+    if (!STATE.settings.announcementTemplates) STATE.settings.announcementTemplates = [];
     renderAdminList();
+    renderWebhookListUI();
+    renderWebhookSelect();
+    renderTemplateSelect();
   }
 
   function persistSettingsOnly(){
@@ -847,6 +991,53 @@
     renderAdminList();
     renderLedger();
   });
+
+  function renderWebhookListUI(){
+    var list = STATE.settings.webhooks || [];
+    if (list.length===0){ els.webhookListUI.innerHTML = '<div style="font-size:12px;color:var(--text-3);">No saved webhooks yet.</div>'; return; }
+    els.webhookListUI.innerHTML = list.map(function(w, i){
+      return '<div class="proof-item"><span class="label">'+escapeHtml(w.name)+'</span><button type="button" class="rm" data-rmwh="'+i+'">&times;</button></div>';
+    }).join('');
+    els.webhookListUI.querySelectorAll('[data-rmwh]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        STATE.settings.webhooks.splice(Number(btn.dataset.rmwh), 1);
+        persistSettingsOnly();
+        renderWebhookListUI();
+        renderWebhookSelect();
+      });
+    });
+  }
+
+  els.addWebhookBtn.addEventListener('click', function(){
+    var name = els.webhookNameInput.value.trim();
+    var url = els.webhookUrlInput.value.trim();
+    if (!name || !url) return;
+    if (!STATE.settings.webhooks) STATE.settings.webhooks = [];
+    STATE.settings.webhooks.push({ name:name, url:url });
+    els.webhookNameInput.value=''; els.webhookUrlInput.value='';
+    persistSettingsOnly();
+    renderWebhookListUI();
+    renderWebhookSelect();
+  });
+
+  function renderWebhookSelect(){
+    var list = STATE.settings.webhooks || [];
+    var current = els.annWebhookSelect.value;
+    els.annWebhookSelect.innerHTML = list.map(function(w, i){ return '<option value="'+i+'">'+escapeHtml(w.name)+'</option>'; }).join('')
+      + '<option value="__custom">Custom URL for this message only</option>';
+    if (list.some(function(w,i){ return String(i)===current; })) els.annWebhookSelect.value = current;
+    else els.annWebhookSelect.value = list.length ? '0' : '__custom';
+    els.annCustomWebhookField.style.display = (els.annWebhookSelect.value==='__custom') ? 'block' : 'none';
+  }
+  els.annWebhookSelect.addEventListener('change', function(){
+    els.annCustomWebhookField.style.display = (els.annWebhookSelect.value==='__custom') ? 'block' : 'none';
+  });
+
+  function renderTemplateSelect(){
+    var list = STATE.settings.announcementTemplates || [];
+    els.annTemplateSelect.innerHTML = '<option value="">Load a template...</option>' +
+      list.map(function(t, i){ return '<option value="'+i+'">'+escapeHtml(t.name)+'</option>'; }).join('');
+  }
 
   function saveSettings(){
     STATE.settings.serverName = els.serverNameInput.value.trim() || 'Community server';
@@ -1508,6 +1699,197 @@
       askConfirm('This user already has an open case (#'+openCase.caseNo+', '+LABEL[openCase.action]+'). Publish this report anyway?', proceed);
     } else {
       proceed();
+    }
+  });
+
+  // ==================== Announcements panel ====================
+  var ANN_IMG = {
+    thumb: { mode:'upload', file:null, previewUrl:'', url:'' },
+    image: { mode:'upload', file:null, previewUrl:'', url:'' }
+  };
+  var ANN_TS = 'no';
+
+  function setupImgSlot(key, els_){
+    var slot = ANN_IMG[key];
+    els_.dropzone.addEventListener('click', function(){ els_.file.click(); });
+    ['dragover','dragenter'].forEach(function(evt){ els_.dropzone.addEventListener(evt, function(e){ e.preventDefault(); els_.dropzone.classList.add('drag'); }); });
+    ['dragleave','drop'].forEach(function(evt){ els_.dropzone.addEventListener(evt, function(e){ e.preventDefault(); els_.dropzone.classList.remove('drag'); }); });
+    els_.dropzone.addEventListener('drop', function(e){ var f = e.dataTransfer.files[0]; if (f) setImgFile(key, els_, f); });
+    els_.file.addEventListener('change', function(){ if (this.files[0]) setImgFile(key, els_, this.files[0]); });
+    els_.remove.addEventListener('click', function(e){
+      e.stopPropagation();
+      slot.file = null; slot.previewUrl = ''; els_.file.value='';
+      els_.preview.classList.remove('show'); els_.dropzone.style.display = 'block';
+    });
+  }
+  function setImgFile(key, els_, file){
+    if (!file.type.startsWith('image/')){ setAnnFormMsg('Only image files are supported.', 'err'); return; }
+    if (file.size > 8*1024*1024){ setAnnFormMsg('That image is over 8MB.', 'err'); return; }
+    var slot = ANN_IMG[key];
+    var reader = new FileReader();
+    reader.onload = function(e){
+      slot.file = file; slot.previewUrl = e.target.result;
+      els_.img.src = e.target.result; els_.name.textContent = file.name;
+      els_.preview.classList.add('show'); els_.dropzone.style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  }
+  setupImgSlot('thumb', { dropzone:els.annThumbDropzone, preview:els.annThumbPreview, img:els.annThumbImg, name:els.annThumbName, remove:els.annThumbRemove, file:els.annThumbFile });
+  setupImgSlot('image', { dropzone:els.annImageDropzone, preview:els.annImagePreview, img:els.annImageImg, name:els.annImageName, remove:els.annImageRemove, file:els.annImageFile });
+
+  document.querySelectorAll('[data-annimg]').forEach(function(tab){
+    tab.addEventListener('click', function(){
+      var parts = tab.dataset.annimg.split('-'); var key = parts[0]==='thumb' ? 'thumb' : 'image'; var mode = parts[1];
+      var group = tab.closest('.field').querySelectorAll('[data-annimg]');
+      group.forEach(function(t){ t.classList.toggle('active', t===tab); });
+      ANN_IMG[key].mode = mode;
+      if (key==='thumb'){
+        els.annThumbUpload.style.display = (mode==='upload') ? 'block' : 'none';
+        els.annThumbLink.style.display = (mode==='link') ? 'block' : 'none';
+      } else {
+        els.annImageUpload.style.display = (mode==='upload') ? 'block' : 'none';
+        els.annImageLink.style.display = (mode==='link') ? 'block' : 'none';
+      }
+    });
+  });
+
+  els.annTimestampToggle.addEventListener('click', function(e){
+    var b = e.target.closest('button[data-ts]'); if (!b) return;
+    ANN_TS = b.dataset.ts;
+    els.annTimestampToggle.querySelectorAll('button').forEach(function(x){ x.classList.toggle('active', x===b); });
+  });
+
+  els.annPingType.addEventListener('change', function(){
+    els.annRoleField.style.display = (els.annPingType.value==='role') ? 'block' : 'none';
+  });
+
+  function setAnnFormMsg(text, kind){ els.annFormMsg.textContent = text||''; els.annFormMsg.className = kind||''; }
+
+  function resetAnnForm(){
+    els.annTitle.value=''; els.annDescription.value=''; els.annAuthorName.value=''; els.annAuthorIcon.value='';
+    els.annFooter.value=''; els.annRoleId.value=''; els.annPingType.value='none'; els.annRoleField.style.display='none';
+    els.annColor.value='#5865f2';
+    ANN_TS='no'; els.annTimestampToggle.querySelectorAll('button').forEach(function(x){ x.classList.toggle('active', x.dataset.ts==='no'); });
+    ['thumb','image'].forEach(function(key){
+      ANN_IMG[key] = { mode:'upload', file:null, previewUrl:'', url:'' };
+    });
+    els.annThumbPreview.classList.remove('show'); els.annThumbDropzone.style.display='block'; els.annThumbFile.value=''; els.annThumbUrlInput.value='';
+    els.annImagePreview.classList.remove('show'); els.annImageDropzone.style.display='block'; els.annImageFile.value=''; els.annImageUrlInput.value='';
+  }
+
+  els.annSaveTemplateBtn.addEventListener('click', function(){
+    var name = (els.annTitle.value.trim() || 'Untitled') + ' template';
+    var data = {
+      title: els.annTitle.value.trim(), description: els.annDescription.value.trim(),
+      color: els.annColor.value, authorName: els.annAuthorName.value.trim(), authorIcon: els.annAuthorIcon.value.trim(),
+      footer: els.annFooter.value.trim(), includeTimestamp: ANN_TS,
+      pingType: els.annPingType.value, roleId: els.annRoleId.value.trim(),
+      thumbUrl: ANN_IMG.thumb.mode==='link' ? els.annThumbUrlInput.value.trim() : '',
+      imageUrl: ANN_IMG.image.mode==='link' ? els.annImageUrlInput.value.trim() : ''
+    };
+    if (!STATE.settings.announcementTemplates) STATE.settings.announcementTemplates = [];
+    STATE.settings.announcementTemplates.push({ name:name, data:data });
+    persistSettingsOnly();
+    renderTemplateSelect();
+    setAnnFormMsg('Saved as "'+name+'". Uploaded images are not saved in templates, only pasted links are.', 'ok');
+  });
+
+  els.annTemplateSelect.addEventListener('change', function(){
+    var idx = els.annTemplateSelect.value;
+    if (idx==='') return;
+    var t = (STATE.settings.announcementTemplates||[])[Number(idx)];
+    if (!t) return;
+    var d = t.data;
+    els.annTitle.value = d.title||''; els.annDescription.value = d.description||'';
+    els.annColor.value = d.color||'#5865f2'; els.annAuthorName.value = d.authorName||''; els.annAuthorIcon.value = d.authorIcon||'';
+    els.annFooter.value = d.footer||''; els.annPingType.value = d.pingType||'none'; els.annRoleId.value = d.roleId||'';
+    els.annRoleField.style.display = (d.pingType==='role') ? 'block' : 'none';
+    ANN_TS = d.includeTimestamp||'no';
+    els.annTimestampToggle.querySelectorAll('button').forEach(function(x){ x.classList.toggle('active', x.dataset.ts===ANN_TS); });
+    if (d.thumbUrl){
+      document.querySelector('[data-annimg="thumb-link"]').click();
+      els.annThumbUrlInput.value = d.thumbUrl;
+    }
+    if (d.imageUrl){
+      document.querySelector('[data-annimg="image-link"]').click();
+      els.annImageUrlInput.value = d.imageUrl;
+    }
+    setAnnFormMsg('Template loaded.', 'ok');
+  });
+
+  function hexToInt(hex){ return parseInt(hex.replace('#',''), 16); }
+
+  els.annPublishBtn.addEventListener('click', async function(){
+    var title = els.annTitle.value.trim();
+    var description = els.annDescription.value.trim();
+    if (!title && !description){ setAnnFormMsg('Add a title or description.', 'err'); return; }
+
+    var webhook;
+    if (els.annWebhookSelect.value==='__custom'){
+      webhook = els.annCustomWebhookInput.value.trim();
+      if (!webhook){ setAnnFormMsg('Enter a webhook URL or save one in settings.', 'err'); return; }
+    } else {
+      var w = (STATE.settings.webhooks||[])[Number(els.annWebhookSelect.value)];
+      if (!w){ setAnnFormMsg('No webhook selected.', 'err'); return; }
+      webhook = w.url;
+    }
+
+    var embed = { color: hexToInt(els.annColor.value) };
+    if (title) embed.title = title;
+    if (description) embed.description = description;
+    if (els.annAuthorName.value.trim()) embed.author = { name: els.annAuthorName.value.trim(), icon_url: els.annAuthorIcon.value.trim()||undefined };
+    if (els.annFooter.value.trim()) embed.footer = { text: els.annFooter.value.trim() };
+    if (ANN_TS==='yes') embed.timestamp = new Date().toISOString();
+
+    var content;
+    var allowed_mentions = { parse: [] };
+    var pingType = els.annPingType.value;
+    if (pingType==='everyone'){ content = '@everyone'; allowed_mentions.parse = ['everyone']; }
+    else if (pingType==='here'){ content = '@here'; allowed_mentions.parse = ['everyone']; }
+    else if (pingType==='role'){
+      var rid = els.annRoleId.value.trim();
+      if (!rid){ setAnnFormMsg('Enter a role ID for the ping.', 'err'); return; }
+      content = '<@&'+rid+'>'; allowed_mentions.roles = [rid];
+    }
+
+    var uploadFiles = [];
+    if (ANN_IMG.thumb.mode==='upload' && ANN_IMG.thumb.file) uploadFiles.push({ slot:'thumb', file:ANN_IMG.thumb.file });
+    if (ANN_IMG.image.mode==='upload' && ANN_IMG.image.file) uploadFiles.push({ slot:'image', file:ANN_IMG.image.file });
+
+    if (ANN_IMG.thumb.mode==='link' && els.annThumbUrlInput.value.trim()) embed.thumbnail = { url: els.annThumbUrlInput.value.trim() };
+    if (ANN_IMG.image.mode==='link' && els.annImageUrlInput.value.trim()) embed.image = { url: els.annImageUrlInput.value.trim() };
+
+    els.annPublishBtn.disabled = true;
+    setAnnFormMsg('Sending...', '');
+
+    try{
+      var res;
+      if (uploadFiles.length){
+        var fd = new FormData();
+        uploadFiles.forEach(function(u, i){
+          var safeName = u.file.name.replace(/\s+/g,'_');
+          fd.append('files['+i+']', u.file, safeName);
+          if (u.slot==='thumb') embed.thumbnail = { url:'attachment://'+safeName };
+          if (u.slot==='image') embed.image = { url:'attachment://'+safeName };
+        });
+        var payload = { embeds:[embed] };
+        if (content){ payload.content = content; payload.allowed_mentions = allowed_mentions; }
+        fd.append('payload_json', JSON.stringify(payload));
+        res = await fetch(webhook, { method:'POST', body: fd });
+      } else {
+        var payload2 = { embeds:[embed] };
+        if (content){ payload2.content = content; payload2.allowed_mentions = allowed_mentions; }
+        res = await fetch(webhook, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload2) });
+      }
+      if (!res.ok) throw new Error('Discord rejected the message (status '+res.status+'). Check the webhook URL.');
+      showToast('Announcement sent', 'ok');
+      setAnnFormMsg('Sent successfully.', 'ok');
+      resetAnnForm();
+    }catch(err){
+      setAnnFormMsg(err.message || 'Could not send. Try again.', 'err');
+      showToast(err.message || 'Send failed', 'err');
+    }finally{
+      els.annPublishBtn.disabled = false;
     }
   });
 })();
