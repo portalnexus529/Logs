@@ -307,13 +307,19 @@
 
   .page-shell{display:grid;grid-template-columns:1fr minmax(0,1180px) 1fr;gap:24px;max-width:1900px;margin:0 auto;align-items:start;}
 
-  .dash-body{display:grid;grid-template-columns:200px 1fr;gap:24px;align-items:start;}
+  .dash-body{display:grid;grid-template-columns:230px 1fr;gap:24px;align-items:start;}
   @media (max-width:800px){.dash-body{grid-template-columns:1fr;} .side-nav{flex-direction:row;flex-wrap:wrap;position:static;}}
-  .side-nav{display:flex;flex-direction:column;gap:4px;position:sticky;top:28px;}
-  .nav-item{
-    background:none;border:none;color:var(--text-2);text-align:left;padding:11px 14px;font-size:14.5px;font-weight:500;
-    border-radius:var(--radius-sm);cursor:pointer;
+  .side-nav{
+    display:flex;flex-direction:column;gap:3px;position:sticky;top:28px;
+    background:var(--panel);border:1px solid var(--border-soft);border-radius:var(--radius);padding:14px;
   }
+  .side-nav-brand{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);font-weight:700;padding:4px 10px 12px;}
+  .nav-divider{height:1px;background:var(--border-soft);margin:8px 4px;}
+  .nav-item{
+    background:none;border:none;color:var(--text-2);text-align:left;padding:11px 12px;font-size:14.5px;font-weight:500;
+    border-radius:var(--radius-sm);cursor:pointer;display:flex;align-items:center;gap:11px;
+  }
+  .nav-item svg{width:17px;height:17px;flex-shrink:0;}
   .nav-item:hover{background:var(--panel-2);color:var(--text);}
   .nav-item.active{background:var(--accent-bg);color:var(--accent);font-weight:600;}
   .dash-section{display:block;}
@@ -347,87 +353,39 @@
       <div class="chip warn"><div class="n" id="statWarn">0</div><div class="l">Warnings</div></div>
       <div class="chip dban"><div class="n" id="statDban">0</div><div class="l">Discord bans</div></div>
       <div class="chip dkick"><div class="n" id="statDkick">0</div><div class="l">Discord kicks</div></div>
-      <button class="icon-btn" id="gearBtn" aria-label="Settings" title="Settings">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-      </button>
     </div>
   </div>
 
-  <div class="settings" id="settingsPanel">
-    <h3>Setup</h3>
-    <div class="settings-grid">
-      <div class="field">
-        <label for="serverNameInput">Community / server name</label>
-        <input type="text" id="serverNameInput" placeholder="e.g. Skyline DayZ">
-      </div>
-      <div class="field">
-        <label for="webhookInput">Discord webhook URL</label>
-        <input type="url" id="webhookInput" placeholder="https://discord.com/api/webhooks/...">
-      </div>
-      <div class="field">
-        <label for="ticketLinkInput">Ticket / appeal link</label>
-        <input type="url" id="ticketLinkInput" placeholder="https://discord.gg/...">
-      </div>
-      <div class="settings-actions">
-        <button class="btn primary small" id="saveSettingsBtn">Save settings</button>
-        <button class="btn small" id="testWebhookBtn">Send test message</button>
-        <button class="btn small" id="exportBtn">Export ledger</button>
-        <button class="btn small" id="importBtn">Import ledger</button>
-        <input type="file" id="importFile" accept="application/json" style="display:none;">
-        <span id="settingsStatus"></span>
-      </div>
-
-      <div class="settings-note" style="border-top:none;padding-top:0;">
-        <label style="margin-bottom:8px;">Admin roster (for case assignment)</label>
-        <div style="display:flex;gap:8px;margin-bottom:10px;">
-          <input type="text" id="adminNameInput" placeholder="Admin name" style="flex:1;">
-          <button class="btn small" id="addAdminBtn">Add</button>
-        </div>
-        <div class="proof-list" id="adminList"></div>
-      </div>
-
-      <div class="settings-note" style="border-top:1px solid var(--border-soft);padding-top:12px;">
-        <label style="margin-bottom:8px;">Saved webhooks (for announcements)</label>
-        <div class="two-col" style="margin-bottom:8px;">
-          <input type="text" id="webhookNameInput" placeholder="Label, e.g. Announcements">
-          <input type="url" id="webhookUrlInput" placeholder="https://discord.com/api/webhooks/...">
-        </div>
-        <button class="btn small" id="addWebhookBtn" style="margin-bottom:10px;">Add webhook</button>
-        <div class="proof-list" id="webhookListUI"></div>
-      </div>
-
-      <div class="settings-note" style="border-top:1px solid var(--border-soft);padding-top:12px;">
-        <label style="margin-bottom:8px;">Bot actions (real Discord bans/kicks + DMs)</label>
-        <div class="field">
-          <label style="font-size:11.5px;" for="workerUrlInput">Worker URL</label>
-          <input type="url" id="workerUrlInput" placeholder="https://your-worker.workers.dev">
-        </div>
-        <div class="two-col">
-          <div class="field">
-            <label style="font-size:11.5px;" for="workerKeyInput">Admin key</label>
-            <input type="text" id="workerKeyInput" placeholder="Your worker's admin key">
-          </div>
-          <div class="field">
-            <label style="font-size:11.5px;" for="guildIdInput">Server ID</label>
-            <input type="text" id="guildIdInput" placeholder="Your Discord server ID">
-          </div>
-        </div>
-        <p style="font-size:11.5px;color:var(--text-3);margin:4px 0 0;">These are stored only in this browser, same as your webhook URL. Never paste your actual bot token here or anywhere in this site.</p>
-      </div>
-      <p class="settings-note">
-        The webhook URL and ledger are stored in this browser only (localStorage) &mdash; a static site like Netlify has no shared database behind it, so each admin's device keeps its own local copy. Every publish still posts to your Discord channel, which stays the permanent shared record for the whole team. Use export/import to back up or move your local ledger between devices.
-      </p>
-    </div>
-  </div>
 
   <div class="dash-body">
 
     <nav class="side-nav">
-      <button type="button" class="nav-item active" data-section="dashboard">Dashboard</button>
-      <button type="button" class="nav-item" data-section="game">New report</button>
-      <button type="button" class="nav-item" data-section="discord">Discord actions</button>
-      <button type="button" class="nav-item" data-section="ann">Announcements</button>
-      <button type="button" class="nav-item" data-section="ledger">Ledger</button>
+      <div class="side-nav-brand" id="sideNavBrand">Menu</div>
+      <button type="button" class="nav-item active" data-section="dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+        Dashboard
+      </button>
+      <button type="button" class="nav-item" data-section="game">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+        New report
+      </button>
+      <button type="button" class="nav-item" data-section="discord">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.3 4.3a18 18 0 0 0-4.5-1.4l-.3.6a16 16 0 0 1 3.8 1.3M8.5 3.5a18 18 0 0 0-4.5 1.4M3.5 5.8C1.8 10 1.4 14.1 2.1 18.1a18 18 0 0 0 5.5 2.8l1-1.6M20.5 5.8c1.7 4.2 2.1 8.3 1.4 12.3a18 18 0 0 1-5.5 2.8l-1-1.6"/><circle cx="9" cy="13" r="1.3"/><circle cx="15" cy="13" r="1.3"/></svg>
+        Discord actions
+      </button>
+      <button type="button" class="nav-item" data-section="ann">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11v2a2 2 0 0 0 2 2h1l2 5h2l-1.5-5H10l8 4V5l-8 4H6a2 2 0 0 0-2 2z"/><path d="M18 9v6"/></svg>
+        Announcements
+      </button>
+      <button type="button" class="nav-item" data-section="ledger">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        Ledger
+      </button>
+      <div class="nav-divider"></div>
+      <button type="button" class="nav-item" data-section="settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+      </button>
     </nav>
 
     <div class="dash-main">
@@ -828,6 +786,77 @@
     </div>
       </div>
 
+      <div id="sectionSettings" class="dash-section" style="display:none;">
+        <div class="panel">
+          <div class="panel-head"><h2>Settings</h2></div>
+          <div class="panel-body">
+<div class="settings-grid">
+      <div class="field">
+        <label for="serverNameInput">Community / server name</label>
+        <input type="text" id="serverNameInput" placeholder="e.g. Skyline DayZ">
+      </div>
+      <div class="field">
+        <label for="webhookInput">Discord webhook URL</label>
+        <input type="url" id="webhookInput" placeholder="https://discord.com/api/webhooks/...">
+      </div>
+      <div class="field">
+        <label for="ticketLinkInput">Ticket / appeal link</label>
+        <input type="url" id="ticketLinkInput" placeholder="https://discord.gg/...">
+      </div>
+      <div class="settings-actions">
+        <button class="btn primary small" id="saveSettingsBtn">Save settings</button>
+        <button class="btn small" id="testWebhookBtn">Send test message</button>
+        <button class="btn small" id="exportBtn">Export ledger</button>
+        <button class="btn small" id="importBtn">Import ledger</button>
+        <input type="file" id="importFile" accept="application/json" style="display:none;">
+        <span id="settingsStatus"></span>
+      </div>
+
+      <div class="settings-note" style="border-top:none;padding-top:0;">
+        <label style="margin-bottom:8px;">Admin roster (for case assignment)</label>
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <input type="text" id="adminNameInput" placeholder="Admin name" style="flex:1;">
+          <button class="btn small" id="addAdminBtn">Add</button>
+        </div>
+        <div class="proof-list" id="adminList"></div>
+      </div>
+
+      <div class="settings-note" style="border-top:1px solid var(--border-soft);padding-top:12px;">
+        <label style="margin-bottom:8px;">Saved webhooks (for announcements)</label>
+        <div class="two-col" style="margin-bottom:8px;">
+          <input type="text" id="webhookNameInput" placeholder="Label, e.g. Announcements">
+          <input type="url" id="webhookUrlInput" placeholder="https://discord.com/api/webhooks/...">
+        </div>
+        <button class="btn small" id="addWebhookBtn" style="margin-bottom:10px;">Add webhook</button>
+        <div class="proof-list" id="webhookListUI"></div>
+      </div>
+
+      <div class="settings-note" style="border-top:1px solid var(--border-soft);padding-top:12px;">
+        <label style="margin-bottom:8px;">Bot actions (real Discord bans/kicks + DMs)</label>
+        <div class="field">
+          <label style="font-size:11.5px;" for="workerUrlInput">Worker URL</label>
+          <input type="url" id="workerUrlInput" placeholder="https://your-worker.workers.dev">
+        </div>
+        <div class="two-col">
+          <div class="field">
+            <label style="font-size:11.5px;" for="workerKeyInput">Admin key</label>
+            <input type="text" id="workerKeyInput" placeholder="Your worker's admin key">
+          </div>
+          <div class="field">
+            <label style="font-size:11.5px;" for="guildIdInput">Server ID</label>
+            <input type="text" id="guildIdInput" placeholder="Your Discord server ID">
+          </div>
+        </div>
+        <p style="font-size:11.5px;color:var(--text-3);margin:4px 0 0;">These are stored only in this browser, same as your webhook URL. Never paste your actual bot token here or anywhere in this site.</p>
+      </div>
+      <p class="settings-note">
+        The webhook URL and ledger are stored in this browser only (localStorage) &mdash; a static site like Netlify has no shared database behind it, so each admin's device keeps its own local copy. Every publish still posts to your Discord channel, which stays the permanent shared record for the whole team. Use export/import to back up or move your local ledger between devices.
+      </p>
+    </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -854,6 +883,7 @@
 
   var els = {};
   ['gearBtn','settingsPanel','serverNameInput','webhookInput','ticketLinkInput','saveSettingsBtn','testWebhookBtn','exportBtn','importBtn','importFile',
+   'sideNavBrand',
    'settingsStatus','serverNameOut','adminNameInput','addAdminBtn','adminList','actionToggle','durationBlock','durationToggle','durationRow','durationValue','durationUnit',
    'playerName','steamId','steamIdLabel','acctCreatedLabel','steamStatsRow','historyBox','joinTime','acctCreated','vacBans','gameBans','daysSinceBan','bgNotes',
    'reasonInput','templateRow','resolutionBlock','scopeField','banScope','appealToggle',
@@ -1031,9 +1061,7 @@
     els.linkInlineInput.value=''; els.linkInlineRow.classList.remove('show');
   });
 
-  els.gearBtn.addEventListener('click', function(){ els.settingsPanel.classList.toggle('open'); });
-
-  var SECTION_IDS = { dashboard:'sectionDashboard', game:'sectionGame', discord:'sectionDiscord', ann:'sectionAnn', ledger:'sectionLedger' };
+  var SECTION_IDS = { dashboard:'sectionDashboard', game:'sectionGame', discord:'sectionDiscord', ann:'sectionAnn', ledger:'sectionLedger', settings:'sectionSettings' };
   document.querySelectorAll('.nav-item').forEach(function(btn){
     btn.addEventListener('click', function(){
       document.querySelectorAll('.nav-item').forEach(function(b){ b.classList.toggle('active', b===btn); });
@@ -1055,6 +1083,7 @@
     els.webhookInput.value = STATE.settings.webhookUrl || '';
     els.ticketLinkInput.value = STATE.settings.ticketLink || '';
     els.serverNameOut.textContent = STATE.settings.serverName || 'Community server';
+    els.sideNavBrand.textContent = STATE.settings.serverName || 'Community server';
     els.workerUrlInput.value = STATE.settings.workerUrl || '';
     els.workerKeyInput.value = STATE.settings.workerKey || '';
     els.guildIdInput.value = STATE.settings.guildId || '';
@@ -1150,6 +1179,7 @@
     STATE.settings.webhookUrl = els.webhookInput.value.trim();
     STATE.settings.ticketLink = els.ticketLinkInput.value.trim();
     els.serverNameOut.textContent = STATE.settings.serverName;
+    els.sideNavBrand.textContent = STATE.settings.serverName;
     STATE.settings.workerUrl = els.workerUrlInput.value.trim().replace(/\/$/,'');
     STATE.settings.workerKey = els.workerKeyInput.value.trim();
     STATE.settings.guildId = els.guildIdInput.value.trim();
