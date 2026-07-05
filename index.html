@@ -322,6 +322,26 @@
   .nav-item svg{width:17px;height:17px;flex-shrink:0;}
   .nav-item:hover{background:var(--panel-2);color:var(--text);}
   .nav-item.active{background:var(--accent-bg);color:var(--accent);font-weight:600;}
+
+  .audit-list{display:flex;flex-direction:column;gap:2px;max-height:70vh;overflow-y:auto;}
+  .audit-row{display:grid;grid-template-columns:150px 130px 1fr;gap:14px;padding:10px 8px;border-bottom:1px solid var(--border-soft);font-size:13px;align-items:baseline;}
+  .audit-row:last-child{border-bottom:none;}
+  .audit-time{color:var(--text-3);font-size:12px;}
+  .audit-tag{font-size:11px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;color:var(--accent);}
+  .audit-detail{color:var(--text-2);}
+  .audit-detail b{color:var(--text);font-weight:600;}
+  @media (max-width:700px){.audit-row{grid-template-columns:1fr;gap:2px;}}
+
+  .public-view{display:none;min-height:100vh;align-items:center;justify-content:center;padding:20px;}
+  .public-view.show{display:flex;}
+  .public-card{max-width:520px;width:100%;background:var(--panel);border:1px solid var(--border-soft);border-radius:var(--radius);padding:28px 26px;}
+  .public-card h1{font-size:20px;margin:0 0 4px;}
+  .public-card .pc-sub{font-size:13px;color:var(--text-3);margin-bottom:20px;}
+  .public-field{margin-bottom:16px;}
+  .public-field label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-3);font-weight:700;margin-bottom:5px;}
+  .public-field .val{font-size:15px;color:var(--text);}
+  .public-appeal{margin-top:20px;padding:14px;background:var(--accent-bg);border:1px solid var(--accent);border-radius:var(--radius-sm);font-size:13.5px;color:var(--text);}
+  .public-appeal a{color:var(--accent);font-weight:600;}
   .dash-section{display:block;}
   .dash-cards{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;}
   @media (max-width:1100px){.dash-cards{grid-template-columns:repeat(2,1fr);}}
@@ -340,7 +360,13 @@
 </style>
 </head>
 <body>
-<div class="wrap">
+<div class="public-view" id="publicView">
+  <div class="public-card" id="publicCard">
+    <div class="empty-state">Loading report status...</div>
+  </div>
+</div>
+
+<div class="wrap" id="adminWrap">
 
   <div class="topbar">
     <div class="topbar-left">
@@ -379,7 +405,11 @@
       </button>
       <button type="button" class="nav-item" data-section="ledger">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-        Ledger
+        Cases
+      </button>
+      <button type="button" class="nav-item" data-section="audit">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        Audit logs
       </button>
       <div class="nav-divider"></div>
       <button type="button" class="nav-item" data-section="settings">
@@ -766,7 +796,7 @@
 
       <div id="sectionLedger" class="dash-section" style="display:none;">
         <div class="panel">
-      <div class="panel-head"><h2>Ledger</h2><button class="btn ghost small" id="clearAllBtn">Clear all</button></div>
+      <div class="panel-head"><h2>Cases</h2><button class="btn ghost small" id="clearAllBtn">Clear all</button></div>
       <div class="panel-body">
         <div class="search-row">
           <input type="text" id="searchInput" placeholder="Search by player, admin or reason">
@@ -784,6 +814,18 @@
         </div>
       </div>
     </div>
+      </div>
+
+      <div id="sectionAudit" class="dash-section" style="display:none;">
+        <div class="panel">
+          <div class="panel-head"><h2>Audit logs</h2><button class="btn ghost small" id="clearAuditBtn">Clear log</button></div>
+          <div class="panel-body">
+            <p style="font-size:12.5px;color:var(--text-3);margin:0 0 14px;">Every action taken through this site &mdash; publishing, editing, status changes, deletions, bot actions, announcements &mdash; is recorded here for accountability. Stored locally in this browser.</p>
+            <div class="audit-list" id="auditList">
+              <div class="empty-state">Nothing recorded yet.</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div id="sectionSettings" class="dash-section" style="display:none;">
@@ -866,6 +908,46 @@
   <span id="toastMsg"></span>
 </div>
 
+<div class="confirm-overlay" id="editOverlay">
+  <div class="confirm-box" style="max-width:480px;">
+    <h3 style="font-size:15px;font-weight:600;margin:0 0 14px;">Edit case <span id="editCaseLabel"></span></h3>
+    <div class="field">
+      <label for="editReason">Reason</label>
+      <textarea id="editReason"></textarea>
+    </div>
+    <div class="field" id="editDurationField">
+      <label for="editDuration">Duration</label>
+      <input type="text" id="editDuration" placeholder="e.g. 3 days, or Permanent">
+    </div>
+    <div class="two-col" id="editResolutionField">
+      <div class="field">
+        <label style="font-size:11.5px;">Ban scope</label>
+        <select id="editBanScope">
+          <option value="game">Game only</option>
+          <option value="discord">Discord only</option>
+          <option value="both">Both</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:11.5px;">Appeal eligible</label>
+        <div class="toggle-row" id="editAppealToggle">
+          <button type="button" data-ev="yes">Yes</button>
+          <button type="button" data-ev="no">No</button>
+        </div>
+      </div>
+    </div>
+    <div class="field">
+      <label for="editInternalNotes">Internal notes</label>
+      <textarea id="editInternalNotes"></textarea>
+    </div>
+    <div id="editMsg" style="font-size:12.5px;margin-bottom:10px;"></div>
+    <div class="confirm-actions">
+      <button type="button" class="btn small" id="editCancel">Cancel</button>
+      <button type="button" class="btn small primary" id="editSave">Save & publish</button>
+    </div>
+  </div>
+</div>
+
 <div class="confirm-overlay" id="confirmOverlay">
   <div class="confirm-box">
     <p id="confirmMsg"></p>
@@ -903,7 +985,9 @@
    'webhookNameInput','webhookUrlInput','addWebhookBtn','webhookListUI',
    'workerUrlInput','workerKeyInput','guildIdInput',
    'discDmMessage','discGenerateDmBtn','discSendDmToggle',
-   'ovOpen','ovPending','ovSolved','ovWeek','ovTotal','recentFeed'
+   'ovOpen','ovPending','ovSolved','ovWeek','ovTotal','recentFeed',
+   'auditList','clearAuditBtn',
+   'editOverlay','editCaseLabel','editReason','editDurationField','editDuration','editResolutionField','editBanScope','editAppealToggle','editInternalNotes','editMsg','editCancel','editSave'
   ].forEach(function(id){ els[id] = document.getElementById(id); });
 
   var LABEL = { ban:'Ban', kick:'Kick', warn:'Warning', dban:'Discord ban', dkick:'Discord kick' };
@@ -937,6 +1021,80 @@
     els.confirmOk.addEventListener('click', okHandler);
     els.confirmCancel.addEventListener('click', cancelHandler);
   }
+
+  // ---------- edit case modal ----------
+  var EDIT_APPEAL = 'yes';
+  var EDIT_ID = null;
+
+  els.editAppealToggle.addEventListener('click', function(e){
+    var b = e.target.closest('button[data-ev]'); if (!b) return;
+    EDIT_APPEAL = b.dataset.ev;
+    els.editAppealToggle.querySelectorAll('button').forEach(function(x){ x.classList.toggle('active', x===b); });
+  });
+
+  function openEditModal(id){
+    var entry = STATE.entries.find(function(x){ return x.id===id; });
+    if (!entry) return;
+    EDIT_ID = id;
+    els.editCaseLabel.textContent = '#'+entry.caseNo+' \u2014 '+entry.player;
+    els.editReason.value = entry.reason || '';
+    els.editInternalNotes.value = entry.internalNotes || '';
+    els.editMsg.textContent = '';
+
+    var showResolution = isBanType(entry.action);
+    els.editDurationField.style.display = showResolution ? 'block' : 'none';
+    els.editResolutionField.style.display = (entry.action==='ban') ? 'grid' : (showResolution ? 'block' : 'none');
+    els.editBanScope.parentElement.style.display = (entry.action==='ban') ? 'block' : 'none';
+
+    if (showResolution){
+      els.editDuration.value = entry.durationText || 'Permanent';
+      els.editBanScope.value = entry.banScope || 'game';
+      EDIT_APPEAL = entry.appeal || 'yes';
+      els.editAppealToggle.querySelectorAll('button').forEach(function(x){ x.classList.toggle('active', x.dataset.ev===EDIT_APPEAL); });
+    }
+
+    els.editOverlay.classList.add('show');
+  }
+
+  els.editCancel.addEventListener('click', function(){ els.editOverlay.classList.remove('show'); EDIT_ID=null; });
+
+  els.editSave.addEventListener('click', async function(){
+    var entry = STATE.entries.find(function(x){ return x.id===EDIT_ID; });
+    if (!entry) return;
+
+    entry.reason = els.editReason.value.trim();
+    entry.internalNotes = els.editInternalNotes.value.trim();
+    if (isBanType(entry.action)){
+      entry.durationText = els.editDuration.value.trim() || 'Permanent';
+      entry.appeal = EDIT_APPEAL;
+      if (entry.action==='ban') entry.banScope = els.editBanScope.value;
+    }
+
+    saveLedger();
+    renderLedger();
+
+    if (!entry.discordMessageId){
+      els.editOverlay.classList.remove('show');
+      showToast('Case updated locally (no linked Discord message to update)', 'ok');
+      logAudit('Case edited', 'Case #'+entry.caseNo+' edited (not synced to Discord)');
+      syncCaseToWorker(entry);
+      EDIT_ID = null;
+      return;
+    }
+
+    els.editMsg.textContent = 'Publishing changes to Discord...'; els.editMsg.style.color = 'var(--text-2)';
+    try{
+      await editDiscordMessage(entry);
+      els.editOverlay.classList.remove('show');
+      showToast('Case updated and published live', 'ok');
+      logAudit('Case edited', 'Case #'+entry.caseNo+' edited and republished live');
+      syncCaseToWorker(entry);
+      EDIT_ID = null;
+    }catch(err){
+      els.editMsg.textContent = err.message || 'Could not update Discord.';
+      els.editMsg.style.color = 'var(--ban)';
+    }
+  });
 
   // ---------- action toggle ----------
   function setAction(a){
@@ -1061,7 +1219,7 @@
     els.linkInlineInput.value=''; els.linkInlineRow.classList.remove('show');
   });
 
-  var SECTION_IDS = { dashboard:'sectionDashboard', game:'sectionGame', discord:'sectionDiscord', ann:'sectionAnn', ledger:'sectionLedger', settings:'sectionSettings' };
+  var SECTION_IDS = { dashboard:'sectionDashboard', game:'sectionGame', discord:'sectionDiscord', ann:'sectionAnn', ledger:'sectionLedger', audit:'sectionAudit', settings:'sectionSettings' };
   document.querySelectorAll('.nav-item').forEach(function(btn){
     btn.addEventListener('click', function(){
       document.querySelectorAll('.nav-item').forEach(function(b){ b.classList.toggle('active', b===btn); });
@@ -1203,10 +1361,48 @@
     }catch(e){ STATE.caseSeq = 0; }
     updateCaseTag();
     renderLedger();
+    loadAuditLog();
   }
   function saveLedger(){
     try{ localStorage.setItem('modlog:entries', JSON.stringify(STATE.entries)); }catch(e){}
   }
+
+  // ---------- audit log ----------
+  var AUDIT_LOG = [];
+  function loadAuditLog(){
+    try{
+      var raw = localStorage.getItem('modlog:auditLog');
+      if (raw) AUDIT_LOG = JSON.parse(raw);
+    }catch(e){ AUDIT_LOG = []; }
+    renderAuditLog();
+  }
+  function saveAuditLog(){
+    if (AUDIT_LOG.length > 500) AUDIT_LOG = AUDIT_LOG.slice(0, 500);
+    try{ localStorage.setItem('modlog:auditLog', JSON.stringify(AUDIT_LOG)); }catch(e){}
+  }
+  function logAudit(action, detail){
+    AUDIT_LOG.unshift({ ts: Date.now(), action: action, detail: detail });
+    saveAuditLog();
+    renderAuditLog();
+  }
+  function renderAuditLog(){
+    if (!els.auditList) return;
+    if (AUDIT_LOG.length===0){ els.auditList.innerHTML = '<div class="empty-state">Nothing recorded yet.</div>'; return; }
+    els.auditList.innerHTML = AUDIT_LOG.map(function(a){
+      var d = new Date(a.ts);
+      var timeStr = d.toLocaleDateString(undefined,{month:'short',day:'numeric'}) + ' \u00b7 ' + d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+      return '<div class="audit-row"><span class="audit-time">'+timeStr+'</span><span class="audit-tag">'+escapeHtml(a.action)+'</span><span class="audit-detail">'+a.detail+'</span></div>';
+    }).join('');
+  }
+  els.clearAuditBtn && els.clearAuditBtn.addEventListener('click', function(){
+    askConfirm('Clear the entire audit log? This cannot be undone.', function(){
+      AUDIT_LOG = [];
+      saveAuditLog();
+      renderAuditLog();
+      showToast('Audit log cleared', 'ok');
+    });
+  });
+
   function updateCaseTag(){
     var text = 'Next case #' + String(STATE.caseSeq+1).padStart(4,'0');
     els.caseTag.textContent = text;
@@ -1370,7 +1566,7 @@
         '<div class="entry">' + thumb +
           '<div class="entry-body">' +
             badges +
-            '<div class="entry-top" style="margin-bottom:2px;"><span class="entry-time">'+dateStr+'</span><div style="display:flex;align-items:center;gap:8px;">'+investigatorSelectHtml+statusSelectHtml+'<button type="button" class="entry-del" data-del="'+e.id+'" aria-label="Delete entry" title="Delete">&times;</button></div></div>' +
+            '<div class="entry-top" style="margin-bottom:2px;"><span class="entry-time">'+dateStr+'</span><div style="display:flex;align-items:center;gap:8px;">'+investigatorSelectHtml+statusSelectHtml+'<button type="button" class="btn small ghost" data-edit="'+e.id+'" style="padding:4px 10px;">Edit</button><button type="button" class="entry-del" data-del="'+e.id+'" aria-label="Delete entry" title="Delete">&times;</button></div></div>' +
             '<div class="entry-player">'+escapeHtml(e.player)+'</div>' +
             '<div class="entry-meta">Issued by '+escapeHtml(e.admin)+(durText ? ' &middot; '+durText : '')+'</div>' +
             bgLine + bgNotesLine +
@@ -1404,6 +1600,7 @@
         saveLedger();
         renderLedger();
         showToast('Linked. Status changes will now update that message.', 'ok');
+        logAudit('Case linked', 'Case #'+entry.caseNo+' manually linked to a Discord message');
       });
     });
 
@@ -1419,11 +1616,14 @@
         renderLedger();
         if (!entry.discordMessageId){
           showToast('Status saved locally, but this entry has no linked Discord message to update', 'err');
+          logAudit('Status changed', 'Case #'+entry.caseNo+' status changed to <b>'+newStatus+'</b> (not synced to Discord)');
           return;
         }
         try{
           await editDiscordMessage(entry);
           showToast('Discord message updated', 'ok');
+          logAudit('Status changed', 'Case #'+entry.caseNo+' status changed to <b>'+newStatus+'</b>');
+          syncCaseToWorker(entry);
         }catch(err){
           entry.status = oldStatus;
           saveLedger();
@@ -1450,6 +1650,7 @@
         try{
           await editDiscordMessage(entry);
           showToast(newInv ? ('Assigned to '+newInv+' on Discord') : 'Unassigned on Discord', 'ok');
+          logAudit('Case assigned', 'Case #'+entry.caseNo+' assigned to <b>'+(newInv||'Unassigned')+'</b>');
         }catch(err){
           entry.investigator = oldInv;
           saveLedger();
@@ -1457,6 +1658,10 @@
           showToast(err.message || 'Could not update Discord', 'err');
         }
       });
+    });
+
+    els.ledgerList.querySelectorAll('[data-edit]').forEach(function(btn){
+      btn.addEventListener('click', function(){ openEditModal(btn.dataset.edit); });
     });
 
     els.ledgerList.querySelectorAll('[data-del]').forEach(function(btn){
@@ -1469,6 +1674,7 @@
           saveLedger();
           renderLedger();
           showToast('Entry deleted', 'ok');
+          logAudit('Case deleted', 'Deleted '+label);
         });
       });
     });
@@ -1479,10 +1685,12 @@
   els.clearAllBtn.addEventListener('click', function(){
     if (STATE.entries.length===0) return;
     askConfirm('Delete all '+STATE.entries.length+' entries from the local ledger? This only clears this browser\'s copy, not your Discord channel. Consider exporting a backup first.', function(){
+      var count = STATE.entries.length;
       STATE.entries = [];
       saveLedger();
       renderLedger();
       showToast('Ledger cleared', 'ok');
+      logAudit('Cases cleared', 'Cleared all '+count+' cases from the local ledger');
     });
   });
 
@@ -1543,6 +1751,11 @@
       fields.push({ name:'\u200b', value:'**Player background**' });
       fields = fields.concat(bgFields);
       if (entry.bgNotes) fields.push({ name:'Notes', value: entry.bgNotes });
+    }
+
+    if (STATE.settings.workerUrl){
+      var statusUrl = window.location.origin + window.location.pathname + '?case=' + entry.caseNo + '&w=' + encodeURIComponent(STATE.settings.workerUrl);
+      fields.push({ name:'View status of report', value: '[Click here to view full details](' + statusUrl + ')' });
     }
 
     var linkProofs = (entry.proofs||[]).filter(function(p){ return p.type==='link'; });
@@ -1647,6 +1860,8 @@
       renderLedger();
       showToast('Published to Discord', 'ok');
       msgSetter('Added to the ledger as case #' + entry.caseNo + '.', 'ok');
+      logAudit('Case filed', '<b>'+escapeHtml(entry.admin)+'</b> filed '+LABEL[entry.action]+' case #'+entry.caseNo+' for <b>'+escapeHtml(entry.player)+'</b>');
+      syncCaseToWorker(entry);
       onSuccess();
     }catch(err){
       STATE.caseSeq -= 1; try{ localStorage.setItem('modlog:caseSeq', String(STATE.caseSeq)); }catch(e){} updateCaseTag();
@@ -2122,6 +2337,62 @@
       els.annPublishBtn.disabled = false;
     }
   });
+  // ==================== Public case-status view ====================
+  function syncCaseToWorker(entry){
+    if (!STATE.settings.workerUrl || !STATE.settings.workerKey) return;
+    var publicData = {
+      action: entry.action, player: entry.player, reason: entry.reason,
+      status: entry.status, durationText: entry.durationText, expiresAt: entry.expiresAt,
+      appeal: entry.appeal, ts: entry.ts, serverName: STATE.settings.serverName,
+      ticketLink: STATE.settings.ticketLink
+    };
+    fetch(STATE.settings.workerUrl + '/case', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ adminKey: STATE.settings.workerKey, caseNo: entry.caseNo, data: publicData })
+    }).catch(function(){ /* best-effort; local ledger and Discord remain the source of truth */ });
+  }
+
+  function checkPublicView(){
+    var params = new URLSearchParams(location.search);
+    var caseId = params.get('case');
+    if (!caseId) return;
+    var workerUrl = params.get('w');
+    document.getElementById('adminWrap').style.display = 'none';
+    var pv = document.getElementById('publicView');
+    pv.classList.add('show');
+    var card = document.getElementById('publicCard');
+    if (!workerUrl){
+      card.innerHTML = '<div class="empty-state">This report link is not fully configured. Contact server staff.</div>';
+      return;
+    }
+    fetch(workerUrl + '/case?id=' + encodeURIComponent(caseId))
+      .then(function(res){
+        if (!res.ok) throw new Error(res.status===404 ? 'No report found with that case number.' : 'Could not load report status.');
+        return res.json();
+      })
+      .then(function(d){ renderPublicCase(caseId, d, card); })
+      .catch(function(err){
+        card.innerHTML = '<div class="empty-state">'+ escapeHtml(err.message || 'Could not load report status.') +'</div>';
+      });
+  }
+
+  function renderPublicCase(caseId, d, card){
+    var statusLabel = { active:'Active', pending:'Pending', solved:'Solved' }[d.status] || 'Active';
+    var actionLabel = { ban:'Ban', kick:'Kick', warn:'Warning', dban:'Discord ban', dkick:'Discord kick' }[d.action] || d.action;
+    var html = '<h1>Case #'+escapeHtml(caseId)+'</h1><div class="pc-sub">'+escapeHtml(d.serverName||'Server')+' &middot; Filed '+new Date(d.ts).toLocaleDateString()+'</div>';
+    html += '<div class="public-field"><label>Action</label><div class="val">'+actionLabel+'</div></div>';
+    html += '<div class="public-field"><label>Status</label><div class="val">'+statusLabel+'</div></div>';
+    if (d.durationText){
+      html += '<div class="public-field"><label>Duration</label><div class="val">'+escapeHtml(d.durationText)+(d.expiresAt ? ' (expires '+new Date(d.expiresAt).toLocaleString()+')' : '')+'</div></div>';
+    }
+    html += '<div class="public-field"><label>Reason</label><div class="val">'+escapeHtml(d.reason||'')+'</div></div>';
+    if (d.appeal==='yes' && d.ticketLink){
+      html += '<div class="public-appeal">Think this was a mistake? <a href="'+escapeHtml(d.ticketLink)+'" target="_blank" rel="noopener">Open a ticket to appeal</a>.</div>';
+    }
+    card.innerHTML = html;
+  }
+
+  checkPublicView();
 })();
 </script>
 </body>
