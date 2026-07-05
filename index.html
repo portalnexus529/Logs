@@ -368,6 +368,25 @@
         <button class="btn small" id="addWebhookBtn" style="margin-bottom:10px;">Add webhook</button>
         <div class="proof-list" id="webhookListUI"></div>
       </div>
+
+      <div class="settings-note" style="border-top:1px solid var(--border-soft);padding-top:12px;">
+        <label style="margin-bottom:8px;">Bot actions (real Discord bans/kicks + DMs)</label>
+        <div class="field">
+          <label style="font-size:11.5px;" for="workerUrlInput">Worker URL</label>
+          <input type="url" id="workerUrlInput" placeholder="https://your-worker.workers.dev">
+        </div>
+        <div class="two-col">
+          <div class="field">
+            <label style="font-size:11.5px;" for="workerKeyInput">Admin key</label>
+            <input type="text" id="workerKeyInput" placeholder="Your worker's admin key">
+          </div>
+          <div class="field">
+            <label style="font-size:11.5px;" for="guildIdInput">Server ID</label>
+            <input type="text" id="guildIdInput" placeholder="Your Discord server ID">
+          </div>
+        </div>
+        <p style="font-size:11.5px;color:var(--text-3);margin:4px 0 0;">These are stored only in this browser, same as your webhook URL. Never paste your actual bot token here or anywhere in this site.</p>
+      </div>
       <p class="settings-note">
         The webhook URL and ledger are stored in this browser only (localStorage) &mdash; a static site like Netlify has no shared database behind it, so each admin's device keeps its own local copy. Every publish still posts to your Discord channel, which stays the permanent shared record for the whole team. Use export/import to back up or move your local ledger between devices.
       </p>
@@ -556,6 +575,18 @@
               <button type="button" data-dv="yes" class="active">Yes</button>
               <button type="button" data-dv="no">No</button>
             </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <label for="discDmMessage" style="margin:0;">DM to user <span style="color:var(--text-3);font-weight:400;">(sent before the ban/kick executes)</span></label>
+            <button type="button" class="btn small ghost" id="discGenerateDmBtn" style="padding:4px 10px;">Generate from reason</button>
+          </div>
+          <textarea id="discDmMessage" placeholder="You will be notified with this message before the action is carried out"></textarea>
+          <div class="toggle-row" id="discSendDmToggle" style="margin-top:8px;">
+            <button type="button" data-sdm="yes" class="active">Send DM</button>
+            <button type="button" data-sdm="no">Skip DM</button>
           </div>
         </div>
 
@@ -752,7 +783,7 @@
 <script>
 (function(){
   var STATE = { action:'ban', durationMode:'perm', appeal:'yes', proofs:[], entries:[], caseSeq:0,
-    settings:{ serverName:'Community server', webhookUrl:'', ticketLink:'https://discord.gg/26UfjmMTA3', investigators:[], webhooks:[], announcementTemplates:[] } };
+    settings:{ serverName:'Community server', webhookUrl:'', ticketLink:'https://discord.gg/26UfjmMTA3', investigators:[], webhooks:[], announcementTemplates:[], workerUrl:'', workerKey:'', guildId:'' } };
 
   var els = {};
   ['gearBtn','settingsPanel','serverNameInput','webhookInput','ticketLinkInput','saveSettingsBtn','testWebhookBtn','exportBtn','importBtn','importFile',
@@ -772,7 +803,9 @@
    'annThumbDropzone','annThumbPreview','annThumbImg','annThumbName','annThumbRemove','annThumbFile','annThumbUpload','annThumbLink','annThumbUrlInput',
    'annImageDropzone','annImagePreview','annImageImg','annImageName','annImageRemove','annImageFile','annImageUpload','annImageLink','annImageUrlInput',
    'annFooter','annTimestampToggle','annPingType','annRoleField','annRoleId','annPublishBtn','annFormMsg',
-   'webhookNameInput','webhookUrlInput','addWebhookBtn','webhookListUI'
+   'webhookNameInput','webhookUrlInput','addWebhookBtn','webhookListUI',
+   'workerUrlInput','workerKeyInput','guildIdInput',
+   'discDmMessage','discGenerateDmBtn','discSendDmToggle'
   ].forEach(function(id){ els[id] = document.getElementById(id); });
 
   var LABEL = { ban:'Ban', kick:'Kick', warn:'Warning', dban:'Discord ban', dkick:'Discord kick' };
@@ -952,6 +985,9 @@
     els.webhookInput.value = STATE.settings.webhookUrl || '';
     els.ticketLinkInput.value = STATE.settings.ticketLink || '';
     els.serverNameOut.textContent = STATE.settings.serverName || 'Community server';
+    els.workerUrlInput.value = STATE.settings.workerUrl || '';
+    els.workerKeyInput.value = STATE.settings.workerKey || '';
+    els.guildIdInput.value = STATE.settings.guildId || '';
     if (!STATE.settings.investigators) STATE.settings.investigators = [];
     if (!STATE.settings.webhooks) STATE.settings.webhooks = [];
     if (!STATE.settings.announcementTemplates) STATE.settings.announcementTemplates = [];
@@ -1044,6 +1080,9 @@
     STATE.settings.webhookUrl = els.webhookInput.value.trim();
     STATE.settings.ticketLink = els.ticketLinkInput.value.trim();
     els.serverNameOut.textContent = STATE.settings.serverName;
+    STATE.settings.workerUrl = els.workerUrlInput.value.trim().replace(/\/$/,'');
+    STATE.settings.workerKey = els.workerKeyInput.value.trim();
+    STATE.settings.guildId = els.guildIdInput.value.trim();
     try{
       localStorage.setItem('modlog:settings', JSON.stringify(STATE.settings));
       els.settingsStatus.textContent = 'Saved.';
@@ -1648,6 +1687,46 @@
     els.discLinkInlineInput.value=''; els.discLinkInlineRow.classList.remove('show');
   });
 
+  var DISC_SEND_DM = 'yes';
+  els.discSendDmToggle.addEventListener('click', function(e){
+    var b = e.target.closest('button[data-sdm]'); if (!b) return;
+    DISC_SEND_DM = b.dataset.sdm;
+    els.discSendDmToggle.querySelectorAll('button').forEach(function(x){ x.classList.toggle('active', x===b); });
+  });
+
+  els.discGenerateDmBtn.addEventListener('click', function(){
+    var action = DISC_STATE.action;
+    var reason = els.discReasonInput.value.trim() || '(no reason given)';
+    var server = STATE.settings.serverName || 'the server';
+    var verb = action==='dban' ? 'banned' : 'kicked';
+    var msg = 'You have been ' + verb + ' from ' + server + '.\n\nReason: ' + reason;
+    if (action==='dban' && DISC_STATE.appeal==='yes' && STATE.settings.ticketLink){
+      msg += '\n\nIf you believe this was a mistake, you can appeal here: ' + STATE.settings.ticketLink;
+    }
+    els.discDmMessage.value = msg;
+  });
+
+  async function callBotAction(action, userId, reason, dmMessage){
+    var workerUrl = STATE.settings.workerUrl;
+    var workerKey = STATE.settings.workerKey;
+    var guildId = STATE.settings.guildId;
+    if (!workerUrl || !workerKey || !guildId){
+      throw new Error('Bot action settings are not configured. Open Settings and fill in Worker URL, admin key, and Server ID.');
+    }
+    var endpoint = workerUrl + (action==='dban' ? '/ban' : '/kick');
+    var res = await fetch(endpoint, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ adminKey: workerKey, guildId: guildId, userId: userId, reason: reason, dmMessage: dmMessage || undefined })
+    });
+    var data;
+    try{ data = await res.json(); }catch(e){ data = {}; }
+    if (!res.ok){
+      throw new Error(data.error ? (data.error + (data.detail ? ': '+data.detail : '')) : ('Bot action failed (status '+res.status+')'));
+    }
+    return data;
+  }
+
   els.discPublishBtn.addEventListener('click', async function(){
     var player = els.discPlayerName.value.trim();
     var userId = els.discUserId.value.trim();
@@ -1656,6 +1735,7 @@
     var action = DISC_STATE.action;
 
     if (!player){ setDiscFormMsg('Add the Discord username.', 'err'); return; }
+    if (!userId){ setDiscFormMsg('Add the Discord user ID — required to actually ban/kick them.', 'err'); return; }
     if (!reason){ setDiscFormMsg('Add a reason for this action.', 'err'); return; }
     if (!admin){ setDiscFormMsg('Add the admin filing this report.', 'err'); return; }
     if (!STATE.settings.webhookUrl){ setDiscFormMsg('No Discord webhook saved yet. Open settings first.', 'err'); return; }
@@ -1686,12 +1766,31 @@
 
     var openCase = findMatches(player, userId).find(function(m){ return (m.status||'active')==='active'; });
 
-    function proceed(){
+    async function proceed(){
+      els.discPublishBtn.disabled = true;
+      setDiscFormMsg((action==='dban'?'Banning':'Kicking')+' on Discord...', '');
+      var dmMessage = DISC_SEND_DM==='yes' ? els.discDmMessage.value.trim() : '';
+
+      var botResult;
+      try{
+        botResult = await callBotAction(action, userId, reason, dmMessage);
+      }catch(err){
+        setDiscFormMsg(err.message || 'Bot action failed.', 'err');
+        showToast(err.message || 'Bot action failed', 'err');
+        els.discPublishBtn.disabled = false;
+        return;
+      }
+
       entry.caseNo = nextCaseNumber();
       publishEntry(entry, els.discPublishBtn, setDiscFormMsg, function(){
         els.discPlayerName.value=''; els.discUserId.value=''; els.discReasonInput.value='';
-        els.discInternalNotes.value=''; els.discDurationValue.value='';
+        els.discInternalNotes.value=''; els.discDurationValue.value=''; els.discDmMessage.value='';
         DISC_STATE.proofs = []; renderDiscProofList();
+
+        var dmNote = '';
+        if (dmMessage){ dmNote = botResult.dmSent ? ' DM delivered.' : (' DM could not be sent' + (botResult.dmError ? (' ('+botResult.dmError+')') : '') + '.'); }
+        setDiscFormMsg('User '+(action==='dban'?'banned':'kicked')+' on Discord and logged as case #'+entry.caseNo+'.'+dmNote, 'ok');
+        showToast((action==='dban'?'Banned':'Kicked')+' on Discord'+(dmMessage && !botResult.dmSent ? ' (DM failed)' : ''), 'ok');
       });
     }
 
