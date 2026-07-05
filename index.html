@@ -236,7 +236,10 @@
   .confirm-overlay.show{display:flex;}
   .confirm-box{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px;max-width:360px;width:100%;}
   .confirm-box p{font-size:13.5px;color:var(--text);line-height:1.6;margin:0 0 16px;}
-  .confirm-actions{display:flex;gap:10px;justify-content:flex-end;}
+  .confirm-actions{display:flex;gap:10px;justify-content:flex-end;}  .status-select{width:auto;padding:4px 8px;font-size:11px;font-weight:600;border-radius:20px;border:1px solid var(--border);background:var(--panel-2);color:var(--text-2);}
+  .status-select.active{background:rgba(91,141,239,0.12);border-color:var(--accent);color:var(--accent);}
+  .status-select.pending{background:var(--warn-bg);border-color:var(--warn);color:#fde047;}
+  .status-select.solved{background:rgba(74,222,128,0.12);border-color:#4ade80;color:#86efac;}
 </style>
 </head>
 <body>
@@ -700,11 +703,17 @@
       }).join('');
       var proofBlock = proofs.length ? '<div class="entry-proofs">'+proofChips+'</div>' : '';
 
+      var status = e.status || 'active';
+      var statusOptions = ['active','pending','solved'].map(function(s){
+        return '<option value="'+s+'"'+(s===status?' selected':'')+'>'+(s.charAt(0).toUpperCase()+s.slice(1))+'</option>';
+      }).join('');
+      var statusSelectHtml = '<select class="status-select '+status+'" data-status="'+e.id+'">'+statusOptions+'</select>';
+
       return (
         '<div class="entry">' + thumb +
           '<div class="entry-body">' +
             badges +
-            '<div class="entry-top" style="margin-bottom:2px;"><span class="entry-time">'+dateStr+'</span><button type="button" class="entry-del" data-del="'+e.id+'" aria-label="Delete entry" title="Delete">&times;</button></div>' +
+            '<div class="entry-top" style="margin-bottom:2px;"><span class="entry-time">'+dateStr+'</span><div style="display:flex;align-items:center;gap:8px;">'+statusSelectHtml+'<button type="button" class="entry-del" data-del="'+e.id+'" aria-label="Delete entry" title="Delete">&times;</button></div></div>' +
             '<div class="entry-player">'+escapeHtml(e.player)+'</div>' +
             '<div class="entry-meta">Issued by '+escapeHtml(e.admin)+(durText ? ' &middot; '+durText : '')+'</div>' +
             bgLine + bgNotesLine +
@@ -715,6 +724,32 @@
         '</div>'
       );
     }).join('');
+
+    els.ledgerList.querySelectorAll('[data-status]').forEach(function(sel){
+      sel.addEventListener('change', async function(){
+        var id = sel.dataset.status;
+        var entry = STATE.entries.find(function(x){ return x.id===id; });
+        if (!entry) return;
+        var newStatus = sel.value;
+        var oldStatus = entry.status || 'active';
+        entry.status = newStatus;
+        saveLedger();
+        renderLedger();
+        if (!entry.discordMessageId){
+          showToast('Status saved locally, but this entry has no linked Discord message to update', 'err');
+          return;
+        }
+        try{
+          await editDiscordMessage(entry);
+          showToast('Discord message updated', 'ok');
+        }catch(err){
+          entry.status = oldStatus;
+          saveLedger();
+          renderLedger();
+          showToast(err.message || 'Could not update Discord', 'err');
+        }
+      });
+    });
 
     els.ledgerList.querySelectorAll('[data-del]').forEach(function(btn){
       btn.addEventListener('click', function(){
@@ -755,10 +790,9 @@
 
   var SCOPE_LABEL = { game:'Game only', discord:'Discord only', both:'Game and Discord' };
 
-  async function postToDiscord(entry){
-    var webhook = STATE.settings.webhookUrl;
-    if (!webhook) throw new Error('No webhook URL saved. Open settings and add one.');
+  var STATUS_LABEL = { active:'\ud83d\udfe2 Active', pending:'\ud83d\udfe1 Pending', solved:'\u2705 Solved' };
 
+  function buildFields(entry){
     var fields = [
       { name:'Player', value: '**'+(entry.player||'Unknown')+'**', inline:true },
       { name:'SteamID64', value: entry.steamId ? '`'+entry.steamId+'`' : '—', inline:true },
@@ -770,6 +804,8 @@
       fields.push({ name:'Ban scope', value: '**'+(SCOPE_LABEL[entry.banScope] || 'Game only')+'**', inline:true });
       fields.push({ name:'Appeal eligible', value: entry.appeal==='yes' ? '**Yes**' : '**No**', inline:true });
     }
+
+    fields.push({ name:'Status', value: STATUS_LABEL[entry.status] || STATUS_LABEL.active, inline:true });
 
     fields.push({ name:'Reason', value: '> ' + (entry.reason || 'No reason given').replace(/\n/g, '\n> ') });
 
@@ -786,7 +822,7 @@
       if (entry.bgNotes) fields.push({ name:'Notes', value: entry.bgNotes });
     }
 
-    var linkProofs = entry.proofs.filter(function(p){ return p.type==='link'; });
+    var linkProofs = (entry.proofs||[]).filter(function(p){ return p.type==='link'; });
     if (linkProofs.length){
       fields.push({ name:'Proof links', value: linkProofs.map(function(p,i){ return (i+1)+'. '+p.url; }).join('\n') });
     }
@@ -795,15 +831,26 @@
       fields.push({ name:'Think this was a mistake?', value: 'Open a ticket to appeal: ' + STATE.settings.ticketLink });
     }
 
-    var mainEmbed = {
+    return fields;
+  }
+
+  function buildMainEmbed(entry){
+    return {
       title: LABEL[entry.action] + ' issued \u2014 Case #' + entry.caseNo,
       url: STATE.settings.ticketLink || undefined,
       color: COLOR_HEX[entry.action],
-      fields: fields,
+      fields: buildFields(entry),
       footer:{ text: STATE.settings.serverName || 'Community server' },
       timestamp: new Date(entry.ts).toISOString()
     };
+  }
 
+  async function postToDiscord(entry){
+    var webhook = STATE.settings.webhookUrl;
+    if (!webhook) throw new Error('No webhook URL saved. Open settings and add one.');
+
+    var mainEmbed = buildMainEmbed(entry);
+    var linkProofs = entry.proofs.filter(function(p){ return p.type==='link'; });
     var imageProofs = entry.proofs.filter(function(p){ return p.type==='image'; });
 
     if (imageProofs.length){
@@ -821,12 +868,31 @@
       var urls = (data.attachments||[]).map(function(a){ return a.url; });
       var resultProofs = imageProofs.map(function(p, i){ return { type:'image', url: urls[i] || '' }; })
         .concat(linkProofs.map(function(p){ return { type:'link', url:p.url }; }));
-      return resultProofs;
+      return { proofs: resultProofs, messageId: data.id };
     } else {
       var res2 = await fetch(webhook + '?wait=true', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ embeds:[mainEmbed] }) });
       if (!res2.ok) throw new Error('Discord rejected the message (status '+res2.status+'). Check the webhook URL.');
-      return linkProofs.map(function(p){ return { type:'link', url:p.url }; });
+      var data2 = await res2.json();
+      return { proofs: linkProofs.map(function(p){ return { type:'link', url:p.url }; }), messageId: data2.id };
     }
+  }
+
+  async function editDiscordMessage(entry){
+    var webhook = STATE.settings.webhookUrl;
+    if (!webhook) throw new Error('No webhook URL saved.');
+    if (!entry.discordMessageId) throw new Error('This entry has no linked Discord message to update.');
+
+    var mainEmbed = buildMainEmbed(entry);
+    var imageEmbeds = (entry.proofs||[])
+      .filter(function(p){ return p.type==='image' && p.url; })
+      .map(function(p){ return { color: COLOR_HEX[entry.action], image:{ url:p.url } }; });
+
+    var res = await fetch(webhook + '/messages/' + entry.discordMessageId, {
+      method:'PATCH',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ embeds: [mainEmbed].concat(imageEmbeds) })
+    });
+    if (!res.ok) throw new Error('Discord could not update that message (status '+res.status+').');
   }
 
   els.testWebhookBtn.addEventListener('click', async function(){
@@ -877,6 +943,8 @@
       bgNotes: els.bgNotes.value.trim(),
       internalNotes: els.internalNotes.value.trim(),
       proofs: STATE.proofs.slice(),
+      status: 'active',
+      discordMessageId: null,
       ts: Date.now()
     };
     entry.caseNo = nextCaseNumber();
@@ -885,8 +953,9 @@
     setFormMsg('Publishing...', '');
 
     try{
-      var resultProofs = await postToDiscord(entry);
-      entry.proofs = resultProofs;
+      var result = await postToDiscord(entry);
+      entry.proofs = result.proofs;
+      entry.discordMessageId = result.messageId;
       STATE.entries.push(entry);
       saveLedger();
       renderLedger();
