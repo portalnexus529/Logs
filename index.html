@@ -1054,7 +1054,7 @@
     }
 
     if ((entry.action!=='ban' || entry.appeal==='yes') && STATE.settings.ticketLink){
-      fields.push({ name:'Think this was a mistake?', value: 'Open a ticket to appeal: ' + STATE.settings.ticketLink });
+      fields.push({ name:'Think this was a mistake?', value: 'Open a ticket to dispute this: ' + STATE.settings.ticketLink });
     }
 
     return fields;
@@ -1081,11 +1081,12 @@
 
     if (imageProofs.length){
       var fd = new FormData();
+      var safeNames = imageProofs.map(function(p){ return p.file.name.replace(/\s+/g,'_'); });
+      mainEmbed.image = { url: 'attachment://' + safeNames[0] };
       var embeds = [mainEmbed];
       imageProofs.forEach(function(p, i){
-        var safeName = p.file.name.replace(/\s+/g,'_');
-        fd.append('files['+i+']', p.file, safeName);
-        embeds.push({ color: COLOR_HEX[entry.action], image:{ url:'attachment://'+safeName } });
+        fd.append('files['+i+']', p.file, safeNames[i]);
+        if (i>0) embeds.push({ color: COLOR_HEX[entry.action], image:{ url:'attachment://'+safeNames[i] } });
       });
       fd.append('payload_json', JSON.stringify({ embeds: embeds }));
       var res = await fetch(webhook + '?wait=true', { method:'POST', body: fd });
@@ -1109,9 +1110,9 @@
     if (!entry.discordMessageId) throw new Error('This entry has no linked Discord message to update.');
 
     var mainEmbed = buildMainEmbed(entry);
-    var imageEmbeds = (entry.proofs||[])
-      .filter(function(p){ return p.type==='image' && p.url; })
-      .map(function(p){ return { color: COLOR_HEX[entry.action], image:{ url:p.url } }; });
+    var imgProofs = (entry.proofs||[]).filter(function(p){ return p.type==='image' && p.url; });
+    if (imgProofs.length) mainEmbed.image = { url: imgProofs[0].url };
+    var imageEmbeds = imgProofs.slice(1).map(function(p){ return { color: COLOR_HEX[entry.action], image:{ url:p.url } }; });
 
     var res = await fetch(webhook + '/messages/' + entry.discordMessageId, {
       method:'PATCH',
