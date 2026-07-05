@@ -246,6 +246,18 @@
   .link-msg-inline{display:none;gap:6px;margin-top:6px;}
   .link-msg-inline.show{display:flex;}
   .link-msg-inline input{flex:1;font-size:12px;padding:6px 8px;}
+
+  .history-box{display:none;font-size:12px;color:var(--text-2);background:var(--field);border:1px solid var(--border-soft);border-radius:var(--radius-sm);padding:8px 10px;margin:-6px 0 14px;line-height:1.6;}
+  .history-box.show{display:block;}
+  .history-box.warn{border-color:var(--kick);background:var(--kick-bg);color:#fdba74;}
+  .history-box b{color:var(--text);}
+
+  .template-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
+  .template-chip{background:var(--field);border:1px solid var(--border);color:var(--text-2);border-radius:20px;padding:5px 11px;font-size:11.5px;cursor:pointer;}
+  .template-chip:hover{border-color:var(--text-3);color:var(--text);}
+
+  .badge.expiry-ok{background:var(--panel);color:var(--text-2);border:1px solid var(--border);}
+  .badge.expiry-due{background:var(--ban-bg);color:#fca5a5;}
 </style>
 </head>
 <body>
@@ -318,6 +330,8 @@
           </div>
         </div>
 
+        <div class="history-box" id="historyBox"></div>
+
         <details class="bg-section">
           <summary>Player background (optional)</summary>
           <div class="bg-body">
@@ -354,6 +368,7 @@
 
         <div class="field">
           <label for="reasonInput">Reason</label>
+          <div class="template-row" id="templateRow"></div>
           <textarea id="reasonInput" placeholder="What happened, which rule was broken"></textarea>
         </div>
 
@@ -468,8 +483,8 @@
   var els = {};
   ['gearBtn','settingsPanel','serverNameInput','webhookInput','ticketLinkInput','saveSettingsBtn','testWebhookBtn','exportBtn','importBtn','importFile',
    'settingsStatus','serverNameOut','actionToggle','durationBlock','durationToggle','durationRow','durationValue','durationUnit',
-   'playerName','steamId','joinTime','acctCreated','vacBans','gameBans','daysSinceBan','bgNotes',
-   'reasonInput','resolutionBlock','scopeField','banScope','appealToggle',
+   'playerName','steamId','historyBox','joinTime','acctCreated','vacBans','gameBans','daysSinceBan','bgNotes',
+   'reasonInput','templateRow','resolutionBlock','scopeField','banScope','appealToggle',
    'addImageBtn','addLinkBtn','linkInlineRow','linkInlineInput','linkInlineAdd','linkInlineCancel','fileInput','proofList',
    'internalNotes','adminInput','publishBtn','formMsg','searchInput','filterSelect','ledgerList','clearAllBtn',
    'statBan','statKick','statWarn','toast','toastMsg','caseTag','confirmOverlay','confirmMsg','confirmCancel','confirmOk'
@@ -526,11 +541,53 @@
     els.durationRow.style.display = (STATE.durationMode==='temp') ? 'grid' : 'none';
   });
 
-  els.appealToggle.addEventListener('click', function(e){
-    var b = e.target.closest('button[data-v]'); if (!b) return;
-    STATE.appeal = b.dataset.v;
-    els.appealToggle.querySelectorAll('button').forEach(function(x){ x.classList.toggle('active', x===b); });
+  // ---------- reason templates ----------
+  var REASON_TEMPLATES = ['Cheating / hacking','Combat logging','Duping','Teaming','Base or loot exploiting','KOS rule violation','Harassment / toxicity','Hate speech / slurs','Griefing','Voice or chat rule violation'];
+  els.templateRow.innerHTML = REASON_TEMPLATES.map(function(t){ return '<span class="template-chip" data-tpl="'+escapeHtml(t)+'">'+escapeHtml(t)+'</span>'; }).join('');
+  els.templateRow.addEventListener('click', function(e){
+    var chip = e.target.closest('[data-tpl]'); if (!chip) return;
+    var current = els.reasonInput.value.trim();
+    els.reasonInput.value = current ? (current + '; ' + chip.dataset.tpl) : chip.dataset.tpl;
+    els.reasonInput.focus();
   });
+
+  // ---------- player history lookup ----------
+  function findMatches(){
+    var name = els.playerName.value.trim().toLowerCase();
+    var sid = els.steamId.value.trim();
+    if (!name && !sid) return [];
+    return STATE.entries.filter(function(e){
+      if (sid && e.steamId && e.steamId===sid) return true;
+      if (name && e.player && e.player.trim().toLowerCase()===name) return true;
+      return false;
+    });
+  }
+
+  function renderHistoryBox(){
+    var matches = findMatches();
+    if (matches.length===0){ els.historyBox.classList.remove('show','warn'); els.historyBox.innerHTML=''; return; }
+    var counts = { ban:0, kick:0, warn:0 };
+    matches.forEach(function(m){ counts[m.action]++; });
+    var sorted = matches.slice().sort(function(a,b){ return b.ts-a.ts; });
+    var last = sorted[0];
+    var lastDate = new Date(last.ts).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
+    var activeOnes = matches.filter(function(m){ return (m.status||'active')==='active'; });
+
+    var html = '<b>'+matches.length+' previous case(s)</b> for this player &middot; '+counts.ban+' ban(s), '+counts.kick+' kick(s), '+counts.warn+' warning(s)'
+      + '<br>Last: '+escapeHtml(last.reason)+' &middot; '+lastDate+' &middot; Case #'+last.caseNo;
+
+    if (activeOnes.length){
+      var a = activeOnes[0];
+      html += '<br><b>Already has an open case:</b> #'+a.caseNo+' ('+LABEL[a.action]+'), filed '+new Date(a.ts).toLocaleDateString(undefined,{month:'short',day:'numeric'});
+      els.historyBox.classList.add('warn');
+    } else {
+      els.historyBox.classList.remove('warn');
+    }
+    els.historyBox.innerHTML = html;
+    els.historyBox.classList.add('show');
+  }
+  els.playerName.addEventListener('input', renderHistoryBox);
+  els.steamId.addEventListener('input', renderHistoryBox);
 
   // ---------- proof list ----------
   function renderProofList(){
@@ -688,6 +745,16 @@
       if (e.caseNo) badges += '<span class="badge scope">Case #'+e.caseNo+'</span>';
       if (e.action==='ban' && e.banScope) badges += '<span class="badge scope">'+({game:'Game ban',discord:'Discord ban',both:'Game + Discord'})[e.banScope]+'</span>';
       if (e.action==='ban' && e.appeal) badges += '<span class="badge '+(e.appeal==='yes'?'appeal-yes':'appeal-no')+'">'+(e.appeal==='yes'?'Appealable':'Not appealable')+'</span>';
+      if (e.action==='ban' && e.expiresAt){
+        var msLeft = e.expiresAt - Date.now();
+        if (msLeft <= 0){
+          badges += '<span class="badge expiry-due">Expired '+Math.ceil(-msLeft/86400000)+'d ago</span>';
+        } else {
+          var daysLeft = msLeft/86400000;
+          var label = daysLeft >= 1 ? Math.ceil(daysLeft)+'d left' : Math.ceil(msLeft/3600000)+'h left';
+          badges += '<span class="badge expiry-ok">Expires in '+label+'</span>';
+        }
+      }
       badges += '</div>';
 
       var bgParts = [];
@@ -829,6 +896,14 @@
     return v + ' ' + label.toLowerCase();
   }
 
+  var UNIT_MS = { minutes:60000, hours:3600000, days:86400000 };
+  function durationMs(){
+    if (STATE.action!=='ban' || STATE.durationMode==='perm') return null;
+    var v = Number(els.durationValue.value);
+    if (!v) return null;
+    return v * (UNIT_MS[els.durationUnit.value] || UNIT_MS.days);
+  }
+
   var SCOPE_LABEL = { game:'Game only', discord:'Discord only', both:'Game and Discord' };
 
   var STATUS_LABEL = { active:'\ud83d\udfe2 Active', pending:'\ud83d\udfe1 Pending', solved:'\u2705 Solved' };
@@ -841,7 +916,11 @@
     ];
 
     if (entry.action==='ban'){
-      fields.push({ name:'Duration', value: '**'+(entry.durationText || 'Permanent')+'**', inline:true });
+      var durVal = '**'+(entry.durationText || 'Permanent')+'**';
+      if (entry.expiresAt){
+        durVal += ' (expires ' + new Date(entry.expiresAt).toLocaleString(undefined,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) + ')';
+      }
+      fields.push({ name:'Duration', value: durVal, inline:true });
       fields.push({ name:'Ban scope', value: '**'+(SCOPE_LABEL[entry.banScope] || 'Game only')+'**', inline:true });
       fields.push({ name:'Appeal eligible', value: entry.appeal==='yes' ? '**Yes**' : '**No**', inline:true });
     }
@@ -951,6 +1030,34 @@
     setTimeout(function(){ els.settingsStatus.textContent=''; }, 3200);
   });
 
+  async function doPublish(entry){
+    els.publishBtn.disabled = true;
+    setFormMsg('Publishing...', '');
+
+    try{
+      var result = await postToDiscord(entry);
+      entry.proofs = result.proofs;
+      entry.discordMessageId = result.messageId;
+      STATE.entries.push(entry);
+      saveLedger();
+      renderLedger();
+      showToast('Published to Discord', 'ok');
+      setFormMsg('Added to the ledger as case #' + entry.caseNo + '.', 'ok');
+
+      els.playerName.value=''; els.steamId.value=''; els.reasonInput.value='';
+      els.joinTime.value=''; els.acctCreated.value=''; els.vacBans.value=''; els.gameBans.value=''; els.daysSinceBan.value=''; els.bgNotes.value='';
+      els.internalNotes.value=''; els.durationValue.value='';
+      STATE.proofs = []; renderProofList();
+      renderHistoryBox();
+    }catch(err){
+      STATE.caseSeq -= 1; try{ localStorage.setItem('modlog:caseSeq', String(STATE.caseSeq)); }catch(e){} updateCaseTag();
+      setFormMsg(err.message || 'Could not publish. Try again.', 'err');
+      showToast(err.message || 'Publish failed', 'err');
+    }finally{
+      els.publishBtn.disabled = false;
+    }
+  }
+
   els.publishBtn.addEventListener('click', async function(){
     var player = els.playerName.value.trim();
     var reason = els.reasonInput.value.trim();
@@ -974,6 +1081,7 @@
       action: action, player: player, steamId: els.steamId.value.trim(),
       reason: reason, admin: admin,
       durationText: action==='ban' ? durText : null,
+      expiresAt: action==='ban' ? (function(){ var ms = durationMs(); return ms ? Date.now()+ms : null; })() : null,
       banScope: action==='ban' ? els.banScope.value : null,
       appeal: action==='ban' ? STATE.appeal : null,
       joinTime: els.joinTime.value.trim(),
@@ -988,31 +1096,18 @@
       discordMessageId: null,
       ts: Date.now()
     };
-    entry.caseNo = nextCaseNumber();
 
-    els.publishBtn.disabled = true;
-    setFormMsg('Publishing...', '');
+    var openCase = findMatches().find(function(m){ return (m.status||'active')==='active'; });
 
-    try{
-      var result = await postToDiscord(entry);
-      entry.proofs = result.proofs;
-      entry.discordMessageId = result.messageId;
-      STATE.entries.push(entry);
-      saveLedger();
-      renderLedger();
-      showToast('Published to Discord', 'ok');
-      setFormMsg('Added to the ledger as case #' + entry.caseNo + '.', 'ok');
+    function proceed(){
+      entry.caseNo = nextCaseNumber();
+      doPublish(entry);
+    }
 
-      els.playerName.value=''; els.steamId.value=''; els.reasonInput.value='';
-      els.joinTime.value=''; els.acctCreated.value=''; els.vacBans.value=''; els.gameBans.value=''; els.daysSinceBan.value=''; els.bgNotes.value='';
-      els.internalNotes.value=''; els.durationValue.value='';
-      STATE.proofs = []; renderProofList();
-    }catch(err){
-      STATE.caseSeq -= 1; try{ localStorage.setItem('modlog:caseSeq', String(STATE.caseSeq)); }catch(e){} updateCaseTag();
-      setFormMsg(err.message || 'Could not publish. Try again.', 'err');
-      showToast(err.message || 'Publish failed', 'err');
-    }finally{
-      els.publishBtn.disabled = false;
+    if (openCase){
+      askConfirm('This player already has an open case (#'+openCase.caseNo+', '+LABEL[openCase.action]+'). Publish this report anyway?', proceed);
+    } else {
+      proceed();
     }
   });
 
