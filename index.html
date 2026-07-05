@@ -304,9 +304,45 @@
   .status-select{font-size:13px!important;padding:6px 11px!important;font-weight:700!important;}
   .proof-item .label{font-size:13.5px!important;}
   .confirm-box p{font-size:15px!important;}
+
+  .page-shell{display:grid;grid-template-columns:1fr minmax(0,1180px) 1fr;gap:24px;max-width:1900px;margin:0 auto;align-items:start;}
+  .side-panel{position:sticky;top:28px;width:100%;max-width:280px;}
+  .side-panel.side-left{justify-self:end;}
+  .side-panel.side-right{justify-self:start;}
+  @media (max-width:1550px){
+    .page-shell{grid-template-columns:1fr;max-width:none;}
+    .side-panel{display:none;}
+  }
+  .side-stats{display:flex;flex-direction:column;gap:12px;}
+  .side-stat-row{display:flex;justify-content:space-between;align-items:center;font-size:13.5px;color:var(--text-2);}
+  .side-stat-row b{font-size:19px;font-weight:700;color:var(--text);}
+  .recent-feed{display:flex;flex-direction:column;gap:10px;max-height:70vh;overflow-y:auto;}
+  .recent-item{border-left:2px solid var(--border);padding:6px 0 6px 10px;}
+  .recent-item .rt{font-size:10.5px;color:var(--text-3);}
+  .recent-item .rp{font-size:13.5px;font-weight:600;color:var(--text);margin:2px 0;}
+  .recent-item .ra{font-size:11.5px;color:var(--text-2);}
+  .recent-item.ban{border-left-color:var(--ban);}
+  .recent-item.kick{border-left-color:var(--kick);}
+  .recent-item.warn{border-left-color:var(--warn);}
+  .recent-item.dban, .recent-item.dkick{border-left-color:var(--discord);}
 </style>
 </head>
 <body>
+<div class="page-shell">
+
+  <aside class="side-panel side-left">
+    <div class="panel">
+      <div class="panel-head"><h2>Overview</h2></div>
+      <div class="panel-body side-stats">
+        <div class="side-stat-row"><span>Open cases</span><b id="ovOpen">0</b></div>
+        <div class="side-stat-row"><span>Pending review</span><b id="ovPending">0</b></div>
+        <div class="side-stat-row"><span>Solved</span><b id="ovSolved">0</b></div>
+        <div class="side-stat-row"><span>Filed this week</span><b id="ovWeek">0</b></div>
+        <div class="side-stat-row"><span>Total logged</span><b id="ovTotal">0</b></div>
+      </div>
+    </div>
+  </aside>
+
 <div class="wrap">
 
   <div class="topbar">
@@ -765,6 +801,19 @@
   </div>
 </div>
 
+  <aside class="side-panel side-right">
+    <div class="panel">
+      <div class="panel-head"><h2>Recent activity</h2></div>
+      <div class="panel-body">
+        <div class="recent-feed" id="recentFeed">
+          <div class="empty-state">Nothing logged yet.</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+</div>
+
 <div class="toast" id="toast">
   <svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
   <span id="toastMsg"></span>
@@ -805,7 +854,8 @@
    'annFooter','annTimestampToggle','annPingType','annRoleField','annRoleId','annPublishBtn','annFormMsg',
    'webhookNameInput','webhookUrlInput','addWebhookBtn','webhookListUI',
    'workerUrlInput','workerKeyInput','guildIdInput',
-   'discDmMessage','discGenerateDmBtn','discSendDmToggle'
+   'discDmMessage','discGenerateDmBtn','discSendDmToggle',
+   'ovOpen','ovPending','ovSolved','ovWeek','ovTotal','recentFeed'
   ].forEach(function(id){ els[id] = document.getElementById(id); });
 
   var LABEL = { ban:'Ban', kick:'Kick', warn:'Warning', dban:'Discord ban', dkick:'Discord kick' };
@@ -1158,8 +1208,39 @@
     els.statDban.textContent=db; els.statDkick.textContent=dk;
   }
 
+  function renderSidePanels(){
+    var open=0, pending=0, solved=0, week=0;
+    var weekAgo = Date.now() - 7*86400000;
+    STATE.entries.forEach(function(e){
+      var st = e.status || 'active';
+      if (st==='active') open++; else if (st==='pending') pending++; else if (st==='solved') solved++;
+      if (e.ts >= weekAgo) week++;
+    });
+    els.ovOpen.textContent = open;
+    els.ovPending.textContent = pending;
+    els.ovSolved.textContent = solved;
+    els.ovWeek.textContent = week;
+    els.ovTotal.textContent = STATE.entries.length;
+
+    var recent = STATE.entries.slice().sort(function(a,b){ return b.ts-a.ts; }).slice(0, 10);
+    if (recent.length===0){
+      els.recentFeed.innerHTML = '<div class="empty-state">Nothing logged yet.</div>';
+      return;
+    }
+    els.recentFeed.innerHTML = recent.map(function(e){
+      var d = new Date(e.ts);
+      var timeStr = d.toLocaleDateString(undefined,{month:'short',day:'numeric'}) + ' \u00b7 ' + d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+      return '<div class="recent-item '+e.action+'">' +
+        '<div class="rt">'+timeStr+' &middot; '+LABEL[e.action]+'</div>' +
+        '<div class="rp">'+escapeHtml(e.player)+'</div>' +
+        '<div class="ra">'+escapeHtml(e.admin)+' &middot; Case #'+e.caseNo+'</div>' +
+      '</div>';
+    }).join('');
+  }
+
   function renderLedger(){
     updateStats();
+    renderSidePanels();
     var q = els.searchInput.value.trim().toLowerCase();
     var f = els.filterSelect.value;
     var list = STATE.entries.slice().sort(function(a,b){ return b.ts - a.ts; });
