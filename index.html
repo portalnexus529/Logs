@@ -165,7 +165,7 @@
   .entry{display:flex;gap:12px;border:1px solid var(--border-soft);background:var(--panel-2);border-radius:var(--radius-sm);padding:12px 14px;}
   .entry-thumb{width:44px;height:44px;border-radius:6px;object-fit:cover;flex-shrink:0;background:var(--field);}
   .entry-body{flex:1;min-width:0;}
-  .entry-top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:5px;}
+  .entry-top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:5px;flex-wrap:wrap;}
   .badge{font-size:10.5px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;padding:3px 8px;border-radius:20px;}
   .badge.ban{background:var(--ban-bg);color:#fca5a5;}
   .badge.kick{background:var(--kick-bg);color:#fdba74;}
@@ -300,6 +300,15 @@
         <button class="btn small" id="importBtn">Import ledger</button>
         <input type="file" id="importFile" accept="application/json" style="display:none;">
         <span id="settingsStatus"></span>
+      </div>
+
+      <div class="settings-note" style="border-top:none;padding-top:0;">
+        <label style="margin-bottom:8px;">Admin roster (for case assignment)</label>
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <input type="text" id="adminNameInput" placeholder="Admin name" style="flex:1;">
+          <button class="btn small" id="addAdminBtn">Add</button>
+        </div>
+        <div class="proof-list" id="adminList"></div>
       </div>
       <p class="settings-note">
         The webhook URL and ledger are stored in this browser only (localStorage) &mdash; a static site like Netlify has no shared database behind it, so each admin's device keeps its own local copy. Every publish still posts to your Discord channel, which stays the permanent shared record for the whole team. Use export/import to back up or move your local ledger between devices.
@@ -478,11 +487,11 @@
 <script>
 (function(){
   var STATE = { action:'ban', durationMode:'perm', appeal:'yes', proofs:[], entries:[], caseSeq:0,
-    settings:{ serverName:'Community server', webhookUrl:'', ticketLink:'https://discord.gg/26UfjmMTA3' } };
+    settings:{ serverName:'Community server', webhookUrl:'', ticketLink:'https://discord.gg/26UfjmMTA3', investigators:[] } };
 
   var els = {};
   ['gearBtn','settingsPanel','serverNameInput','webhookInput','ticketLinkInput','saveSettingsBtn','testWebhookBtn','exportBtn','importBtn','importFile',
-   'settingsStatus','serverNameOut','actionToggle','durationBlock','durationToggle','durationRow','durationValue','durationUnit',
+   'settingsStatus','serverNameOut','adminNameInput','addAdminBtn','adminList','actionToggle','durationBlock','durationToggle','durationRow','durationValue','durationUnit',
    'playerName','steamId','historyBox','joinTime','acctCreated','vacBans','gameBans','daysSinceBan','bgNotes',
    'reasonInput','templateRow','resolutionBlock','scopeField','banScope','appealToggle',
    'addImageBtn','addLinkBtn','linkInlineRow','linkInlineInput','linkInlineAdd','linkInlineCancel','fileInput','proofList',
@@ -645,7 +654,40 @@
     els.webhookInput.value = STATE.settings.webhookUrl || '';
     els.ticketLinkInput.value = STATE.settings.ticketLink || '';
     els.serverNameOut.textContent = STATE.settings.serverName || 'Community server';
+    if (!STATE.settings.investigators) STATE.settings.investigators = [];
+    renderAdminList();
   }
+
+  function persistSettingsOnly(){
+    try{ localStorage.setItem('modlog:settings', JSON.stringify(STATE.settings)); }catch(e){}
+  }
+
+  function renderAdminList(){
+    var list = STATE.settings.investigators || [];
+    if (list.length===0){ els.adminList.innerHTML = '<div style="font-size:12px;color:var(--text-3);">No admins added yet.</div>'; return; }
+    els.adminList.innerHTML = list.map(function(name, i){
+      return '<div class="proof-item"><span class="label">'+escapeHtml(name)+'</span><button type="button" class="rm" data-rmadmin="'+i+'">&times;</button></div>';
+    }).join('');
+    els.adminList.querySelectorAll('[data-rmadmin]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        STATE.settings.investigators.splice(Number(btn.dataset.rmadmin), 1);
+        persistSettingsOnly();
+        renderAdminList();
+        renderLedger();
+      });
+    });
+  }
+
+  els.addAdminBtn.addEventListener('click', function(){
+    var name = els.adminNameInput.value.trim();
+    if (!name) return;
+    if (!STATE.settings.investigators) STATE.settings.investigators = [];
+    if (STATE.settings.investigators.indexOf(name)===-1) STATE.settings.investigators.push(name);
+    els.adminNameInput.value = '';
+    persistSettingsOnly();
+    renderAdminList();
+    renderLedger();
+  });
 
   function saveSettings(){
     STATE.settings.serverName = els.serverNameInput.value.trim() || 'Community server';
@@ -782,6 +824,12 @@
       }).join('');
       var statusSelectHtml = '<select class="status-select '+status+'" data-status="'+e.id+'">'+statusOptions+'</select>';
 
+      var roster = STATE.settings.investigators || [];
+      var invOptions = '<option value="">Unassigned</option>' + roster.map(function(name){
+        return '<option value="'+escapeHtml(name)+'"'+(e.investigator===name?' selected':'')+'>'+escapeHtml(name)+'</option>';
+      }).join('');
+      var investigatorSelectHtml = '<select class="status-select" data-investigator="'+e.id+'" style="border-color:var(--border);">'+invOptions+'</select>';
+
       var linkMsgHtml = !e.discordMessageId ? (
         '<div class="link-msg-row">' +
           '<button type="button" class="link-msg-btn" data-linkmsg="'+e.id+'">Link this to its Discord message</button>' +
@@ -796,7 +844,7 @@
         '<div class="entry">' + thumb +
           '<div class="entry-body">' +
             badges +
-            '<div class="entry-top" style="margin-bottom:2px;"><span class="entry-time">'+dateStr+'</span><div style="display:flex;align-items:center;gap:8px;">'+statusSelectHtml+'<button type="button" class="entry-del" data-del="'+e.id+'" aria-label="Delete entry" title="Delete">&times;</button></div></div>' +
+            '<div class="entry-top" style="margin-bottom:2px;"><span class="entry-time">'+dateStr+'</span><div style="display:flex;align-items:center;gap:8px;">'+investigatorSelectHtml+statusSelectHtml+'<button type="button" class="entry-del" data-del="'+e.id+'" aria-label="Delete entry" title="Delete">&times;</button></div></div>' +
             '<div class="entry-player">'+escapeHtml(e.player)+'</div>' +
             '<div class="entry-meta">Issued by '+escapeHtml(e.admin)+(durText ? ' &middot; '+durText : '')+'</div>' +
             bgLine + bgNotesLine +
@@ -852,6 +900,32 @@
           showToast('Discord message updated', 'ok');
         }catch(err){
           entry.status = oldStatus;
+          saveLedger();
+          renderLedger();
+          showToast(err.message || 'Could not update Discord', 'err');
+        }
+      });
+    });
+
+    els.ledgerList.querySelectorAll('[data-investigator]').forEach(function(sel){
+      sel.addEventListener('change', async function(){
+        var id = sel.dataset.investigator;
+        var entry = STATE.entries.find(function(x){ return x.id===id; });
+        if (!entry) return;
+        var newInv = sel.value || null;
+        var oldInv = entry.investigator || null;
+        entry.investigator = newInv;
+        saveLedger();
+        renderLedger();
+        if (!entry.discordMessageId){
+          showToast('Assignment saved locally, but this entry has no linked Discord message to update', 'err');
+          return;
+        }
+        try{
+          await editDiscordMessage(entry);
+          showToast(newInv ? ('Assigned to '+newInv+' on Discord') : 'Unassigned on Discord', 'ok');
+        }catch(err){
+          entry.investigator = oldInv;
           saveLedger();
           renderLedger();
           showToast(err.message || 'Could not update Discord', 'err');
@@ -926,6 +1000,7 @@
     }
 
     fields.push({ name:'Status', value: STATUS_LABEL[entry.status] || STATUS_LABEL.active, inline:true });
+    fields.push({ name:'Under investigation by', value: entry.investigator ? '**'+entry.investigator+'**' : 'Unassigned', inline:true });
 
     fields.push({ name:'Reason', value: '> ' + (entry.reason || 'No reason given').replace(/\n/g, '\n> ') });
 
@@ -948,7 +1023,7 @@
     }
 
     if ((entry.action!=='ban' || entry.appeal==='yes') && STATE.settings.ticketLink){
-      fields.push({ name:'Think this was a mistake?', value: 'Open a ticket to appeal: ' + STATE.settings.ticketLink });
+      fields.push({ name:'Think this was a mistake?', value: 'Open a ticket to dispute this: ' + STATE.settings.ticketLink });
     }
 
     return fields;
@@ -1093,6 +1168,7 @@
       internalNotes: els.internalNotes.value.trim(),
       proofs: STATE.proofs.slice(),
       status: 'active',
+      investigator: null,
       discordMessageId: null,
       ts: Date.now()
     };
