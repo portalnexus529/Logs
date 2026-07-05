@@ -229,7 +229,8 @@
   .entry-internal b{color:var(--text-3);font-weight:600;font-size:10.5px;text-transform:uppercase;display:block;margin-bottom:2px;}
   .entry-proofs{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;}
   .entry-proofs img{width:36px;height:36px;object-fit:cover;border-radius:5px;}
-  .entry-proofs a.link-chip{font-size:11px;color:var(--accent);text-decoration:none;background:var(--field);border:1px solid var(--border);padding:6px 8px;border-radius:5px;}
+  .entry-proofs a.link-chip{font-size:11px;color:var(--accent);text-decoration:none;background:var(--field);border:1px solid var(--border);padding:6px 8px;border-radius:5px;}  .entry-del{background:none;border:none;color:var(--text-3);cursor:pointer;font-size:16px;line-height:1;padding:2px 4px;flex-shrink:0;}
+  .entry-del:hover{color:var(--ban);}
 </style>
 </head>
 <body>
@@ -409,7 +410,7 @@
     </div>
 
     <div class="panel">
-      <div class="panel-head"><h2>Ledger</h2></div>
+      <div class="panel-head"><h2>Ledger</h2><button class="btn ghost small" id="clearAllBtn">Clear all</button></div>
       <div class="panel-body">
         <div class="search-row">
           <input type="text" id="searchInput" placeholder="Search by player, admin or reason">
@@ -445,7 +446,7 @@
    'playerName','steamId','joinTime','acctCreated','vacBans','gameBans','daysSinceBan','bgNotes',
    'reasonInput','resolutionBlock','scopeField','banScope','appealToggle',
    'addImageBtn','addLinkBtn','linkInlineRow','linkInlineInput','linkInlineAdd','linkInlineCancel','fileInput','proofList',
-   'internalNotes','adminInput','publishBtn','formMsg','searchInput','filterSelect','ledgerList',
+   'internalNotes','adminInput','publishBtn','formMsg','searchInput','filterSelect','ledgerList','clearAllBtn',
    'statBan','statKick','statWarn','toast','toastMsg','caseTag'
   ].forEach(function(id){ els[id] = document.getElementById(id); });
 
@@ -673,7 +674,7 @@
         '<div class="entry">' + thumb +
           '<div class="entry-body">' +
             badges +
-            '<div class="entry-top" style="margin-bottom:2px;"><span class="entry-time">'+dateStr+'</span></div>' +
+            '<div class="entry-top" style="margin-bottom:2px;"><span class="entry-time">'+dateStr+'</span><button type="button" class="entry-del" data-del="'+e.id+'" aria-label="Delete entry" title="Delete">&times;</button></div>' +
             '<div class="entry-player">'+escapeHtml(e.player)+'</div>' +
             '<div class="entry-meta">Issued by '+escapeHtml(e.admin)+(durText ? ' &middot; '+durText : '')+'</div>' +
             bgLine + bgNotesLine +
@@ -684,9 +685,31 @@
         '</div>'
       );
     }).join('');
+
+    els.ledgerList.querySelectorAll('[data-del]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var id = btn.dataset.del;
+        var entry = STATE.entries.find(function(x){ return x.id===id; });
+        var label = entry ? ('case #'+entry.caseNo+' ('+entry.player+')') : 'this entry';
+        if (!confirm('Delete '+label+' from the local ledger? This only removes it here, not from Discord.')) return;
+        STATE.entries = STATE.entries.filter(function(x){ return x.id!==id; });
+        saveLedger();
+        renderLedger();
+        showToast('Entry deleted', 'ok');
+      });
+    });
   }
   els.searchInput.addEventListener('input', renderLedger);
   els.filterSelect.addEventListener('change', renderLedger);
+
+  els.clearAllBtn.addEventListener('click', function(){
+    if (STATE.entries.length===0) return;
+    if (!confirm('Delete all '+STATE.entries.length+' entries from the local ledger? This only clears this browser\'s copy, not your Discord channel. Consider exporting a backup first.')) return;
+    STATE.entries = [];
+    saveLedger();
+    renderLedger();
+    showToast('Ledger cleared', 'ok');
+  });
 
   function durationText(){
     if (STATE.action!=='ban' || STATE.durationMode==='perm') return 'Permanent';
