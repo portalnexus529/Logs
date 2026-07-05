@@ -542,7 +542,7 @@
   function loadSettings(){
     try{
       var raw = localStorage.getItem('modlog:settings');
-      if (raw) STATE.settings = JSON.parse(raw);
+      if (raw) STATE.settings = Object.assign({}, STATE.settings, JSON.parse(raw));
     }catch(e){}
     els.serverNameInput.value = STATE.settings.serverName || '';
     els.webhookInput.value = STATE.settings.webhookUrl || '';
@@ -605,7 +605,7 @@
       try{
         var data = JSON.parse(e.target.result);
         if (data.entries) STATE.entries = data.entries;
-        if (data.settings) STATE.settings = data.settings;
+        if (data.settings) STATE.settings = Object.assign({}, STATE.settings, data.settings);
         saveLedger();
         try{ localStorage.setItem('modlog:settings', JSON.stringify(STATE.settings)); }catch(err){}
         loadSettings(); renderLedger();
