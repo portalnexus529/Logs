@@ -231,6 +231,12 @@
   .entry-proofs img{width:36px;height:36px;object-fit:cover;border-radius:5px;}
   .entry-proofs a.link-chip{font-size:11px;color:var(--accent);text-decoration:none;background:var(--field);border:1px solid var(--border);padding:6px 8px;border-radius:5px;}  .entry-del{background:none;border:none;color:var(--text-3);cursor:pointer;font-size:16px;line-height:1;padding:2px 4px;flex-shrink:0;}
   .entry-del:hover{color:var(--ban);}
+
+  .confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);display:none;align-items:center;justify-content:center;z-index:1000;padding:20px;}
+  .confirm-overlay.show{display:flex;}
+  .confirm-box{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px;max-width:360px;width:100%;}
+  .confirm-box p{font-size:13.5px;color:var(--text);line-height:1.6;margin:0 0 16px;}
+  .confirm-actions{display:flex;gap:10px;justify-content:flex-end;}
 </style>
 </head>
 <body>
@@ -435,6 +441,16 @@
   <span id="toastMsg"></span>
 </div>
 
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <p id="confirmMsg"></p>
+    <div class="confirm-actions">
+      <button type="button" class="btn small" id="confirmCancel">Cancel</button>
+      <button type="button" class="btn small primary" id="confirmOk">Delete</button>
+    </div>
+  </div>
+</div>
+
 <script>
 (function(){
   var STATE = { action:'ban', durationMode:'perm', appeal:'yes', proofs:[], entries:[], caseSeq:0,
@@ -447,7 +463,7 @@
    'reasonInput','resolutionBlock','scopeField','banScope','appealToggle',
    'addImageBtn','addLinkBtn','linkInlineRow','linkInlineInput','linkInlineAdd','linkInlineCancel','fileInput','proofList',
    'internalNotes','adminInput','publishBtn','formMsg','searchInput','filterSelect','ledgerList','clearAllBtn',
-   'statBan','statKick','statWarn','toast','toastMsg','caseTag'
+   'statBan','statKick','statWarn','toast','toastMsg','caseTag','confirmOverlay','confirmMsg','confirmCancel','confirmOk'
   ].forEach(function(id){ els[id] = document.getElementById(id); });
 
   var LABEL = { ban:'Ban', kick:'Kick', warn:'Warning' };
@@ -464,6 +480,20 @@
     els.toast.className = 'toast show ' + (kind||'');
     clearTimeout(showToast._t);
     showToast._t = setTimeout(function(){ els.toast.className = 'toast'; }, 3200);
+  }
+
+  function askConfirm(message, onConfirm){
+    els.confirmMsg.textContent = message;
+    els.confirmOverlay.classList.add('show');
+    function cleanup(){
+      els.confirmOverlay.classList.remove('show');
+      els.confirmOk.removeEventListener('click', okHandler);
+      els.confirmCancel.removeEventListener('click', cancelHandler);
+    }
+    function okHandler(){ cleanup(); onConfirm(); }
+    function cancelHandler(){ cleanup(); }
+    els.confirmOk.addEventListener('click', okHandler);
+    els.confirmCancel.addEventListener('click', cancelHandler);
   }
 
   // ---------- action toggle ----------
@@ -691,11 +721,12 @@
         var id = btn.dataset.del;
         var entry = STATE.entries.find(function(x){ return x.id===id; });
         var label = entry ? ('case #'+entry.caseNo+' ('+entry.player+')') : 'this entry';
-        if (!confirm('Delete '+label+' from the local ledger? This only removes it here, not from Discord.')) return;
-        STATE.entries = STATE.entries.filter(function(x){ return x.id!==id; });
-        saveLedger();
-        renderLedger();
-        showToast('Entry deleted', 'ok');
+        askConfirm('Delete '+label+' from the local ledger? This only removes it here, not from Discord.', function(){
+          STATE.entries = STATE.entries.filter(function(x){ return x.id!==id; });
+          saveLedger();
+          renderLedger();
+          showToast('Entry deleted', 'ok');
+        });
       });
     });
   }
@@ -704,11 +735,12 @@
 
   els.clearAllBtn.addEventListener('click', function(){
     if (STATE.entries.length===0) return;
-    if (!confirm('Delete all '+STATE.entries.length+' entries from the local ledger? This only clears this browser\'s copy, not your Discord channel. Consider exporting a backup first.')) return;
-    STATE.entries = [];
-    saveLedger();
-    renderLedger();
-    showToast('Ledger cleared', 'ok');
+    askConfirm('Delete all '+STATE.entries.length+' entries from the local ledger? This only clears this browser\'s copy, not your Discord channel. Consider exporting a backup first.', function(){
+      STATE.entries = [];
+      saveLedger();
+      renderLedger();
+      showToast('Ledger cleared', 'ok');
+    });
   });
 
   function durationText(){
