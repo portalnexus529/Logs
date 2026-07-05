@@ -261,6 +261,10 @@
         <label for="webhookInput">Discord webhook URL</label>
         <input type="url" id="webhookInput" placeholder="https://discord.com/api/webhooks/...">
       </div>
+      <div class="field">
+        <label for="ticketLinkInput">Ticket / appeal link</label>
+        <input type="url" id="ticketLinkInput" placeholder="https://discord.gg/...">
+      </div>
       <div class="settings-actions">
         <button class="btn primary small" id="saveSettingsBtn">Save settings</button>
         <button class="btn small" id="testWebhookBtn">Send test message</button>
@@ -433,10 +437,10 @@
 <script>
 (function(){
   var STATE = { action:'ban', durationMode:'perm', appeal:'yes', proofs:[], entries:[], caseSeq:0,
-    settings:{ serverName:'Community server', webhookUrl:'' } };
+    settings:{ serverName:'Community server', webhookUrl:'', ticketLink:'https://discord.gg/26UfjmMTA3' } };
 
   var els = {};
-  ['gearBtn','settingsPanel','serverNameInput','webhookInput','saveSettingsBtn','testWebhookBtn','exportBtn','importBtn','importFile',
+  ['gearBtn','settingsPanel','serverNameInput','webhookInput','ticketLinkInput','saveSettingsBtn','testWebhookBtn','exportBtn','importBtn','importFile',
    'settingsStatus','serverNameOut','actionToggle','durationBlock','durationToggle','durationRow','durationValue','durationUnit',
    'playerName','steamId','joinTime','acctCreated','vacBans','gameBans','daysSinceBan','bgNotes',
    'reasonInput','resolutionBlock','scopeField','banScope','appealToggle',
@@ -542,12 +546,14 @@
     }catch(e){}
     els.serverNameInput.value = STATE.settings.serverName || '';
     els.webhookInput.value = STATE.settings.webhookUrl || '';
+    els.ticketLinkInput.value = STATE.settings.ticketLink || '';
     els.serverNameOut.textContent = STATE.settings.serverName || 'Community server';
   }
 
   function saveSettings(){
     STATE.settings.serverName = els.serverNameInput.value.trim() || 'Community server';
     STATE.settings.webhookUrl = els.webhookInput.value.trim();
+    STATE.settings.ticketLink = els.ticketLinkInput.value.trim();
     els.serverNameOut.textContent = STATE.settings.serverName;
     try{
       localStorage.setItem('modlog:settings', JSON.stringify(STATE.settings));
@@ -699,33 +705,44 @@
     if (!webhook) throw new Error('No webhook URL saved. Open settings and add one.');
 
     var fields = [
-      { name:'Player', value: entry.player || 'Unknown', inline:true },
+      { name:'Player', value: '**'+(entry.player||'Unknown')+'**', inline:true },
+      { name:'SteamID64', value: entry.steamId ? '`'+entry.steamId+'`' : '—', inline:true },
       { name:'Issued by', value: entry.admin || 'Unknown', inline:true }
     ];
-    if (entry.steamId) fields.push({ name:'SteamID64', value: entry.steamId, inline:true });
-    if (entry.action==='ban'){
-      fields.push({ name:'Duration', value: entry.durationText || 'Permanent', inline:true });
-      fields.push({ name:'Ban scope', value: SCOPE_LABEL[entry.banScope] || 'Game only', inline:true });
-      fields.push({ name:'Appeal eligible', value: entry.appeal==='yes' ? 'Yes' : 'No', inline:true });
-    }
-    fields.push({ name:'Reason', value: entry.reason || 'No reason given' });
 
-    var bgParts = [];
-    if (entry.joinTime) bgParts.push('Joined at: ' + entry.joinTime);
-    if (entry.acctCreated) bgParts.push('Account created: ' + entry.acctCreated);
-    if (entry.vacBans) bgParts.push('VAC bans: ' + entry.vacBans);
-    if (entry.gameBans) bgParts.push('Game bans: ' + entry.gameBans);
-    if (entry.daysSinceBan) bgParts.push('Days since last ban: ' + entry.daysSinceBan);
-    if (entry.bgNotes) bgParts.push(entry.bgNotes);
-    if (bgParts.length) fields.push({ name:'Player background', value: bgParts.join('\n') });
+    if (entry.action==='ban'){
+      fields.push({ name:'Duration', value: '**'+(entry.durationText || 'Permanent')+'**', inline:true });
+      fields.push({ name:'Ban scope', value: '**'+(SCOPE_LABEL[entry.banScope] || 'Game only')+'**', inline:true });
+      fields.push({ name:'Appeal eligible', value: entry.appeal==='yes' ? '**Yes**' : '**No**', inline:true });
+    }
+
+    fields.push({ name:'Reason', value: '> ' + (entry.reason || 'No reason given').replace(/\n/g, '\n> ') });
+
+    var bgFields = [];
+    if (entry.joinTime) bgFields.push({ name:'Joined at', value: '**'+entry.joinTime+'**', inline:true });
+    if (entry.acctCreated) bgFields.push({ name:'Account created', value: '**'+entry.acctCreated+'**', inline:true });
+    if (entry.vacBans) bgFields.push({ name:'VAC bans', value: '**'+entry.vacBans+'**', inline:true });
+    if (entry.gameBans) bgFields.push({ name:'Game bans', value: '**'+entry.gameBans+'**', inline:true });
+    if (entry.daysSinceBan) bgFields.push({ name:'Last ban', value: '**'+entry.daysSinceBan+' days ago**', inline:true });
+
+    if (bgFields.length){
+      fields.push({ name:'\u200b', value:'**Player background**' });
+      fields = fields.concat(bgFields);
+      if (entry.bgNotes) fields.push({ name:'Notes', value: entry.bgNotes });
+    }
 
     var linkProofs = entry.proofs.filter(function(p){ return p.type==='link'; });
     if (linkProofs.length){
       fields.push({ name:'Proof links', value: linkProofs.map(function(p,i){ return (i+1)+'. '+p.url; }).join('\n') });
     }
 
+    if ((entry.action!=='ban' || entry.appeal==='yes') && STATE.settings.ticketLink){
+      fields.push({ name:'Think this was a mistake?', value: 'Open a ticket to dispute this: ' + STATE.settings.ticketLink });
+    }
+
     var mainEmbed = {
       title: LABEL[entry.action] + ' issued \u2014 Case #' + entry.caseNo,
+      url: STATE.settings.ticketLink || undefined,
       color: COLOR_HEX[entry.action],
       fields: fields,
       footer:{ text: STATE.settings.serverName || 'Community server' },
