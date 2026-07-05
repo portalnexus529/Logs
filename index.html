@@ -19,12 +19,12 @@
     --text-3:#636674;
     --accent:#5b8def;
     --accent-bg:rgba(91,141,239,0.12);
-    --ban:#ef4444;
-    --ban-bg:rgba(239,68,68,0.12);
-    --kick:#f97316;
-    --kick-bg:rgba(249,115,22,0.12);
-    --warn:#eab308;
-    --warn-bg:rgba(234,179,8,0.12);
+    --ban:#ff5c5c;
+    --ban-bg:rgba(255,92,92,0.14);
+    --kick:#ffa94d;
+    --kick-bg:rgba(255,169,77,0.14);
+    --warn:#ffd43b;
+    --warn-bg:rgba(255,212,59,0.16);
     --radius:10px;
     --radius-sm:7px;
   }
@@ -258,6 +258,37 @@
 
   .badge.expiry-ok{background:var(--panel);color:var(--text-2);border:1px solid var(--border);}
   .badge.expiry-due{background:var(--ban-bg);color:#fca5a5;}
+
+  /* Legibility pass: bigger, bolder, more zoomed-in-friendly text */
+  body{font-size:16px;}
+  .topbar-left h1{font-size:26px!important;}
+  .topbar-left p{font-size:14.5px!important;}
+  .chip{padding:10px 20px!important;}
+  .chip .n{font-size:30px!important;font-weight:700!important;}
+  .chip .l{font-size:12.5px!important;font-weight:600!important;}
+  label{font-size:14px!important;font-weight:600!important;}
+  input[type=text], input[type=url], input[type=number], select, textarea{font-size:16px!important;padding:11px 13px!important;}
+  textarea{min-height:78px!important;}
+  button.btn{font-size:15px!important;padding:11px 18px!important;}
+  button.btn.small{padding:8px 14px!important;font-size:13.5px!important;}
+  .panel-head h2{font-size:19px!important;}
+  .case-tag{font-size:13.5px!important;font-weight:600!important;}
+  .seg button{font-size:15px!important;padding:11px 4px!important;}
+  .entry-player{font-size:19px!important;font-weight:700!important;}
+  .entry-meta{font-size:14.5px!important;}
+  .entry-reason{font-size:15.5px!important;}
+  .entry-time{font-size:13.5px!important;font-weight:600!important;}
+  .badge{font-size:12.5px!important;padding:5px 11px!important;font-weight:700!important;}
+  .entry-bg{font-size:13.5px!important;}
+  .entry-internal{font-size:14px!important;}
+  .history-box{font-size:14.5px!important;}
+  .history-box b{font-size:15px!important;}
+  .template-chip{font-size:13.5px!important;padding:7px 14px!important;}
+  .settings-note{font-size:14px!important;}
+  .toast{font-size:15px!important;}
+  .status-select{font-size:13px!important;padding:6px 11px!important;font-weight:700!important;}
+  .proof-item .label{font-size:13.5px!important;}
+  .confirm-box p{font-size:15px!important;}
 </style>
 </head>
 <body>
@@ -500,7 +531,7 @@
   ].forEach(function(id){ els[id] = document.getElementById(id); });
 
   var LABEL = { ban:'Ban', kick:'Kick', warn:'Warning' };
-  var COLOR_HEX = { ban:0xEF4444, kick:0xF97316, warn:0xEAB308 };
+  var COLOR_HEX = { ban:0xFF5C5C, kick:0xFFA94D, warn:0xFFD43B };
 
   function escapeHtml(s){
     return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; });
