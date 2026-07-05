@@ -103,12 +103,17 @@
   button.btn.small{padding:6px 12px;font-size:12.5px;}
 
   /* ---------- MAIN GRID ---------- */
-  .grid{display:grid;grid-template-columns:380px 380px 1fr;gap:20px;align-items:start;}
-  @media (max-width:1180px){.grid{grid-template-columns:1fr;}}
+  .grid{display:grid;grid-template-columns:400px 1fr;gap:20px;align-items:start;}
+  @media (max-width:900px){.grid{grid-template-columns:1fr;}}
 
   .panel{background:var(--panel);border:1px solid var(--border-soft);border-radius:var(--radius);}
   .panel-head{padding:15px 18px;border-bottom:1px solid var(--border-soft);display:flex;justify-content:space-between;align-items:center;}
   .panel-head h2{font-size:14.5px;font-weight:600;margin:0;}
+  .tabs-head{gap:10px;flex-wrap:wrap;}
+  .tab-switch{display:flex;gap:4px;}
+  .tab-btn{background:none;border:none;color:var(--text-3);font-size:14.5px!important;font-weight:600;padding:6px 4px;cursor:pointer;border-bottom:2px solid transparent;}
+  .tab-btn.active{color:var(--text);border-bottom-color:var(--accent);}
+  .tab-btn:not(.active):hover{color:var(--text-2);}
   .panel-body{padding:18px;}
 
   /* Segmented action control */
@@ -362,9 +367,15 @@
   <div class="grid">
 
     <div class="panel">
-      <div class="panel-head"><h2>New report</h2><span class="case-tag" id="caseTag">Next case #0001</span></div>
+      <div class="panel-head tabs-head">
+        <div class="tab-switch">
+          <button type="button" class="tab-btn active" data-tab="game">New report</button>
+          <button type="button" class="tab-btn" data-tab="discord">Discord actions</button>
+        </div>
+        <span class="case-tag" id="caseTag">Next case #0001</span>
+      </div>
       <div class="panel-body">
-
+        <div id="gameFormBody">
         <div class="seg" id="actionToggle">
           <button type="button" data-a="ban" class="active"><span class="dot"></span>Ban</button>
           <button type="button" data-a="kick"><span class="dot"></span>Kick</button>
@@ -488,12 +499,9 @@
 
         <button class="btn primary" id="publishBtn">Publish ban report</button>
         <div id="formMsg"></div>
-      </div>
-    </div>
+        </div>
 
-    <div class="panel">
-      <div class="panel-head"><h2>Discord actions</h2><span class="case-tag" id="discCaseTag">Next case #0001</span></div>
-      <div class="panel-body">
+        <div id="discFormBody" style="display:none;">
 
         <div class="seg" id="discActionToggle">
           <button type="button" data-da="dban" class="active"><span class="dot"></span>Discord ban</button>
@@ -567,6 +575,7 @@
 
         <button class="btn primary" id="discPublishBtn">Publish Discord ban report</button>
         <div id="discFormMsg"></div>
+        </div>
       </div>
     </div>
 
@@ -624,7 +633,8 @@
    'discActionToggle','discPlayerName','discUserId','discReasonInput','discTemplateRow','discResolutionBlock',
    'discDurationToggle','discDurationRow','discDurationValue','discDurationUnit','discAppealToggle',
    'discAddImageBtn','discAddLinkBtn','discLinkInlineRow','discLinkInlineInput','discLinkInlineAdd','discLinkInlineCancel',
-   'discFileInput','discProofList','discInternalNotes','discAdminInput','discPublishBtn','discFormMsg','discCaseTag'
+   'discFileInput','discProofList','discInternalNotes','discAdminInput','discPublishBtn','discFormMsg','discCaseTag',
+   'gameFormBody','discFormBody'
   ].forEach(function(id){ els[id] = document.getElementById(id); });
 
   var LABEL = { ban:'Ban', kick:'Kick', warn:'Warning', dban:'Discord ban', dkick:'Discord kick' };
@@ -783,6 +793,15 @@
   });
 
   els.gearBtn.addEventListener('click', function(){ els.settingsPanel.classList.toggle('open'); });
+
+  document.querySelectorAll('.tab-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.toggle('active', b===btn); });
+      var tab = btn.dataset.tab;
+      els.gameFormBody.style.display = (tab==='game') ? 'block' : 'none';
+      els.discFormBody.style.display = (tab==='discord') ? 'block' : 'none';
+    });
+  });
 
   // ---------- storage (localStorage: works on a static host like Netlify) ----------
   function loadSettings(){
