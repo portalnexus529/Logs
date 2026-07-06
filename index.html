@@ -54,7 +54,7 @@
   [data-theme="light"] .badge.ban{color:#c0362f;}
   [data-theme="light"] .badge.kick{color:#b56413;}
   [data-theme="light"] .badge.warn{color:#8a6913;}
-  [data-theme="light"] .badge.dban, [data-theme="light"] .badge.dkick{color:#3b45c9;}
+  [data-theme="light"] .badge.dban, [data-theme="light"] .badge.dkick, [data-theme="light"] .badge.dtimeout{color:#3b45c9;}
   [data-theme="light"] .badge.appeal-yes{color:#1a7a41;}
   [data-theme="light"] .badge.appeal-no{color:#c0362f;}
   [data-theme="light"] .flag-yes{color:#c0362f!important;}
@@ -222,6 +222,7 @@
   .badge.warn{background:var(--warn-bg);color:#fde047;}
   .badge.dban{background:var(--discord-bg);color:#c7ccfb;}
   .badge.dkick{background:var(--discord-bg);color:#c7ccfb;}
+  .badge.dtimeout{background:var(--discord-bg);color:#c7ccfb;}
   .entry-time{font-size:11px;color:var(--text-3);}
   .entry-player{font-size:14px;font-weight:600;margin-bottom:3px;}
   .entry-meta{font-size:12px;color:var(--text-2);margin-bottom:5px;}
@@ -393,6 +394,8 @@
   .bulk-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;padding:10px 12px;background:var(--field);border:1px solid var(--border-soft);border-radius:var(--radius-sm);}
   .bulk-bar select{width:auto;padding:6px 10px;font-size:12.5px;}
   .entry-checkbox{margin-right:2px;}
+
+  .lock-overlay{position:fixed;inset:0;background:var(--bg);z-index:2000;display:flex;align-items:center;justify-content:center;}
   @media (max-width:700px){.audit-row{grid-template-columns:1fr;gap:2px;}}
 
   .dash-section{display:block;}
@@ -413,6 +416,15 @@
 </style>
 </head>
 <body>
+<div class="lock-overlay" id="lockOverlay" style="display:none;">
+  <div class="confirm-box" style="max-width:340px;text-align:center;">
+    <h3 style="font-size:16px;font-weight:700;margin:0 0 6px;">Locked</h3>
+    <p style="font-size:12.5px;color:var(--text-3);margin:0 0 16px;">Enter the access PIN to continue.</p>
+    <input type="password" id="lockPinInput" placeholder="PIN" style="text-align:center;font-size:18px;letter-spacing:.1em;margin-bottom:10px;">
+    <div id="lockMsg" style="font-size:12.5px;color:var(--ban);min-height:16px;margin-bottom:10px;"></div>
+    <button type="button" class="btn primary" id="lockUnlockBtn" style="width:100%;">Unlock</button>
+  </div>
+</div>
 <div class="wrap" id="adminWrap">
 
   <div class="topbar">
@@ -489,6 +501,14 @@
           <div class="panel dash-card"><div class="panel-body"><div class="dash-card-label">Solved</div><div class="dash-card-num" id="ovSolved">0</div></div></div>
           <div class="panel dash-card"><div class="panel-body"><div class="dash-card-label">Filed this week</div><div class="dash-card-num" id="ovWeek">0</div></div></div>
           <div class="panel dash-card"><div class="panel-body"><div class="dash-card-label">Total logged</div><div class="dash-card-num" id="ovTotal">0</div></div></div>
+        </div>
+        <div class="panel" style="margin-top:20px;">
+          <div class="panel-head"><h2>Follow-ups due</h2></div>
+          <div class="panel-body">
+            <div class="recent-feed" id="followupFeed">
+              <div class="empty-state">No follow-ups set.</div>
+            </div>
+          </div>
         </div>
         <div class="panel" style="margin-top:20px;">
           <div class="panel-head"><h2>Recent activity</h2></div>
@@ -657,6 +677,7 @@
         <div class="seg" id="discActionToggle">
           <button type="button" data-da="dban" class="active"><span class="dot"></span>Discord ban</button>
           <button type="button" data-da="dkick"><span class="dot"></span>Discord kick</button>
+          <button type="button" data-da="dtimeout"><span class="dot"></span>Discord timeout</button>
         </div>
 
         <div class="two-col">
@@ -1063,6 +1084,14 @@
         <label for="ticketLinkInput">Ticket / appeal link</label>
         <input type="url" id="ticketLinkInput" placeholder="https://discord.gg/...">
       </div>
+      <div class="field">
+        <label for="accessPinInput">Access PIN <span style="color:var(--text-3);font-weight:400;">(optional, leave blank to disable)</span></label>
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="accessPinInput" placeholder="e.g. 4-8 digit PIN" style="flex:1;">
+          <button type="button" class="btn small" id="removePinBtn">Remove PIN</button>
+        </div>
+        <p style="font-size:11.5px;color:var(--text-3);margin:6px 0 0;">This is a basic deterrent, not real security &mdash; it's checked in this browser's own code, so anyone determined enough could bypass it by reading the page source. It's meant to keep casual visitors out, not to replace a real login system.</p>
+      </div>
       <div class="settings-actions">
         <button class="btn primary small" id="saveSettingsBtn">Save settings</button>
         <button class="btn small" id="testWebhookBtn">Send test message</button>
@@ -1254,10 +1283,11 @@
 <script>
 (function(){
   var STATE = { action:'ban', durationMode:'perm', appeal:'yes', proofs:[], entries:[], caseSeq:0,
-    settings:{ serverName:'Community server', webhookUrl:'', ticketLink:'https://discord.gg/26UfjmMTA3', investigators:[], webhooks:[], announcementTemplates:[], workerUrl:'', workerKey:'', guildId:'' } };
+    settings:{ serverName:'Community server', webhookUrl:'', ticketLink:'https://discord.gg/26UfjmMTA3', investigators:[], webhooks:[], announcementTemplates:[], workerUrl:'', workerKey:'', guildId:'', pinHash:'' } };
 
   var els = {};
   ['gearBtn','settingsPanel','serverNameInput','webhookInput','ticketLinkInput','saveSettingsBtn','testWebhookBtn','exportBtn','importBtn','importFile',
+   'lockOverlay','lockPinInput','lockMsg','lockUnlockBtn','accessPinInput','removePinBtn',
    'sideNavBrand','themeToggleBtn','themeIcon',
    'settingsStatus','serverNameOut','adminNameInput','addAdminBtn','adminList','actionToggle','durationBlock','durationToggle','durationRow','durationValue','durationUnit',
    'playerName','steamId','steamIdLabel','acctCreatedLabel','steamStatsRow','gameDiscordId','gameDiscordLookupLink','categorySelect','historyBox','joinTime','acctCreated','vacBans','gameBans','daysSinceBan','bgNotes',
@@ -1279,7 +1309,7 @@
    'webhookNameInput','webhookUrlInput','addWebhookBtn','webhookListUI',
    'workerUrlInput','workerKeyInput','guildIdInput',
    'discDmMessage','discGenerateDmBtn','discSendDmToggle',
-   'ovOpen','ovPending','ovSolved','ovWeek','ovTotal','recentFeed',
+   'ovOpen','ovPending','ovSolved','ovWeek','ovTotal','recentFeed','followupFeed',
    'auditList','clearAuditBtn','auditSearch',
    'dlUserId','dlLookupBtn','dlMsg','dlResult','dlAvatar','dlUsername','dlTag','dlCreated','dlId',
    'plName','plSteamId','plDiscordId','plKills','plDeaths','plFurthestKill','plDistanceTraveled','plShotsFired','plAccuracy','plInfectedKilled','plNotes','plAddBtn','plFormMsg','plSearch','playerList',
@@ -1287,10 +1317,11 @@
    'editOverlay','editCaseLabel','editDiscordField','editDiscordId','editCategory','editReason','editDurationField','editDuration','editResolutionField','editBanScope','editAppealToggle','editInternalNotes','editMsg','editCancel','editSave'
   ].forEach(function(id){ els[id] = document.getElementById(id); });
 
-  var LABEL = { ban:'Ban', kick:'Kick', warn:'Warning', dban:'Discord ban', dkick:'Discord kick' };
-  var COLOR_HEX = { ban:0xFF5C5C, kick:0xFFA94D, warn:0xFFD43B, dban:0x5865F2, dkick:0x5865F2 };
+  var LABEL = { ban:'Ban', kick:'Kick', warn:'Warning', dban:'Discord ban', dkick:'Discord kick', dtimeout:'Discord timeout' };
+  var COLOR_HEX = { ban:0xFF5C5C, kick:0xFFA94D, warn:0xFFD43B, dban:0x5865F2, dkick:0x5865F2, dtimeout:0x5865F2 };
   function isBanType(a){ return a==='ban' || a==='dban'; }
-  function isDiscordType(a){ return a==='dban' || a==='dkick'; }
+  function isDiscordType(a){ return a==='dban' || a==='dkick' || a==='dtimeout'; }
+  function hasDuration(a){ return isBanType(a) || a==='dtimeout'; }
 
   function escapeHtml(s){
     return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; });
@@ -1665,7 +1696,13 @@
       list.map(function(t, i){ return '<option value="'+i+'">'+escapeHtml(t.name)+'</option>'; }).join('');
   }
 
-  function saveSettings(){
+  async function sha256Hex(str){
+    var enc = new TextEncoder().encode(str);
+    var buf = await crypto.subtle.digest('SHA-256', enc);
+    return Array.from(new Uint8Array(buf)).map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+  }
+
+  async function saveSettings(){
     STATE.settings.serverName = els.serverNameInput.value.trim() || 'Community server';
     STATE.settings.webhookUrl = els.webhookInput.value.trim();
     STATE.settings.ticketLink = els.ticketLinkInput.value.trim();
@@ -1674,6 +1711,12 @@
     STATE.settings.workerUrl = els.workerUrlInput.value.trim().replace(/\/$/,'');
     STATE.settings.workerKey = els.workerKeyInput.value.trim();
     STATE.settings.guildId = els.guildIdInput.value.trim();
+    var enteredPin = els.accessPinInput.value.trim();
+    if (enteredPin){
+      STATE.settings.pinHash = await sha256Hex(enteredPin);
+      els.accessPinInput.value = '';
+      checkLock();
+    }
     try{
       localStorage.setItem('modlog:settings', JSON.stringify(STATE.settings));
       els.settingsStatus.textContent = 'Saved.';
@@ -1683,6 +1726,41 @@
     setTimeout(function(){ els.settingsStatus.textContent=''; }, 2500);
   }
   els.saveSettingsBtn.addEventListener('click', saveSettings);
+
+  function checkLock(){
+    if (STATE.settings.pinHash && localStorage.getItem('modlog:unlocked')!==STATE.settings.pinHash){
+      els.lockOverlay.style.display = 'flex';
+    } else {
+      els.lockOverlay.style.display = 'none';
+    }
+  }
+  els.lockUnlockBtn.addEventListener('click', async function(){
+    var entered = els.lockPinInput.value.trim();
+    if (!entered){ els.lockMsg.textContent = 'Enter the PIN.'; return; }
+    var hash = await sha256Hex(entered);
+    if (hash === STATE.settings.pinHash){
+      try{ localStorage.setItem('modlog:unlocked', hash); }catch(e){}
+      els.lockOverlay.style.display = 'none';
+      els.lockMsg.textContent = '';
+      els.lockPinInput.value = '';
+    } else {
+      els.lockMsg.textContent = 'Incorrect PIN.';
+    }
+  });
+  els.lockPinInput.addEventListener('keydown', function(e){ if (e.key==='Enter') els.lockUnlockBtn.click(); });
+
+  els.removePinBtn.addEventListener('click', function(){
+    if (!STATE.settings.pinHash){ showToast('No PIN is currently set.', 'ok'); return; }
+    askConfirm('Remove the access PIN? The site will be open to anyone with the link.', function(){
+      STATE.settings.pinHash = '';
+      try{
+        localStorage.setItem('modlog:settings', JSON.stringify(STATE.settings));
+        localStorage.removeItem('modlog:unlocked');
+      }catch(e){}
+      checkLock();
+      showToast('PIN removed', 'ok');
+    });
+  });
 
   function loadLedger(){
     try{
@@ -2077,17 +2155,32 @@
     var recent = STATE.entries.slice().sort(function(a,b){ return b.ts-a.ts; }).slice(0, 10);
     if (recent.length===0){
       els.recentFeed.innerHTML = '<div class="empty-state">Nothing logged yet.</div>';
-      return;
+    } else {
+      els.recentFeed.innerHTML = recent.map(function(e){
+        var d = new Date(e.ts);
+        var timeStr = d.toLocaleDateString(undefined,{month:'short',day:'numeric'}) + ' \u00b7 ' + d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+        return '<div class="recent-item '+e.action+'">' +
+          '<div class="rt">'+timeStr+' &middot; '+LABEL[e.action]+'</div>' +
+          '<div class="rp">'+escapeHtml(e.player)+'</div>' +
+          '<div class="ra">'+escapeHtml(e.admin)+' &middot; Case #'+e.caseNo+'</div>' +
+        '</div>';
+      }).join('');
     }
-    els.recentFeed.innerHTML = recent.map(function(e){
-      var d = new Date(e.ts);
-      var timeStr = d.toLocaleDateString(undefined,{month:'short',day:'numeric'}) + ' \u00b7 ' + d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
-      return '<div class="recent-item '+e.action+'">' +
-        '<div class="rt">'+timeStr+' &middot; '+LABEL[e.action]+'</div>' +
-        '<div class="rp">'+escapeHtml(e.player)+'</div>' +
-        '<div class="ra">'+escapeHtml(e.admin)+' &middot; Case #'+e.caseNo+'</div>' +
-      '</div>';
-    }).join('');
+
+    var followups = STATE.entries.filter(function(e){ return !!e.reminderAt; }).sort(function(a,b){ return a.reminderAt - b.reminderAt; });
+    if (followups.length===0){
+      els.followupFeed.innerHTML = '<div class="empty-state">No follow-ups set.</div>';
+    } else {
+      els.followupFeed.innerHTML = followups.map(function(e){
+        var due = e.reminderAt - Date.now();
+        var dueLabel = due<=0 ? 'Overdue' : ('Due in '+Math.ceil(due/86400000)+'d');
+        return '<div class="recent-item '+e.action+'">' +
+          '<div class="rt">'+dueLabel+' &middot; '+LABEL[e.action]+'</div>' +
+          '<div class="rp">'+escapeHtml(e.player)+'</div>' +
+          '<div class="ra">Case #'+e.caseNo+' &middot; '+escapeHtml(e.reason)+'</div>' +
+        '</div>';
+      }).join('');
+    }
   }
 
   var SELECTED_CASES = new Set();
@@ -2175,7 +2268,7 @@
     els.ledgerList.innerHTML = list.map(function(e){
       var d = new Date(e.ts);
       var dateStr = d.toLocaleDateString(undefined,{month:'short',day:'numeric'}) + ' &middot; ' + d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
-      var durText = isBanType(e.action) ? (e.durationText || 'Permanent') : '';
+      var durText = hasDuration(e.action) ? (e.durationText || 'Permanent') : '';
       var proofs = e.proofs || [];
       var firstImg = proofs.find(function(p){ return p.type==='image'; });
       var thumb = firstImg ? '<img class="entry-thumb" src="'+escapeHtml(firstImg.url)+'" alt="Proof thumbnail">' : '<div class="entry-thumb"></div>';
@@ -2186,7 +2279,7 @@
       if (e.action==='ban' && e.banScope) badges += '<span class="badge scope">'+({game:'Game ban',discord:'Discord ban',both:'Game + Discord'})[e.banScope]+'</span>';
       if (isBanType(e.action) && e.appeal) badges += '<span class="badge '+(e.appeal==='yes'?'appeal-yes':'appeal-no')+'">'+(e.appeal==='yes'?'Appealable':'Not appealable')+'</span>';
       var showUnbanBtn = false;
-      if (isBanType(e.action) && e.expiresAt){
+      if (hasDuration(e.action) && e.expiresAt){
         var msLeft = e.expiresAt - Date.now();
         if (msLeft <= 0){
           badges += '<span class="badge expiry-due">Expired '+Math.ceil(-msLeft/86400000)+'d ago</span>';
@@ -2198,6 +2291,11 @@
         }
       }
       if (e.action==='dban' && e.unbannedAt) badges += '<span class="badge expiry-ok" style="color:#4ade80;">Unbanned</span>';
+      if (e.reminderAt){
+        var remMs = e.reminderAt - Date.now();
+        if (remMs <= 0) badges += '<span class="badge expiry-due">Follow-up overdue</span>';
+        else badges += '<span class="badge expiry-ok">Follow-up in '+Math.ceil(remMs/86400000)+'d</span>';
+      }
       badges += '</div>';
 
       var bgParts = [];
@@ -2242,6 +2340,18 @@
         '</div>'
       ) : '';
 
+      var reminderHtml = !e.reminderAt ? (
+        '<div class="link-msg-row">' +
+          '<button type="button" class="link-msg-btn" data-remindmsg="'+e.id+'">Set follow-up reminder</button>' +
+          '<div class="link-msg-inline" id="remind-'+e.id+'">' +
+            '<input type="number" min="1" placeholder="Days" style="max-width:90px;" data-remindinput="'+e.id+'">' +
+            '<button type="button" class="btn small primary" data-remindsave="'+e.id+'">Set</button>' +
+          '</div>' +
+        '</div>'
+      ) : (
+        '<div class="link-msg-row"><button type="button" class="link-msg-btn" data-remindclear="'+e.id+'" style="color:var(--text-3);">Clear follow-up reminder</button></div>'
+      );
+
       return (
         '<div class="entry">' +
           '<input type="checkbox" class="entry-checkbox" data-casecheck="'+e.id+'" style="margin-top:4px;" '+(SELECTED_CASES.has(e.id)?'checked':'')+'>' + thumb +
@@ -2255,6 +2365,7 @@
             internalLine +
             proofBlock +
             linkMsgHtml +
+            reminderHtml +
           '</div>' +
         '</div>'
       );
@@ -2282,6 +2393,38 @@
         renderLedger();
         showToast('Linked. Status changes will now update that message.', 'ok');
         logAudit('Case linked', 'Case #'+entry.caseNo+' manually linked to a Discord message');
+      });
+    });
+
+    els.ledgerList.querySelectorAll('[data-remindmsg]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        document.getElementById('remind-'+btn.dataset.remindmsg).classList.add('show');
+      });
+    });
+    els.ledgerList.querySelectorAll('[data-remindsave]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var id = btn.dataset.remindsave;
+        var input = els.ledgerList.querySelector('[data-remindinput="'+id+'"]');
+        var days = Number(input.value);
+        if (!days || days<=0){ showToast('Enter a number of days.', 'err'); return; }
+        var entry = STATE.entries.find(function(x){ return x.id===id; });
+        if (!entry) return;
+        entry.reminderAt = Date.now() + days*86400000;
+        saveLedger();
+        renderLedger();
+        showToast('Follow-up reminder set for case #'+entry.caseNo, 'ok');
+        logAudit('Reminder set', 'Follow-up reminder set for case #'+entry.caseNo+' in '+days+' day(s)');
+      });
+    });
+    els.ledgerList.querySelectorAll('[data-remindclear]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var id = btn.dataset.remindclear;
+        var entry = STATE.entries.find(function(x){ return x.id===id; });
+        if (!entry) return;
+        delete entry.reminderAt;
+        saveLedger();
+        renderLedger();
+        showToast('Reminder cleared', 'ok');
       });
     });
 
@@ -2461,7 +2604,7 @@
       fields.push({ name:'Discord account', value: '<@'+entry.discordId+'>', inline:true });
     }
 
-    if (isBanType(entry.action)){
+    if (hasDuration(entry.action)){
       var durVal = '**'+(entry.durationText || 'Permanent')+'**';
       if (entry.expiresAt){
         durVal += ' (expires ' + new Date(entry.expiresAt).toLocaleString(undefined,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) + ')';
@@ -2470,7 +2613,9 @@
       if (entry.action==='ban'){
         fields.push({ name:'Ban scope', value: '**'+(SCOPE_LABEL[entry.banScope] || 'Game only')+'**', inline:true });
       }
-      fields.push({ name:'Appeal eligible', value: entry.appeal==='yes' ? '**Yes**' : '**No**', inline:true });
+      if (entry.action!=='dtimeout'){
+        fields.push({ name:'Appeal eligible', value: entry.appeal==='yes' ? '**Yes**' : '**No**', inline:true });
+      }
     }
 
     fields.push({ name:'Status', value: STATUS_LABEL[entry.status] || STATUS_LABEL.active, inline:true });
@@ -2691,6 +2836,7 @@
   });
 
   loadSettings();
+  checkLock();
   loadLedger();
 
   // ==================== Discord actions panel ====================
@@ -2699,7 +2845,15 @@
   function setDiscAction(a){
     DISC_STATE.action = a;
     els.discActionToggle.querySelectorAll('button').forEach(function(b){ b.classList.toggle('active', b.dataset.da===a); });
-    els.discResolutionBlock.style.display = (a==='dban') ? 'block' : 'none';
+    els.discResolutionBlock.style.display = (a==='dban' || a==='dtimeout') ? 'block' : 'none';
+    if (a==='dtimeout'){
+      els.discDurationToggle.style.display = 'none';
+      DISC_STATE.durationMode = 'temp';
+      els.discDurationRow.style.display = 'grid';
+    } else {
+      els.discDurationToggle.style.display = 'grid';
+      els.discDurationRow.style.display = (DISC_STATE.durationMode==='temp') ? 'grid' : 'none';
+    }
     els.discPublishBtn.textContent = 'Publish ' + LABEL[a].toLowerCase() + ' report';
   }
   els.discActionToggle.addEventListener('click', function(e){
@@ -2729,7 +2883,7 @@
   });
 
   function discDurationText(){
-    if (DISC_STATE.action!=='dban' || DISC_STATE.durationMode==='perm') return 'Permanent';
+    if (!hasDuration(DISC_STATE.action) || DISC_STATE.durationMode==='perm') return 'Permanent';
     var v = Number(els.discDurationValue.value);
     if (!v) return null;
     var unit = els.discDurationUnit.value;
@@ -2738,7 +2892,7 @@
     return v + ' ' + label.toLowerCase();
   }
   function discDurationMs(){
-    if (DISC_STATE.action!=='dban' || DISC_STATE.durationMode==='perm') return null;
+    if (!hasDuration(DISC_STATE.action) || DISC_STATE.durationMode==='perm') return null;
     var v = Number(els.discDurationValue.value);
     if (!v) return null;
     return v * (UNIT_MS[els.discDurationUnit.value] || UNIT_MS.days);
@@ -2806,18 +2960,18 @@
     els.discDmMessage.value = msg;
   });
 
-  async function callBotAction(action, userId, reason, dmMessage){
+  async function callBotAction(action, userId, reason, dmMessage, durationMsVal){
     var workerUrl = STATE.settings.workerUrl;
     var workerKey = STATE.settings.workerKey;
     var guildId = STATE.settings.guildId;
     if (!workerUrl || !workerKey || !guildId){
       throw new Error('Bot action settings are not configured. Open Settings and fill in Worker URL, admin key, and Server ID.');
     }
-    var endpoint = workerUrl + (action==='dban' ? '/ban' : '/kick');
+    var endpoint = workerUrl + (action==='dban' ? '/ban' : action==='dtimeout' ? '/timeout' : '/kick');
     var res = await fetch(endpoint, {
       method:'POST',
       headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify({ adminKey: workerKey, guildId: guildId, userId: userId, reason: reason, dmMessage: dmMessage || undefined })
+      body: JSON.stringify({ adminKey: workerKey, guildId: guildId, userId: userId, reason: reason, dmMessage: dmMessage || undefined, durationMs: durationMsVal || undefined })
     });
     var data;
     try{ data = await res.json(); }catch(e){ data = {}; }
@@ -2835,15 +2989,21 @@
     var action = DISC_STATE.action;
 
     if (!player){ setDiscFormMsg('Add the Discord username.', 'err'); return; }
-    if (!userId){ setDiscFormMsg('Add the Discord user ID — required to actually ban/kick them.', 'err'); return; }
+    if (!userId){ setDiscFormMsg('Add the Discord user ID — required to actually act on them.', 'err'); return; }
     if (!reason){ setDiscFormMsg('Add a reason for this action.', 'err'); return; }
     if (!admin){ setDiscFormMsg('Add the admin filing this report.', 'err'); return; }
     if (!STATE.settings.webhookUrl){ setDiscFormMsg('No Discord webhook saved yet. Open settings first.', 'err'); return; }
 
-    var durText = null;
-    if (action==='dban'){
+    var durText = null, durMs = null;
+    if (hasDuration(action)){
       durText = discDurationText();
-      if (DISC_STATE.durationMode==='temp' && !durText){ setDiscFormMsg('Enter how long the temporary ban should last.', 'err'); return; }
+      durMs = discDurationMs();
+      if (action==='dtimeout'){
+        if (!durMs){ setDiscFormMsg('Enter how long the timeout should last.', 'err'); return; }
+        if (durMs > 28*86400000){ setDiscFormMsg('Discord timeouts can last a maximum of 28 days.', 'err'); return; }
+      } else if (DISC_STATE.durationMode==='temp' && !durText){
+        setDiscFormMsg('Enter how long the temporary ban should last.', 'err'); return;
+      }
     }
 
     var entry = {
@@ -2851,8 +3011,8 @@
       caseNo: null,
       action: action, player: player, steamId: userId,
       reason: reason, admin: admin, category: els.discCategorySelect.value,
-      durationText: action==='dban' ? durText : null,
-      expiresAt: action==='dban' ? (function(){ var ms = discDurationMs(); return ms ? Date.now()+ms : null; })() : null,
+      durationText: hasDuration(action) ? (action==='dtimeout' ? durText : durText) : null,
+      expiresAt: hasDuration(action) ? (durMs ? Date.now()+durMs : null) : null,
       banScope: null,
       appeal: action==='dban' ? DISC_STATE.appeal : null,
       joinTime:'', acctCreated:'', vacBans:null, gameBans:null, daysSinceBan:null, bgNotes:'',
@@ -2873,7 +3033,7 @@
 
       var botResult;
       try{
-        botResult = await callBotAction(action, userId, reason, dmMessage);
+        botResult = await callBotAction(action, userId, reason, dmMessage, entry.action==='dtimeout' ? (entry.expiresAt - Date.now()) : null);
       }catch(err){
         setDiscFormMsg(err.message || 'Bot action failed.', 'err');
         showToast(err.message || 'Bot action failed', 'err');
