@@ -35,6 +35,39 @@
     --radius-sm:7px;
   }
 
+  [data-theme="light"]{
+    --bg:#f5f6f8;
+    --panel:#ffffff;
+    --panel-2:#f0f1f4;
+    --field:#f7f8fa;
+    --border:#dcdfe4;
+    --border-soft:#e8eaed;
+    --text:#1a1c22;
+    --text-2:#565a66;
+    --text-3:#878c99;
+    --accent-bg:rgba(91,141,239,0.14);
+    --ban-bg:rgba(255,92,92,0.14);
+    --kick-bg:rgba(255,169,77,0.18);
+    --warn-bg:rgba(234,179,8,0.16);
+    --discord-bg:rgba(88,101,242,0.12);
+  }
+  [data-theme="light"] .badge.ban{color:#c0362f;}
+  [data-theme="light"] .badge.kick{color:#b56413;}
+  [data-theme="light"] .badge.warn{color:#8a6913;}
+  [data-theme="light"] .badge.dban, [data-theme="light"] .badge.dkick{color:#3b45c9;}
+  [data-theme="light"] .badge.appeal-yes{color:#1a7a41;}
+  [data-theme="light"] .badge.appeal-no{color:#c0362f;}
+  [data-theme="light"] .flag-yes{color:#c0362f!important;}
+  [data-theme="light"] .status-select.pending{color:#8a6913;}
+  [data-theme="light"] .status-select.solved{color:#1a7a41;}
+  [data-theme="light"] .chip.ban .n{color:#e0433a;}
+  [data-theme="light"] .chip.kick .n{color:#d68830;}
+  [data-theme="light"] .chip.warn .n{color:#c4a01a;}
+  [data-theme="light"] .badge.expiry-due{color:#c0362f;}
+  [data-theme="light"] .badge.expiry-ok{color:var(--text-2);}
+  [data-theme="light"] .public-appeal, [data-theme="light"] .link-msg-inline{color:var(--text);}
+  [data-theme="light"] ::-webkit-scrollbar-thumb, [data-theme="light"] .ledger-list::-webkit-scrollbar-thumb, [data-theme="light"] .audit-list::-webkit-scrollbar-thumb, [data-theme="light"] .recent-feed::-webkit-scrollbar-thumb{background:var(--border);}
+
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
   body{
@@ -351,6 +384,10 @@
   .player-notes{font-size:12.5px;color:var(--text-2);margin-bottom:6px;}
   .player-case-count{font-size:12px;color:var(--text-3);}
   .player-actions{display:flex;gap:6px;flex-shrink:0;}
+
+  .bulk-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;padding:10px 12px;background:var(--field);border:1px solid var(--border-soft);border-radius:var(--radius-sm);}
+  .bulk-bar select{width:auto;padding:6px 10px;font-size:12.5px;}
+  .entry-checkbox{margin-right:2px;}
   @media (max-width:700px){.audit-row{grid-template-columns:1fr;gap:2px;}}
 
   .dash-section{display:block;}
@@ -391,7 +428,12 @@
   <div class="dash-body">
 
     <nav class="side-nav">
-      <div class="side-nav-brand" id="sideNavBrand">Menu</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 10px 12px;">
+        <div class="side-nav-brand" id="sideNavBrand" style="padding:0;">Menu</div>
+        <button type="button" class="icon-btn" id="themeToggleBtn" title="Toggle light/dark theme" style="width:26px;height:26px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" id="themeIcon"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+        </button>
+      </div>
       <button type="button" class="nav-item active" data-section="dashboard">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
         Dashboard
@@ -520,6 +562,13 @@
         </details>
 
         <div class="field">
+          <label for="categorySelect">Category</label>
+          <select id="categorySelect">
+            <option value="">Uncategorized</option>
+          </select>
+        </div>
+
+        <div class="field">
           <label for="reasonInput">Reason</label>
           <div class="template-row" id="templateRow"></div>
           <textarea id="reasonInput" placeholder="What happened, which rule was broken"></textarea>
@@ -614,6 +663,13 @@
             <label for="discUserId">Discord user ID</label>
             <input type="text" id="discUserId" placeholder="e.g. 123456789012345678">
           </div>
+        </div>
+
+        <div class="field">
+          <label for="discCategorySelect">Category</label>
+          <select id="discCategorySelect">
+            <option value="">Uncategorized</option>
+          </select>
         </div>
 
         <div class="field">
@@ -821,9 +877,9 @@
         <div class="panel">
       <div class="panel-head"><h2>Cases</h2><button class="btn ghost small" id="clearAllBtn">Clear all</button></div>
       <div class="panel-body">
-        <div class="search-row">
-          <input type="text" id="searchInput" placeholder="Search by player, admin or reason">
-          <select id="filterSelect">
+        <div class="search-row" style="flex-wrap:wrap;">
+          <input type="text" id="searchInput" placeholder="Search by player, admin or reason" style="flex:2;min-width:200px;">
+          <select id="filterSelect" style="flex:1;min-width:130px;">
             <option value="all">All actions</option>
             <option value="ban">Bans</option>
             <option value="kick">Kicks</option>
@@ -831,6 +887,29 @@
             <option value="dban">Discord bans</option>
             <option value="dkick">Discord kicks</option>
           </select>
+          <select id="categoryFilterSelect" style="flex:1;min-width:150px;">
+            <option value="all">All categories</option>
+          </select>
+          <select id="sortSelect" style="flex:1;min-width:130px;">
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+            <option value="case_desc">Case # (high-low)</option>
+            <option value="case_asc">Case # (low-high)</option>
+            <option value="player_az">Player (A-Z)</option>
+          </select>
+        </div>
+        <div class="bulk-bar" id="bulkBar">
+          <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-2);cursor:pointer;">
+            <input type="checkbox" id="selectAllCheck"> Select all
+          </label>
+          <span id="bulkCount" style="font-size:12.5px;color:var(--text-3);">0 selected</span>
+          <select id="bulkStatusSelect" style="width:auto;">
+            <option value="active">Active</option>
+            <option value="pending">Pending</option>
+            <option value="solved">Solved</option>
+          </select>
+          <button type="button" class="btn small" id="bulkApplyStatusBtn" disabled>Set status</button>
+          <button type="button" class="btn small" id="bulkDeleteBtn" disabled style="color:var(--ban);">Delete selected</button>
         </div>
         <div class="ledger-list" id="ledgerList">
           <div class="empty-state">No reports logged yet.</div>
@@ -844,6 +923,7 @@
           <div class="panel-head"><h2>Audit logs</h2><button class="btn ghost small" id="clearAuditBtn">Clear log</button></div>
           <div class="panel-body">
             <p style="font-size:12.5px;color:var(--text-3);margin:0 0 14px;">Every action taken through this site &mdash; publishing, editing, status changes, deletions, bot actions, announcements &mdash; is recorded here for accountability. Stored locally in this browser.</p>
+            <input type="text" id="auditSearch" placeholder="Search audit log" style="margin-bottom:14px;">
             <div class="audit-list" id="auditList">
               <div class="empty-state">Nothing recorded yet.</div>
             </div>
@@ -1008,6 +1088,10 @@
       <input type="text" id="editDiscordId" placeholder="e.g. 123456789012345678">
     </div>
     <div class="field">
+      <label for="editCategory">Category</label>
+      <select id="editCategory"><option value="">Uncategorized</option></select>
+    </div>
+    <div class="field">
       <label for="editReason">Reason</label>
       <textarea id="editReason"></textarea>
     </div>
@@ -1087,14 +1171,15 @@
 
   var els = {};
   ['gearBtn','settingsPanel','serverNameInput','webhookInput','ticketLinkInput','saveSettingsBtn','testWebhookBtn','exportBtn','importBtn','importFile',
-   'sideNavBrand',
+   'sideNavBrand','themeToggleBtn','themeIcon',
    'settingsStatus','serverNameOut','adminNameInput','addAdminBtn','adminList','actionToggle','durationBlock','durationToggle','durationRow','durationValue','durationUnit',
-   'playerName','steamId','steamIdLabel','acctCreatedLabel','steamStatsRow','gameDiscordId','gameDiscordLookupLink','historyBox','joinTime','acctCreated','vacBans','gameBans','daysSinceBan','bgNotes',
+   'playerName','steamId','steamIdLabel','acctCreatedLabel','steamStatsRow','gameDiscordId','gameDiscordLookupLink','categorySelect','historyBox','joinTime','acctCreated','vacBans','gameBans','daysSinceBan','bgNotes',
    'reasonInput','templateRow','resolutionBlock','scopeField','banScope','appealToggle',
    'addImageBtn','addLinkBtn','linkInlineRow','linkInlineInput','linkInlineAdd','linkInlineCancel','fileInput','proofList',
-   'internalNotes','adminInput','publishBtn','formMsg','searchInput','filterSelect','ledgerList','clearAllBtn',
+   'internalNotes','adminInput','publishBtn','formMsg','searchInput','filterSelect','categoryFilterSelect','sortSelect','ledgerList','clearAllBtn',
+   'bulkBar','selectAllCheck','bulkCount','bulkStatusSelect','bulkApplyStatusBtn','bulkDeleteBtn',
    'statBan','statKick','statWarn','statDban','statDkick','toast','toastMsg','caseTag','confirmOverlay','confirmMsg','confirmCancel','confirmOk',
-   'discActionToggle','discPlayerName','discUserId','discReasonInput','discTemplateRow','discResolutionBlock',
+   'discActionToggle','discPlayerName','discUserId','discCategorySelect','discReasonInput','discTemplateRow','discResolutionBlock',
    'discDurationToggle','discDurationRow','discDurationValue','discDurationUnit','discAppealToggle',
    'discAddImageBtn','discAddLinkBtn','discLinkInlineRow','discLinkInlineInput','discLinkInlineAdd','discLinkInlineCancel',
    'discFileInput','discProofList','discInternalNotes','discAdminInput','discPublishBtn','discFormMsg','discCaseTag',
@@ -1108,11 +1193,11 @@
    'workerUrlInput','workerKeyInput','guildIdInput',
    'discDmMessage','discGenerateDmBtn','discSendDmToggle',
    'ovOpen','ovPending','ovSolved','ovWeek','ovTotal','recentFeed',
-   'auditList','clearAuditBtn',
+   'auditList','clearAuditBtn','auditSearch',
    'dlUserId','dlLookupBtn','dlMsg','dlResult','dlAvatar','dlUsername','dlTag','dlCreated','dlId',
    'plName','plSteamId','plDiscordId','plNotes','plAddBtn','plFormMsg','plSearch','playerList',
    'editPlayerOverlay','editPlName','editPlSteamId','editPlDiscordId','editPlNotes','editPlCancel','editPlSave',
-   'editOverlay','editCaseLabel','editDiscordField','editDiscordId','editReason','editDurationField','editDuration','editResolutionField','editBanScope','editAppealToggle','editInternalNotes','editMsg','editCancel','editSave'
+   'editOverlay','editCaseLabel','editDiscordField','editDiscordId','editCategory','editReason','editDurationField','editDuration','editResolutionField','editBanScope','editAppealToggle','editInternalNotes','editMsg','editCancel','editSave'
   ].forEach(function(id){ els[id] = document.getElementById(id); });
 
   var LABEL = { ban:'Ban', kick:'Kick', warn:'Warning', dban:'Discord ban', dkick:'Discord kick' };
@@ -1123,6 +1208,28 @@
   function escapeHtml(s){
     return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; });
   }
+
+  // ---------- theme toggle ----------
+  var MOON_ICON = '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>';
+  var SUN_ICON = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+  function applyTheme(theme){
+    if (theme==='light'){
+      document.documentElement.setAttribute('data-theme','light');
+      els.themeIcon.innerHTML = SUN_ICON;
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+      els.themeIcon.innerHTML = MOON_ICON;
+    }
+  }
+  var savedTheme = 'dark';
+  try{ savedTheme = localStorage.getItem('modlog:theme') || 'dark'; }catch(e){}
+  applyTheme(savedTheme);
+  els.themeToggleBtn.addEventListener('click', function(){
+    var current = document.documentElement.getAttribute('data-theme')==='light' ? 'light' : 'dark';
+    var next = current==='light' ? 'dark' : 'light';
+    applyTheme(next);
+    try{ localStorage.setItem('modlog:theme', next); }catch(e){}
+  });
 
   function setFormMsg(text, kind){ els.formMsg.textContent = text||''; els.formMsg.className = kind||''; }
 
@@ -1164,6 +1271,7 @@
     els.editCaseLabel.textContent = '#'+entry.caseNo+' \u2014 '+entry.player;
     els.editDiscordField.style.display = isDiscordType(entry.action) ? 'none' : 'block';
     els.editDiscordId.value = entry.discordId || '';
+    els.editCategory.value = entry.category || '';
     els.editReason.value = entry.reason || '';
     els.editInternalNotes.value = entry.internalNotes || '';
     els.editMsg.textContent = '';
@@ -1190,6 +1298,7 @@
     if (!entry) return;
 
     if (!isDiscordType(entry.action)) entry.discordId = els.editDiscordId.value.trim();
+    entry.category = els.editCategory.value;
     entry.reason = els.editReason.value.trim();
     entry.internalNotes = els.editInternalNotes.value.trim();
     if (isBanType(entry.action)){
@@ -1255,6 +1364,11 @@
 
   // ---------- reason templates ----------
   var REASON_TEMPLATES = ['Cheating / hacking','Combat logging','Duping','Teaming','Base or loot exploiting','KOS rule violation','Harassment / toxicity','Hate speech / slurs','Griefing','Voice or chat rule violation'];
+  var CATEGORY_OPTIONS_HTML = '<option value="">Uncategorized</option>' + REASON_TEMPLATES.map(function(t){ return '<option value="'+escapeHtml(t)+'">'+escapeHtml(t)+'</option>'; }).join('');
+  els.categorySelect.innerHTML = CATEGORY_OPTIONS_HTML;
+  els.discCategorySelect.innerHTML = CATEGORY_OPTIONS_HTML;
+  els.categoryFilterSelect.innerHTML = '<option value="all">All categories</option>' + CATEGORY_OPTIONS_HTML;
+  els.editCategory.innerHTML = CATEGORY_OPTIONS_HTML;
   els.templateRow.innerHTML = REASON_TEMPLATES.map(function(t){ return '<span class="template-chip" data-tpl="'+escapeHtml(t)+'">'+escapeHtml(t)+'</span>'; }).join('');
   els.templateRow.addEventListener('click', function(e){
     var chip = e.target.closest('[data-tpl]'); if (!chip) return;
@@ -1695,13 +1809,21 @@
   }
   function renderAuditLog(){
     if (!els.auditList) return;
-    if (AUDIT_LOG.length===0){ els.auditList.innerHTML = '<div class="empty-state">Nothing recorded yet.</div>'; return; }
-    els.auditList.innerHTML = AUDIT_LOG.map(function(a){
+    var q = (els.auditSearch && els.auditSearch.value || '').trim().toLowerCase();
+    var list = AUDIT_LOG;
+    if (q){
+      list = list.filter(function(a){
+        return (a.action+' '+a.detail).toLowerCase().indexOf(q)!==-1;
+      });
+    }
+    if (list.length===0){ els.auditList.innerHTML = '<div class="empty-state">'+(AUDIT_LOG.length===0?'Nothing recorded yet.':'No matching entries.')+'</div>'; return; }
+    els.auditList.innerHTML = list.map(function(a){
       var d = new Date(a.ts);
       var timeStr = d.toLocaleDateString(undefined,{month:'short',day:'numeric'}) + ' \u00b7 ' + d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
       return '<div class="audit-row"><span class="audit-time">'+timeStr+'</span><span class="audit-tag">'+escapeHtml(a.action)+'</span><span class="audit-detail">'+a.detail+'</span></div>';
     }).join('');
   }
+  els.auditSearch && els.auditSearch.addEventListener('input', renderAuditLog);
   els.clearAuditBtn && els.clearAuditBtn.addEventListener('click', function(){
     askConfirm('Clear the entire audit log? This cannot be undone.', function(){
       AUDIT_LOG = [];
@@ -1834,16 +1956,85 @@
     }).join('');
   }
 
+  var SELECTED_CASES = new Set();
+
+  function updateBulkBar(){
+    var n = SELECTED_CASES.size;
+    els.bulkCount.textContent = n + ' selected';
+    els.bulkApplyStatusBtn.disabled = n===0;
+    els.bulkDeleteBtn.disabled = n===0;
+    var visibleIds = Array.from(els.ledgerList.querySelectorAll('[data-casecheck]')).map(function(cb){ return cb.dataset.casecheck; });
+    els.selectAllCheck.checked = visibleIds.length>0 && visibleIds.every(function(id){ return SELECTED_CASES.has(id); });
+  }
+
+  els.selectAllCheck.addEventListener('change', function(){
+    var boxes = els.ledgerList.querySelectorAll('[data-casecheck]');
+    boxes.forEach(function(cb){
+      cb.checked = els.selectAllCheck.checked;
+      if (els.selectAllCheck.checked) SELECTED_CASES.add(cb.dataset.casecheck);
+      else SELECTED_CASES.delete(cb.dataset.casecheck);
+    });
+    updateBulkBar();
+  });
+
+  els.bulkApplyStatusBtn.addEventListener('click', function(){
+    var newStatus = els.bulkStatusSelect.value;
+    var ids = Array.from(SELECTED_CASES);
+    if (ids.length===0) return;
+    askConfirm('Set status to "'+newStatus+'" for '+ids.length+' selected case(s)?', async function(){
+      var updated = 0;
+      for (var i=0;i<ids.length;i++){
+        var entry = STATE.entries.find(function(x){ return x.id===ids[i]; });
+        if (!entry) continue;
+        entry.status = newStatus;
+        updated++;
+        if (entry.discordMessageId){
+          try{ await editDiscordMessage(entry); }catch(e){ /* keep going even if one message fails to update */ }
+        }
+      }
+      saveLedger();
+      renderLedger();
+      showToast(updated+' case(s) updated', 'ok');
+      logAudit('Bulk status change', 'Set '+updated+' case(s) to <b>'+newStatus+'</b>');
+      SELECTED_CASES.clear();
+      updateBulkBar();
+    });
+  });
+
+  els.bulkDeleteBtn.addEventListener('click', function(){
+    var ids = Array.from(SELECTED_CASES);
+    if (ids.length===0) return;
+    askConfirm('Delete '+ids.length+' selected case(s) from the local ledger? This only removes them here, not from Discord.', function(){
+      STATE.entries = STATE.entries.filter(function(x){ return !SELECTED_CASES.has(x.id); });
+      saveLedger();
+      renderLedger();
+      showToast(ids.length+' case(s) deleted', 'ok');
+      logAudit('Bulk delete', 'Deleted '+ids.length+' selected case(s)');
+      SELECTED_CASES.clear();
+      updateBulkBar();
+    });
+  });
+
   function renderLedger(){
     updateStats();
     renderSidePanels();
     var q = els.searchInput.value.trim().toLowerCase();
     var f = els.filterSelect.value;
-    var list = STATE.entries.slice().sort(function(a,b){ return b.ts - a.ts; });
+    var cat = els.categoryFilterSelect.value;
+    var sortMode = els.sortSelect.value;
+    var list = STATE.entries.slice();
     list = list.filter(function(e){
       if (f!=='all' && e.action!==f) return false;
+      if (cat!=='all' && (e.category||'')!==cat) return false;
       if (!q) return true;
-      return (e.player+' '+e.admin+' '+e.reason).toLowerCase().indexOf(q)!==-1;
+      return (e.player+' '+e.admin+' '+e.reason+' '+(e.category||'')).toLowerCase().indexOf(q)!==-1;
+    });
+    list.sort(function(a,b){
+      if (sortMode==='oldest') return a.ts - b.ts;
+      if (sortMode==='case_desc') return (Number(b.caseNo)||0) - (Number(a.caseNo)||0);
+      if (sortMode==='case_asc') return (Number(a.caseNo)||0) - (Number(b.caseNo)||0);
+      if (sortMode==='player_az') return (a.player||'').localeCompare(b.player||'');
+      return b.ts - a.ts;
     });
     if (list.length===0){ els.ledgerList.innerHTML = '<div class="empty-state">No matching reports.</div>'; return; }
 
@@ -1857,18 +2048,22 @@
 
       var badges = '<div class="badge-line"><span class="badge '+e.action+'">'+LABEL[e.action]+'</span>';
       if (e.caseNo) badges += '<span class="badge scope">Case #'+e.caseNo+'</span>';
+      if (e.category) badges += '<span class="badge scope">'+escapeHtml(e.category)+'</span>';
       if (e.action==='ban' && e.banScope) badges += '<span class="badge scope">'+({game:'Game ban',discord:'Discord ban',both:'Game + Discord'})[e.banScope]+'</span>';
       if (isBanType(e.action) && e.appeal) badges += '<span class="badge '+(e.appeal==='yes'?'appeal-yes':'appeal-no')+'">'+(e.appeal==='yes'?'Appealable':'Not appealable')+'</span>';
+      var showUnbanBtn = false;
       if (isBanType(e.action) && e.expiresAt){
         var msLeft = e.expiresAt - Date.now();
         if (msLeft <= 0){
           badges += '<span class="badge expiry-due">Expired '+Math.ceil(-msLeft/86400000)+'d ago</span>';
+          if (e.action==='dban' && !e.unbannedAt) showUnbanBtn = true;
         } else {
           var daysLeft = msLeft/86400000;
           var label = daysLeft >= 1 ? Math.ceil(daysLeft)+'d left' : Math.ceil(msLeft/3600000)+'h left';
           badges += '<span class="badge expiry-ok">Expires in '+label+'</span>';
         }
       }
+      if (e.action==='dban' && e.unbannedAt) badges += '<span class="badge expiry-ok" style="color:#4ade80;">Unbanned</span>';
       badges += '</div>';
 
       var bgParts = [];
@@ -1914,10 +2109,11 @@
       ) : '';
 
       return (
-        '<div class="entry">' + thumb +
+        '<div class="entry">' +
+          '<input type="checkbox" class="entry-checkbox" data-casecheck="'+e.id+'" style="margin-top:4px;" '+(SELECTED_CASES.has(e.id)?'checked':'')+'>' + thumb +
           '<div class="entry-body">' +
             badges +
-            '<div class="entry-top" style="margin-bottom:2px;"><span class="entry-time">'+dateStr+'</span><div style="display:flex;align-items:center;gap:8px;">'+investigatorSelectHtml+statusSelectHtml+'<button type="button" class="btn small ghost" data-syncplayer="'+e.id+'" style="padding:4px 10px;" title="Save this player\'s info to the Players directory">+ Player</button><button type="button" class="btn small ghost" data-edit="'+e.id+'" style="padding:4px 10px;">Edit</button><button type="button" class="entry-del" data-del="'+e.id+'" aria-label="Delete entry" title="Delete">&times;</button></div></div>' +
+            '<div class="entry-top" style="margin-bottom:2px;"><span class="entry-time">'+dateStr+'</span><div style="display:flex;align-items:center;gap:8px;">'+investigatorSelectHtml+statusSelectHtml+(showUnbanBtn?'<button type="button" class="btn small" data-unban="'+e.id+'" style="padding:4px 10px;color:#4ade80;border-color:#4ade80;">Unban now</button>':'')+'<button type="button" class="btn small ghost" data-syncplayer="'+e.id+'" style="padding:4px 10px;" title="Save this player\'s info to the Players directory">+ Player</button><button type="button" class="btn small ghost" data-edit="'+e.id+'" style="padding:4px 10px;">Edit</button><button type="button" class="entry-del" data-del="'+e.id+'" aria-label="Delete entry" title="Delete">&times;</button></div></div>' +
             '<div class="entry-player">'+escapeHtml(e.player)+'</div>' +
             '<div class="entry-meta">Issued by '+escapeHtml(e.admin)+(durText ? ' &middot; '+durText : '')+'</div>' +
             bgLine + bgNotesLine +
@@ -2014,12 +2210,56 @@
       btn.addEventListener('click', function(){ openEditModal(btn.dataset.edit); });
     });
 
+    els.ledgerList.querySelectorAll('[data-unban]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var entry = STATE.entries.find(function(x){ return x.id===btn.dataset.unban; });
+        if (!entry) return;
+        askConfirm('Lift the Discord ban on '+entry.player+' now?', async function(){
+          if (!STATE.settings.workerUrl || !STATE.settings.workerKey || !STATE.settings.guildId){
+            showToast('Bot action settings are not configured. Open Settings first.', 'err');
+            return;
+          }
+          btn.disabled = true; btn.textContent = 'Unbanning...';
+          try{
+            var res = await fetch(STATE.settings.workerUrl + '/unban', {
+              method:'POST', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ adminKey: STATE.settings.workerKey, guildId: STATE.settings.guildId, userId: entry.steamId, reason: 'Temporary ban expired' })
+            });
+            var data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Unban failed (status '+res.status+')');
+
+            entry.unbannedAt = Date.now();
+            entry.status = 'solved';
+            saveLedger();
+            renderLedger();
+            if (entry.discordMessageId){
+              try{ await editDiscordMessage(entry); }catch(e){ /* local state still updated even if Discord edit fails */ }
+            }
+            showToast('Unbanned '+entry.player+' on Discord', 'ok');
+            logAudit('Unban', 'Lifted expired Discord ban for <b>'+escapeHtml(entry.player)+'</b> (case #'+entry.caseNo+')');
+          }catch(err){
+            showToast(err.message || 'Unban failed', 'err');
+            renderLedger();
+          }
+        });
+      });
+    });
+
     els.ledgerList.querySelectorAll('[data-syncplayer]').forEach(function(btn){
       btn.addEventListener('click', function(){
         var entry = STATE.entries.find(function(x){ return x.id===btn.dataset.syncplayer; });
         if (entry) syncCaseToPlayerProfile(entry);
       });
     });
+
+    els.ledgerList.querySelectorAll('[data-casecheck]').forEach(function(cb){
+      cb.addEventListener('change', function(){
+        var id = cb.dataset.casecheck;
+        if (cb.checked) SELECTED_CASES.add(id); else SELECTED_CASES.delete(id);
+        updateBulkBar();
+      });
+    });
+    updateBulkBar();
 
     els.ledgerList.querySelectorAll('[data-del]').forEach(function(btn){
       btn.addEventListener('click', function(){
@@ -2038,12 +2278,15 @@
   }
   els.searchInput.addEventListener('input', renderLedger);
   els.filterSelect.addEventListener('change', renderLedger);
+  els.categoryFilterSelect.addEventListener('change', renderLedger);
+  els.sortSelect.addEventListener('change', renderLedger);
 
   els.clearAllBtn.addEventListener('click', function(){
     if (STATE.entries.length===0) return;
     askConfirm('Delete all '+STATE.entries.length+' entries from the local ledger? This only clears this browser\'s copy, not your Discord channel. Consider exporting a backup first.', function(){
       var count = STATE.entries.length;
       STATE.entries = [];
+      SELECTED_CASES.clear();
       saveLedger();
       renderLedger();
       showToast('Ledger cleared', 'ok');
@@ -2098,6 +2341,8 @@
 
     fields.push({ name:'Status', value: STATUS_LABEL[entry.status] || STATUS_LABEL.active, inline:true });
     fields.push({ name:'Under investigation by', value: entry.investigator ? '**'+entry.investigator+'**' : 'Unassigned', inline:true });
+
+    if (entry.category) fields.push({ name:'Category', value: '**'+entry.category+'**', inline:true });
 
     fields.push({ name:'Reason', value: '> ' + (entry.reason || 'No reason given').replace(/\n/g, '\n> ') });
 
@@ -2271,6 +2516,7 @@
       caseNo: null,
       action: action, player: player, steamId: els.steamId.value.trim(),
       discordId: els.gameDiscordId.value.trim(),
+      category: els.categorySelect.value,
       reason: reason, admin: admin,
       durationText: isBanType(action) ? durText : null,
       expiresAt: isBanType(action) ? (function(){ var ms = durationMs(); return ms ? Date.now()+ms : null; })() : null,
@@ -2295,7 +2541,7 @@
     function proceed(){
       entry.caseNo = nextCaseNumber();
       publishEntry(entry, els.publishBtn, setFormMsg, function(){
-        els.playerName.value=''; els.steamId.value=''; els.gameDiscordId.value=''; els.reasonInput.value='';
+        els.playerName.value=''; els.steamId.value=''; els.gameDiscordId.value=''; els.categorySelect.value=''; els.reasonInput.value='';
         els.joinTime.value=''; els.acctCreated.value=''; els.vacBans.value=''; els.gameBans.value=''; els.daysSinceBan.value=''; els.bgNotes.value='';
         els.internalNotes.value=''; els.durationValue.value='';
         STATE.proofs = []; renderProofList();
@@ -2470,7 +2716,7 @@
       id: Date.now()+'-'+Math.random().toString(36).slice(2,8),
       caseNo: null,
       action: action, player: player, steamId: userId,
-      reason: reason, admin: admin,
+      reason: reason, admin: admin, category: els.discCategorySelect.value,
       durationText: action==='dban' ? durText : null,
       expiresAt: action==='dban' ? (function(){ var ms = discDurationMs(); return ms ? Date.now()+ms : null; })() : null,
       banScope: null,
@@ -2503,7 +2749,7 @@
 
       entry.caseNo = nextCaseNumber();
       publishEntry(entry, els.discPublishBtn, setDiscFormMsg, function(){
-        els.discPlayerName.value=''; els.discUserId.value=''; els.discReasonInput.value='';
+        els.discPlayerName.value=''; els.discUserId.value=''; els.discCategorySelect.value=''; els.discReasonInput.value='';
         els.discInternalNotes.value=''; els.discDurationValue.value=''; els.discDmMessage.value='';
         DISC_STATE.proofs = []; renderDiscProofList();
 
