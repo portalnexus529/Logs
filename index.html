@@ -385,6 +385,11 @@
   .player-case-count{font-size:12px;color:var(--text-3);}
   .player-actions{display:flex;gap:6px;flex-shrink:0;}
 
+  .player-stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:8px;}
+  .player-stat{background:var(--field);border:1px solid var(--border-soft);border-radius:var(--radius-sm);padding:8px 10px;}
+  .ps-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3);font-weight:700;margin-bottom:4px;}
+  .ps-value{font-size:14px;font-weight:700;color:var(--text);}
+
   .bulk-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;padding:10px 12px;background:var(--field);border:1px solid var(--border-soft);border-radius:var(--radius-sm);}
   .bulk-bar select{width:auto;padding:6px 10px;font-size:12.5px;}
   .entry-checkbox{margin-right:2px;}
@@ -949,6 +954,47 @@
                 <label for="plDiscordId">Discord user ID <span style="color:var(--text-3);font-weight:400;">(optional)</span></label>
                 <input type="text" id="plDiscordId" placeholder="e.g. 123456789012345678">
               </div>
+
+              <details class="bg-section">
+                <summary>Game stats (optional)</summary>
+                <div class="bg-body">
+                  <div class="two-col">
+                    <div class="field">
+                      <label for="plKills">Kills</label>
+                      <input type="number" id="plKills" min="0" placeholder="0">
+                    </div>
+                    <div class="field">
+                      <label for="plDeaths">Deaths</label>
+                      <input type="number" id="plDeaths" min="0" placeholder="0">
+                    </div>
+                  </div>
+                  <div class="two-col">
+                    <div class="field">
+                      <label for="plFurthestKill">Furthest kill (m)</label>
+                      <input type="number" id="plFurthestKill" min="0" step="0.01" placeholder="e.g. 250">
+                    </div>
+                    <div class="field">
+                      <label for="plDistanceTraveled">Distance traveled (km)</label>
+                      <input type="number" id="plDistanceTraveled" min="0" step="0.01" placeholder="e.g. 100">
+                    </div>
+                  </div>
+                  <div class="two-col">
+                    <div class="field">
+                      <label for="plShotsFired">Shots fired</label>
+                      <input type="number" id="plShotsFired" min="0" placeholder="0">
+                    </div>
+                    <div class="field">
+                      <label for="plAccuracy">Accuracy (%)</label>
+                      <input type="number" id="plAccuracy" min="0" max="100" step="0.01" placeholder="e.g. 12.25">
+                    </div>
+                  </div>
+                  <div class="field" style="margin-bottom:0;">
+                    <label for="plInfectedKilled">Infected killed</label>
+                    <input type="number" id="plInfectedKilled" min="0" placeholder="0">
+                  </div>
+                </div>
+              </details>
+
               <div class="field">
                 <label for="plNotes">Notes <span style="color:var(--text-3);font-weight:400;">(optional)</span></label>
                 <textarea id="plNotes" placeholder="Anything worth remembering about this player"></textarea>
@@ -1143,6 +1189,47 @@
       <label for="editPlDiscordId">Discord user ID</label>
       <input type="text" id="editPlDiscordId">
     </div>
+
+    <details class="bg-section">
+      <summary>Game stats</summary>
+      <div class="bg-body">
+        <div class="two-col">
+          <div class="field">
+            <label for="editPlKills">Kills</label>
+            <input type="number" id="editPlKills" min="0">
+          </div>
+          <div class="field">
+            <label for="editPlDeaths">Deaths</label>
+            <input type="number" id="editPlDeaths" min="0">
+          </div>
+        </div>
+        <div class="two-col">
+          <div class="field">
+            <label for="editPlFurthestKill">Furthest kill (m)</label>
+            <input type="number" id="editPlFurthestKill" min="0" step="0.01">
+          </div>
+          <div class="field">
+            <label for="editPlDistanceTraveled">Distance traveled (km)</label>
+            <input type="number" id="editPlDistanceTraveled" min="0" step="0.01">
+          </div>
+        </div>
+        <div class="two-col">
+          <div class="field">
+            <label for="editPlShotsFired">Shots fired</label>
+            <input type="number" id="editPlShotsFired" min="0">
+          </div>
+          <div class="field">
+            <label for="editPlAccuracy">Accuracy (%)</label>
+            <input type="number" id="editPlAccuracy" min="0" max="100" step="0.01">
+          </div>
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label for="editPlInfectedKilled">Infected killed</label>
+          <input type="number" id="editPlInfectedKilled" min="0">
+        </div>
+      </div>
+    </details>
+
     <div class="field">
       <label for="editPlNotes">Notes</label>
       <textarea id="editPlNotes"></textarea>
@@ -1195,8 +1282,8 @@
    'ovOpen','ovPending','ovSolved','ovWeek','ovTotal','recentFeed',
    'auditList','clearAuditBtn','auditSearch',
    'dlUserId','dlLookupBtn','dlMsg','dlResult','dlAvatar','dlUsername','dlTag','dlCreated','dlId',
-   'plName','plSteamId','plDiscordId','plNotes','plAddBtn','plFormMsg','plSearch','playerList',
-   'editPlayerOverlay','editPlName','editPlSteamId','editPlDiscordId','editPlNotes','editPlCancel','editPlSave',
+   'plName','plSteamId','plDiscordId','plKills','plDeaths','plFurthestKill','plDistanceTraveled','plShotsFired','plAccuracy','plInfectedKilled','plNotes','plAddBtn','plFormMsg','plSearch','playerList',
+   'editPlayerOverlay','editPlName','editPlSteamId','editPlDiscordId','editPlKills','editPlDeaths','editPlFurthestKill','editPlDistanceTraveled','editPlShotsFired','editPlAccuracy','editPlInfectedKilled','editPlNotes','editPlCancel','editPlSave',
    'editOverlay','editCaseLabel','editDiscordField','editDiscordId','editCategory','editReason','editDurationField','editDuration','editResolutionField','editBanScope','editAppealToggle','editInternalNotes','editMsg','editCancel','editSave'
   ].forEach(function(id){ els[id] = document.getElementById(id); });
 
@@ -1696,6 +1783,25 @@
       if (p.discordId) chips += '<span class="player-chip">Discord '+escapeHtml(p.discordId)+'</span>';
       var cases = casesForPlayer(p);
 
+      var statsHtml = '';
+      if (p.stats){
+        var s = p.stats;
+        var kd = (s.kills!=null && s.deaths!=null) ? (s.deaths>0 ? (s.kills/s.deaths).toFixed(2) : Number(s.kills).toFixed(2)) : null;
+        var items = [];
+        if (s.kills!=null || s.deaths!=null){
+          items.push({ label:'Kills / Deaths', value: (s.kills!=null?s.kills:'—')+' / '+(s.deaths!=null?s.deaths:'—')+(kd!=null?' ('+kd+')':'') });
+        }
+        if (s.furthestKill!=null) items.push({ label:'Furthest kill', value: s.furthestKill+' m' });
+        if (s.distanceTraveled!=null) items.push({ label:'Distance traveled', value: s.distanceTraveled+' km' });
+        if (s.shotsFired!=null) items.push({ label:'Shots fired', value: s.shotsFired+(s.accuracy!=null ? ' ('+s.accuracy+'%)' : '') });
+        if (s.infectedKilled!=null) items.push({ label:'Infected killed', value: s.infectedKilled });
+        if (items.length){
+          statsHtml = '<div class="player-stats-grid">' + items.map(function(it){
+            return '<div class="player-stat"><div class="ps-label">'+it.label+'</div><div class="ps-value">'+it.value+'</div></div>';
+          }).join('') + '</div>';
+        }
+      }
+
       var bgLine = '';
       if (p.background){
         var b = p.background;
@@ -1722,6 +1828,7 @@
           '</div>' +
         '</div>' +
         (p.notes ? '<div class="player-notes">'+escapeHtml(p.notes)+'</div>' : '') +
+        statsHtml +
         bgLine +
         '<details style="margin-top:8px;"><summary style="cursor:pointer;font-size:12px;color:var(--accent);">'+cases.length+' case(s) on record</summary><div style="margin-top:8px;display:flex;flex-direction:column;gap:6px;">'+historyHtml+'</div></details>' +
       '</div>';
@@ -1747,20 +1854,38 @@
 
   els.plSearch.addEventListener('input', renderPlayers);
 
+  function readStatsFromForm(prefix){
+    var g = function(id){ var v = els[id].value; return v!=='' ? Number(v) : null; };
+    var stats = {
+      kills: g(prefix+'Kills'), deaths: g(prefix+'Deaths'),
+      furthestKill: g(prefix+'FurthestKill'), distanceTraveled: g(prefix+'DistanceTraveled'),
+      shotsFired: g(prefix+'ShotsFired'), accuracy: g(prefix+'Accuracy'), infectedKilled: g(prefix+'InfectedKilled')
+    };
+    var hasAny = Object.keys(stats).some(function(k){ return stats[k]!==null; });
+    return hasAny ? stats : null;
+  }
+  function clearStatsForm(prefix){
+    ['Kills','Deaths','FurthestKill','DistanceTraveled','ShotsFired','Accuracy','InfectedKilled'].forEach(function(k){
+      els[prefix+k].value = '';
+    });
+  }
+
   els.plAddBtn.addEventListener('click', function(){
     var name = els.plName.value.trim();
     var steamId = els.plSteamId.value.trim();
     var discordId = els.plDiscordId.value.trim();
     var notes = els.plNotes.value.trim();
     if (!name){ els.plFormMsg.textContent = 'Add a player name.'; els.plFormMsg.className = 'err'; return; }
+    var stats = readStatsFromForm('pl');
 
-    PLAYERS.push({ id: Date.now()+'-'+Math.random().toString(36).slice(2,8), name:name, steamId:steamId, discordId:discordId, notes:notes, ts:Date.now() });
+    PLAYERS.push({ id: Date.now()+'-'+Math.random().toString(36).slice(2,8), name:name, steamId:steamId, discordId:discordId, notes:notes, stats:stats, ts:Date.now() });
     savePlayers();
     renderPlayers();
     logAudit('Player added', 'Added <b>'+escapeHtml(name)+'</b> to the player directory');
     showToast('Player added', 'ok');
     els.plFormMsg.textContent = ''; 
     els.plName.value=''; els.plSteamId.value=''; els.plDiscordId.value=''; els.plNotes.value='';
+    clearStatsForm('pl');
   });
 
   function openEditPlayerModal(id){
@@ -1771,6 +1896,14 @@
     els.editPlSteamId.value = p.steamId || '';
     els.editPlDiscordId.value = p.discordId || '';
     els.editPlNotes.value = p.notes || '';
+    var s = p.stats || {};
+    els.editPlKills.value = s.kills!=null ? s.kills : '';
+    els.editPlDeaths.value = s.deaths!=null ? s.deaths : '';
+    els.editPlFurthestKill.value = s.furthestKill!=null ? s.furthestKill : '';
+    els.editPlDistanceTraveled.value = s.distanceTraveled!=null ? s.distanceTraveled : '';
+    els.editPlShotsFired.value = s.shotsFired!=null ? s.shotsFired : '';
+    els.editPlAccuracy.value = s.accuracy!=null ? s.accuracy : '';
+    els.editPlInfectedKilled.value = s.infectedKilled!=null ? s.infectedKilled : '';
     els.editPlayerOverlay.classList.add('show');
   }
   els.editPlCancel.addEventListener('click', function(){ els.editPlayerOverlay.classList.remove('show'); EDIT_PLAYER_ID=null; });
@@ -1781,6 +1914,7 @@
     p.steamId = els.editPlSteamId.value.trim();
     p.discordId = els.editPlDiscordId.value.trim();
     p.notes = els.editPlNotes.value.trim();
+    p.stats = readStatsFromForm('editPl');
     savePlayers();
     renderPlayers();
     els.editPlayerOverlay.classList.remove('show');
