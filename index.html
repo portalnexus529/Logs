@@ -1906,15 +1906,32 @@
     if (!webhook) throw new Error('No webhook URL saved.');
     if (!entry.discordMessageId) throw new Error('This entry has no linked Discord message to update.');
 
+    // Discord's current API requires the "attachments" array to explicitly list
+    // everything that should remain after an edit, or existing images get dropped.
+    // So we fetch the message first to find out what's actually attached to it.
+    var existingAttachments = [];
+    try{
+      var getRes = await fetch(webhook + '/messages/' + entry.discordMessageId);
+      if (getRes.ok){
+        var msgData = await getRes.json();
+        existingAttachments = msgData.attachments || [];
+      }
+    }catch(e){ /* if this fails, we proceed without attachments rather than blocking the edit */ }
+
     var mainEmbed = buildMainEmbed(entry);
-    var imgProofs = (entry.proofs||[]).filter(function(p){ return p.type==='image' && p.url; });
-    if (imgProofs.length) mainEmbed.image = { url: imgProofs[0].url };
-    var imageEmbeds = imgProofs.slice(1).map(function(p){ return { color: COLOR_HEX[entry.action], image:{ url:p.url } }; });
+    var imageEmbeds = [];
+    if (existingAttachments.length){
+      mainEmbed.image = { url: 'attachment://' + existingAttachments[0].filename };
+      imageEmbeds = existingAttachments.slice(1).map(function(att){
+        return { color: COLOR_HEX[entry.action], image:{ url:'attachment://'+att.filename } };
+      });
+    }
+    var attachmentsField = existingAttachments.map(function(att){ return { id: att.id }; });
 
     var res = await fetch(webhook + '/messages/' + entry.discordMessageId, {
       method:'PATCH',
       headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify({ embeds: [mainEmbed].concat(imageEmbeds) })
+      body: JSON.stringify({ embeds: [mainEmbed].concat(imageEmbeds), attachments: attachmentsField })
     });
     if (!res.ok) throw new Error('Discord could not update that message (status '+res.status+').');
   }
