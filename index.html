@@ -3220,7 +3220,7 @@
 
     var embed = { color: hexToInt(els.annColor.value) };
     if (title) embed.title = title;
-    var descChunks = description ? chunkText(description, 4000) : [];
+    var descChunks = description ? chunkText(description, 1800) : [];
     if (descChunks.length) embed.description = descChunks[0];
     if (els.annAuthorName.value.trim()) embed.author = { name: els.annAuthorName.value.trim(), icon_url: els.annAuthorIcon.value.trim()||undefined };
     if (els.annFooter.value.trim()) embed.footer = { text: els.annFooter.value.trim() };
@@ -3252,8 +3252,20 @@
 
     try{
       var allEmbeds = [embed].concat(continuationEmbeds);
+      function embedCost(e){
+        return (e.title||'').length + (e.description||'').length + (e.footer&&e.footer.text||'').length + (e.author&&e.author.name||'').length;
+      }
       var batches = [];
-      for (var i=0; i<allEmbeds.length; i+=10) batches.push(allEmbeds.slice(i, i+10));
+      var current = [], currentCost = 0;
+      allEmbeds.forEach(function(e){
+        var cost = embedCost(e);
+        if (current.length && (current.length>=10 || currentCost+cost > 5500)){
+          batches.push(current);
+          current = []; currentCost = 0;
+        }
+        current.push(e); currentCost += cost;
+      });
+      if (current.length) batches.push(current);
 
       for (var b=0; b<batches.length; b++){
         var res;
