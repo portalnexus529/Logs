@@ -562,6 +562,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11v2a2 2 0 0 0 2 2h1l2 5h2l-1.5-5H10l8 4V5l-8 4H6a2 2 0 0 0-2 2z"/><path d="M18 9v6"/></svg>
         Announcements
       </button>
+      <button type="button" class="nav-item" data-section="events">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Events
+      </button>
       <button type="button" class="nav-item" data-section="ledger">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
         Cases
@@ -990,6 +994,85 @@
           <button class="btn primary" id="annPublishBtn">Send announcement</button>
           <div id="annFormMsg"></div>
         </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="sectionEvents" class="dash-section" style="display:none;">
+        <div class="panel">
+          <div class="panel-head"><h2>Events</h2></div>
+          <div class="panel-body">
+
+            <div class="field">
+              <label for="evWebhookSelect">Send to</label>
+              <select id="evWebhookSelect">
+                <option value="__custom">Custom URL for this message only</option>
+              </select>
+            </div>
+            <div class="field" id="evCustomWebhookField">
+              <input type="url" id="evCustomWebhookInput" placeholder="https://discord.com/api/webhooks/...">
+            </div>
+
+            <div class="field">
+              <label for="evTitle">Event title</label>
+              <input type="text" id="evTitle" placeholder="e.g. Weekend Airdrop Event">
+            </div>
+
+            <div class="field">
+              <label for="evDescription">Description</label>
+              <textarea id="evDescription" placeholder="What's happening, what to expect" style="min-height:100px;"></textarea>
+            </div>
+
+            <div class="two-col">
+              <div class="field">
+                <label for="evDateTime">Date &amp; time</label>
+                <input type="text" id="evDateTime" placeholder="e.g. Saturday, July 12 @ 8PM server time">
+              </div>
+              <div class="field">
+                <label for="evLocation">Location <span style="color:var(--text-3);font-weight:400;">(optional)</span></label>
+                <input type="text" id="evLocation" placeholder="e.g. Chernogorsk Military Base">
+              </div>
+            </div>
+
+            <div class="field">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <label style="margin:0;">Additional info</label>
+                <button type="button" class="btn small ghost" id="evAddInfoBtn" style="padding:4px 10px;">+ Add field</button>
+              </div>
+              <div id="evInfoFields"></div>
+            </div>
+
+            <div class="field">
+              <label for="evColor">Color</label>
+              <input type="color" id="evColor" value="#5865f2" style="height:42px;padding:4px;max-width:120px;">
+            </div>
+
+            <div class="field">
+              <label>Images <span style="color:var(--text-3);font-weight:400;">(add as many as you like)</span></label>
+              <div class="dropzone" id="evImageDropzone">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <p>Drag and drop images, or <span>browse</span></p>
+              </div>
+              <input type="file" id="evImageFile" accept="image/*" multiple style="display:none;">
+              <div class="proof-list" id="evImageList" style="margin-top:10px;"></div>
+            </div>
+
+            <div class="field">
+              <label for="evPingType">Ping</label>
+              <select id="evPingType">
+                <option value="none">No ping</option>
+                <option value="everyone">@everyone</option>
+                <option value="here">@here</option>
+                <option value="role">Specific role</option>
+              </select>
+            </div>
+            <div class="field" id="evRoleField" style="display:none;">
+              <label for="evRoleId">Role ID</label>
+              <input type="text" id="evRoleId" placeholder="e.g. 123456789012345678">
+            </div>
+
+            <button class="btn primary" id="evPublishBtn" style="width:100%;">Post event</button>
+            <div id="evFormMsg" style="font-size:12.5px;margin-top:8px;"></div>
           </div>
         </div>
       </div>
@@ -1430,6 +1513,9 @@
    'annThumbDropzone','annThumbPreview','annThumbImg','annThumbName','annThumbRemove','annThumbFile','annThumbUpload','annThumbLink','annThumbUrlInput',
    'annImageDropzone','annImagePreview','annImageImg','annImageName','annImageRemove','annImageFile','annImageUpload','annImageLink','annImageUrlInput',
    'annFooter','annTimestampToggle','annPingType','annRoleField','annRoleId','annPublishBtn','annFormMsg',
+   'evWebhookSelect','evCustomWebhookField','evCustomWebhookInput','evTitle','evDescription','evDateTime','evLocation',
+   'evAddInfoBtn','evInfoFields','evColor','evImageDropzone','evImageFile','evImageList',
+   'evPingType','evRoleField','evRoleId','evPublishBtn','evFormMsg',
    'webhookNameInput','webhookUrlInput','addWebhookBtn','webhookListUI',
    'workerUrlInput','workerKeyInput','guildIdInput',
    'discDmMessage','discGenerateDmBtn','discSendDmToggle',
@@ -1482,8 +1568,9 @@
     showToast._t = setTimeout(function(){ els.toast.className = 'toast'; }, 3200);
   }
 
-  function askConfirm(message, onConfirm){
+  function askConfirm(message, onConfirm, confirmLabel){
     els.confirmMsg.textContent = message;
+    els.confirmOk.textContent = confirmLabel || 'Confirm';
     els.confirmOverlay.classList.add('show');
     function cleanup(){
       els.confirmOverlay.classList.remove('show');
@@ -1701,7 +1788,7 @@
     els.linkInlineInput.value=''; els.linkInlineRow.classList.remove('show');
   });
 
-  var SECTION_IDS = { dashboard:'sectionDashboard', game:'sectionGame', discord:'sectionDiscord', ann:'sectionAnn', ledger:'sectionLedger', audit:'sectionAudit', players:'sectionPlayers', lookup:'sectionLookup', settings:'sectionSettings' };
+  var SECTION_IDS = { dashboard:'sectionDashboard', game:'sectionGame', discord:'sectionDiscord', ann:'sectionAnn', events:'sectionEvents', ledger:'sectionLedger', audit:'sectionAudit', players:'sectionPlayers', lookup:'sectionLookup', settings:'sectionSettings' };
   function switchSection(target){
     document.querySelectorAll('.nav-item').forEach(function(b){ b.classList.toggle('active', b.dataset.section===target); });
     Object.keys(SECTION_IDS).forEach(function(key){
@@ -1804,15 +1891,23 @@
 
   function renderWebhookSelect(){
     var list = STATE.settings.webhooks || [];
-    var current = els.annWebhookSelect.value;
-    els.annWebhookSelect.innerHTML = list.map(function(w, i){ return '<option value="'+i+'">'+escapeHtml(w.name)+'</option>'; }).join('')
+    var optsHtml = list.map(function(w, i){ return '<option value="'+i+'">'+escapeHtml(w.name)+'</option>'; }).join('')
       + '<option value="__custom">Custom URL for this message only</option>';
-    if (list.some(function(w,i){ return String(i)===current; })) els.annWebhookSelect.value = current;
-    else els.annWebhookSelect.value = list.length ? '0' : '__custom';
+
+    [els.annWebhookSelect, els.evWebhookSelect].forEach(function(sel){
+      var current = sel.value;
+      sel.innerHTML = optsHtml;
+      if (list.some(function(w,i){ return String(i)===current; })) sel.value = current;
+      else sel.value = list.length ? '0' : '__custom';
+    });
     els.annCustomWebhookField.style.display = (els.annWebhookSelect.value==='__custom') ? 'block' : 'none';
+    els.evCustomWebhookField.style.display = (els.evWebhookSelect.value==='__custom') ? 'block' : 'none';
   }
   els.annWebhookSelect.addEventListener('change', function(){
     els.annCustomWebhookField.style.display = (els.annWebhookSelect.value==='__custom') ? 'block' : 'none';
+  });
+  els.evWebhookSelect.addEventListener('change', function(){
+    els.evCustomWebhookField.style.display = (els.evWebhookSelect.value==='__custom') ? 'block' : 'none';
   });
 
   function renderTemplateSelect(){
@@ -1885,7 +1980,7 @@
       }catch(e){}
       checkLock();
       showToast('PIN removed', 'ok');
-    });
+    }, 'Remove');
   });
 
   var MAINT_FORM_ENABLED = false;
@@ -2104,7 +2199,7 @@
           renderPlayers();
           showToast('Player removed', 'ok');
           logAudit('Player removed', 'Removed <b>'+escapeHtml(p?p.name:'player')+'</b> from the directory');
-        });
+        }, 'Remove');
       });
     });
   }
@@ -2235,7 +2330,7 @@
       saveAuditLog();
       renderAuditLog();
       showToast('Audit log cleared', 'ok');
-    });
+    }, 'Clear log');
   });
 
   // ---------- account lookups ----------
@@ -2418,7 +2513,7 @@
       logAudit('Bulk status change', 'Set '+updated+' case(s) to <b>'+newStatus+'</b>');
       SELECTED_CASES.clear();
       updateBulkBar();
-    });
+    }, 'Apply');
   });
 
   els.bulkDeleteBtn.addEventListener('click', function(){
@@ -2432,7 +2527,7 @@
       logAudit('Bulk delete', 'Deleted '+ids.length+' selected case(s)');
       SELECTED_CASES.clear();
       updateBulkBar();
-    });
+    }, 'Delete');
   });
 
   function renderLedger(){
@@ -2711,7 +2806,7 @@
             showToast(err.message || 'Unban failed', 'err');
             renderLedger();
           }
-        });
+        }, 'Unban');
       });
     });
 
@@ -2742,7 +2837,7 @@
           renderLedger();
           showToast('Entry deleted', 'ok');
           logAudit('Case deleted', 'Deleted '+label);
-        });
+        }, 'Delete');
       });
     });
   }
@@ -2761,7 +2856,7 @@
       renderLedger();
       showToast('Ledger cleared', 'ok');
       logAudit('Cases cleared', 'Cleared all '+count+' cases from the local ledger');
-    });
+    }, 'Delete');
   });
 
   function durationText(){
@@ -3056,7 +3151,7 @@
     }
 
     if (openCase){
-      askConfirm('This player already has an open case (#'+openCase.caseNo+', '+LABEL[openCase.action]+'). Publish this report anyway?', proceed);
+      askConfirm('This player already has an open case (#'+openCase.caseNo+', '+LABEL[openCase.action]+'). Publish this report anyway?', proceed, 'Publish anyway');
     } else {
       proceed();
     }
@@ -3281,7 +3376,7 @@
     }
 
     if (openCase){
-      askConfirm('This user already has an open case (#'+openCase.caseNo+', '+LABEL[openCase.action]+'). Publish this report anyway?', proceed);
+      askConfirm('This user already has an open case (#'+openCase.caseNo+', '+LABEL[openCase.action]+'). Publish this report anyway?', proceed, 'Publish anyway');
     } else {
       proceed();
     }
@@ -3519,6 +3614,176 @@
       els.annPublishBtn.disabled = false;
     }
   });
+
+  // ==================== Events panel ====================
+  var EV_IMAGES = [];
+  var EV_INFO_FIELDS = [];
+
+  function renderEvInfoFields(){
+    els.evInfoFields.innerHTML = EV_INFO_FIELDS.map(function(f, i){
+      return '<div class="two-col" style="margin-bottom:8px;align-items:end;" data-evinfo-row="'+i+'">' +
+        '<input type="text" placeholder="Label (e.g. Rewards)" value="'+escapeHtml(f.label)+'" data-evinfo-label="'+i+'">' +
+        '<div style="display:flex;gap:6px;">' +
+          '<input type="text" placeholder="Value" value="'+escapeHtml(f.value)+'" data-evinfo-value="'+i+'" style="flex:1;">' +
+          '<button type="button" class="dz-remove" data-evinfo-rm="'+i+'">&times;</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+    els.evInfoFields.querySelectorAll('[data-evinfo-label]').forEach(function(inp){
+      inp.addEventListener('input', function(){ EV_INFO_FIELDS[Number(inp.dataset.evinfoLabel)].label = inp.value; });
+    });
+    els.evInfoFields.querySelectorAll('[data-evinfo-value]').forEach(function(inp){
+      inp.addEventListener('input', function(){ EV_INFO_FIELDS[Number(inp.dataset.evinfoValue)].value = inp.value; });
+    });
+    els.evInfoFields.querySelectorAll('[data-evinfo-rm]').forEach(function(btn){
+      btn.addEventListener('click', function(){ EV_INFO_FIELDS.splice(Number(btn.dataset.evinfoRm),1); renderEvInfoFields(); });
+    });
+  }
+  els.evAddInfoBtn.addEventListener('click', function(){
+    EV_INFO_FIELDS.push({ label:'', value:'' });
+    renderEvInfoFields();
+  });
+
+  function renderEvImageList(){
+    if (EV_IMAGES.length===0){ els.evImageList.innerHTML=''; return; }
+    els.evImageList.innerHTML = EV_IMAGES.map(function(img, i){
+      return '<div class="proof-item"><img src="'+img.previewUrl+'" alt=""><span class="label">'+escapeHtml(img.file.name)+'</span><button type="button" class="rm" data-evimg-rm="'+i+'">&times;</button></div>';
+    }).join('');
+    els.evImageList.querySelectorAll('[data-evimg-rm]').forEach(function(btn){
+      btn.addEventListener('click', function(){ EV_IMAGES.splice(Number(btn.dataset.evimgRm),1); renderEvImageList(); });
+    });
+  }
+  els.evImageDropzone.addEventListener('click', function(){ els.evImageFile.click(); });
+  ['dragover','dragenter'].forEach(function(evt){ els.evImageDropzone.addEventListener(evt, function(e){ e.preventDefault(); els.evImageDropzone.classList.add('drag'); }); });
+  ['dragleave','drop'].forEach(function(evt){ els.evImageDropzone.addEventListener(evt, function(e){ e.preventDefault(); els.evImageDropzone.classList.remove('drag'); }); });
+  function addEvImages(fileList){
+    Array.from(fileList).forEach(function(file){
+      if (!file.type.startsWith('image/')){ setEvFormMsg('Only image files are supported.', 'err'); return; }
+      if (file.size > 8*1024*1024){ setEvFormMsg('"'+file.name+'" is over 8MB and was skipped.', 'err'); return; }
+      var reader = new FileReader();
+      reader.onload = function(e){
+        EV_IMAGES.push({ file:file, previewUrl:e.target.result });
+        renderEvImageList();
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+  els.evImageDropzone.addEventListener('drop', function(e){ addEvImages(e.dataTransfer.files); });
+  els.evImageFile.addEventListener('change', function(){ addEvImages(this.files); this.value=''; });
+
+  els.evPingType.addEventListener('change', function(){
+    els.evRoleField.style.display = (els.evPingType.value==='role') ? 'block' : 'none';
+  });
+
+  function setEvFormMsg(text, kind){ els.evFormMsg.textContent = text||''; els.evFormMsg.className = kind||''; }
+
+  function resetEvForm(){
+    els.evTitle.value=''; els.evDescription.value=''; els.evDateTime.value=''; els.evLocation.value='';
+    els.evColor.value = '#5865f2';
+    els.evPingType.value = 'none'; els.evRoleId.value=''; els.evRoleField.style.display='none';
+    EV_IMAGES = []; renderEvImageList();
+    EV_INFO_FIELDS = []; renderEvInfoFields();
+  }
+
+  els.evPublishBtn.addEventListener('click', async function(){
+    var title = els.evTitle.value.trim();
+    var description = els.evDescription.value.trim();
+    if (!title){ setEvFormMsg('Add an event title.', 'err'); return; }
+
+    var webhook;
+    if (els.evWebhookSelect.value==='__custom'){
+      webhook = els.evCustomWebhookInput.value.trim();
+      if (!webhook){ setEvFormMsg('Enter a webhook URL or save one in settings.', 'err'); return; }
+    } else {
+      var w = (STATE.settings.webhooks||[])[Number(els.evWebhookSelect.value)];
+      if (!w){ setEvFormMsg('No webhook selected.', 'err'); return; }
+      webhook = w.url;
+    }
+
+    var color = hexToInt(els.evColor.value);
+    var mainEmbed = { title: title, color: color };
+    if (description) mainEmbed.description = description;
+    mainEmbed.fields = [];
+    if (els.evDateTime.value.trim()) mainEmbed.fields.push({ name:'Date & time', value: els.evDateTime.value.trim(), inline:true });
+    if (els.evLocation.value.trim()) mainEmbed.fields.push({ name:'Location', value: els.evLocation.value.trim(), inline:true });
+    EV_INFO_FIELDS.forEach(function(f){
+      if (f.label.trim() && f.value.trim()) mainEmbed.fields.push({ name: f.label.trim().slice(0,256), value: f.value.trim().slice(0,1024) });
+    });
+    if (mainEmbed.fields.length===0) delete mainEmbed.fields;
+
+    var content;
+    var allowed_mentions = { parse: [] };
+    var pingType = els.evPingType.value;
+    if (pingType==='everyone'){ content = '@everyone'; allowed_mentions.parse = ['everyone']; }
+    else if (pingType==='here'){ content = '@here'; allowed_mentions.parse = ['everyone']; }
+    else if (pingType==='role'){
+      var rid = els.evRoleId.value.trim();
+      if (!rid){ setEvFormMsg('Enter a role ID for the ping.', 'err'); return; }
+      content = '<@&'+rid+'>'; allowed_mentions.roles = [rid];
+    }
+
+    var imageEmbeds = [];
+    var safeNames = EV_IMAGES.map(function(img){ return img.file.name.replace(/\s+/g,'_'); });
+    if (EV_IMAGES.length){
+      mainEmbed.image = { url: 'attachment://' + safeNames[0] };
+      for (var i=1; i<EV_IMAGES.length; i++){
+        imageEmbeds.push({ color: color, image:{ url:'attachment://'+safeNames[i] } });
+      }
+    }
+
+    var allEmbeds = [mainEmbed].concat(imageEmbeds);
+    function embedCost(e){
+      var fieldCost = (e.fields||[]).reduce(function(sum,f){ return sum + (f.name||'').length + (f.value||'').length; }, 0);
+      return (e.title||'').length + (e.description||'').length + fieldCost;
+    }
+    var batches = [];
+    var current = [], currentCost = 0;
+    allEmbeds.forEach(function(e){
+      var cost = embedCost(e);
+      if (current.length && (current.length>=10 || currentCost+cost > 5500)){
+        batches.push(current);
+        current = []; currentCost = 0;
+      }
+      current.push(e); currentCost += cost;
+    });
+    if (current.length) batches.push(current);
+
+    els.evPublishBtn.disabled = true;
+    setEvFormMsg('Posting...', '');
+
+    try{
+      for (var b=0; b<batches.length; b++){
+        var res;
+        if (b===0 && EV_IMAGES.length){
+          var fd = new FormData();
+          EV_IMAGES.forEach(function(img, idx){ fd.append('files['+idx+']', img.file, safeNames[idx]); });
+          var payload = { embeds: batches[b] };
+          if (content){ payload.content = content; payload.allowed_mentions = allowed_mentions; }
+          fd.append('payload_json', JSON.stringify(payload));
+          res = await fetch(webhook, { method:'POST', body: fd });
+        } else {
+          var payload2 = { embeds: batches[b] };
+          if (b===0 && content){ payload2.content = content; payload2.allowed_mentions = allowed_mentions; }
+          res = await fetch(webhook, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload2) });
+        }
+        if (!res.ok){
+          throw new Error('Discord rejected the message (status '+res.status+'). '+(await discordErrorDetail(res)));
+        }
+        if (batches.length > 1) setEvFormMsg('Sending part '+(b+1)+' of '+batches.length+'...', '');
+      }
+
+      showToast('Event posted', 'ok');
+      setEvFormMsg(batches.length>1 ? ('Posted across '+batches.length+' messages.') : 'Posted successfully.', 'ok');
+      logAudit('Event posted', 'Posted event <b>'+escapeHtml(title)+'</b>');
+      resetEvForm();
+    }catch(err){
+      setEvFormMsg(err.message || 'Could not post. Try again.', 'err');
+      showToast(err.message || 'Post failed', 'err');
+    }finally{
+      els.evPublishBtn.disabled = false;
+    }
+  });
+
   // ==================== Auth (login / signup) ====================
   // This Worker URL is hardcoded because it must work for every visitor,
   // including ones who've never opened this site before (so it can't rely
@@ -3689,7 +3954,7 @@
 
   els.playerLogoutBtn.addEventListener('click', function(){ clearSession(); routeByAuth(); });
   els.ownerLogoutBtn.addEventListener('click', function(){
-    askConfirm('Log out?', function(){ clearSession(); routeByAuth(); });
+    askConfirm('Log out?', function(){ clearSession(); routeByAuth(); }, 'Log out');
   });
 
   (async function initApp(){
