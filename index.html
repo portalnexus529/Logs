@@ -439,6 +439,16 @@
 
 <div class="lock-overlay" id="authOverlay" style="display:none;">
   <div class="auth-box">
+
+    <div id="maintenanceView" style="display:none;text-align:center;">
+      <svg class="auth-logo" viewBox="0 0 24 24" style="margin:0 auto 16px;display:block;"><rect width="24" height="24" rx="6" fill="#0a0b0e"/><rect x="5.3" y="12" width="3.4" height="7" rx="1.7" fill="#ff5c5c"/><rect x="10.3" y="6.5" width="3.4" height="12.5" rx="1.7" fill="#ffa94d"/><rect x="15.3" y="9.5" width="3.4" height="9.5" rx="1.7" fill="#ffd43b"/></svg>
+      <h1 id="maintTitleOut" style="font-size:19px;font-weight:700;margin:0 0 10px;">Under Maintenance</h1>
+      <p id="maintMessageOut" style="font-size:13.5px;color:var(--text-2);line-height:1.6;margin:0 0 10px;"></p>
+      <p id="maintReturnOut" style="font-size:12px;color:var(--text-3);margin:0 0 20px;"></p>
+      <button type="button" class="link-msg-btn" id="staffLoginLink">Staff login</button>
+    </div>
+
+    <div id="authNormalView">
     <div class="auth-brand">
       <svg class="auth-logo" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#0a0b0e"/><rect x="5.3" y="12" width="3.4" height="7" rx="1.7" fill="#ff5c5c"/><rect x="10.3" y="6.5" width="3.4" height="12.5" rx="1.7" fill="#ffa94d"/><rect x="15.3" y="9.5" width="3.4" height="9.5" rx="1.7" fill="#ffd43b"/></svg>
       <h1 id="authBrandName">The Watchers</h1>
@@ -482,6 +492,7 @@
       </div>
       <div id="signupMsg" style="font-size:12.5px;color:var(--ban);min-height:16px;margin-bottom:6px;"></div>
       <button type="button" class="btn primary" id="signupBtn" style="width:100%;">Create account</button>
+    </div>
     </div>
   </div>
 </div>
@@ -1222,6 +1233,29 @@
         </div>
         <p style="font-size:11.5px;color:var(--text-3);margin:4px 0 0;">These are stored only in this browser, same as your webhook URL. Never paste your actual bot token here or anywhere in this site.</p>
       </div>
+
+      <div class="settings-note" style="border-top:1px solid var(--border-soft);padding-top:12px;">
+        <label style="margin-bottom:8px;">Maintenance mode</label>
+        <div class="toggle-row" id="maintenanceToggle" style="margin-bottom:12px;max-width:220px;">
+          <button type="button" data-mt="off" class="active">Off</button>
+          <button type="button" data-mt="on">On</button>
+        </div>
+        <div class="field">
+          <label for="maintTitleInput">Title</label>
+          <input type="text" id="maintTitleInput" placeholder="e.g. Scheduled Maintenance">
+        </div>
+        <div class="field">
+          <label for="maintMessageInput">Message</label>
+          <textarea id="maintMessageInput" placeholder="Let visitors know what's happening and why"></textarea>
+        </div>
+        <div class="field" style="margin-bottom:10px;">
+          <label for="maintReturnInput">Estimated return <span style="color:var(--text-3);font-weight:400;">(optional)</span></label>
+          <input type="text" id="maintReturnInput" placeholder="e.g. Back online within a few hours">
+        </div>
+        <button class="btn primary small" id="saveMaintenanceBtn">Save maintenance settings</button>
+        <span id="maintenanceStatus" style="font-size:12.5px;color:var(--text-2);margin-left:8px;"></span>
+        <p style="font-size:11.5px;color:var(--text-3);margin:8px 0 0;">While on, everyone except the owner account sees this message instead of the login/signup screen. Applies to every visitor immediately, since it's stored on your Worker, not just this browser.</p>
+      </div>
       <p class="settings-note">
         The webhook URL and ledger are stored in this browser only (localStorage) &mdash; a static site like Netlify has no shared database behind it, so each admin's device keeps its own local copy. Every publish still posts to your Discord channel, which stays the permanent shared record for the whole team. Use export/import to back up or move your local ledger between devices.
       </p>
@@ -1373,6 +1407,8 @@
   ['gearBtn','settingsPanel','serverNameInput','webhookInput','ticketLinkInput','saveSettingsBtn','testWebhookBtn','exportBtn','importBtn','importFile',
    'lockOverlay','lockPinInput','lockMsg','lockUnlockBtn','accessPinInput','removePinBtn',
    'authOverlay','authTabLogin','authTabSignup','authBrandName','loginFormBox','signupFormBox',
+   'maintenanceView','authNormalView','maintTitleOut','maintMessageOut','maintReturnOut','staffLoginLink',
+   'maintenanceToggle','maintTitleInput','maintMessageInput','maintReturnInput','saveMaintenanceBtn','maintenanceStatus',
    'loginUsername','loginPassword','loginMsg','loginBtn',
    'signupUsername','signupPassword','signupDiscordId','signupSteamId','signupMsg','signupBtn',
    'playerWrap','playerWelcome','playerLogoutBtn','playerCasesFeed','ownerLogoutBtn',
@@ -1850,6 +1886,59 @@
       checkLock();
       showToast('PIN removed', 'ok');
     });
+  });
+
+  var MAINT_FORM_ENABLED = false;
+  els.maintenanceToggle.addEventListener('click', function(e){
+    var b = e.target.closest('button[data-mt]'); if (!b) return;
+    MAINT_FORM_ENABLED = b.dataset.mt === 'on';
+    els.maintenanceToggle.querySelectorAll('button').forEach(function(x){ x.classList.toggle('active', x===b); });
+  });
+
+  async function loadMaintenanceIntoSettings(){
+    if (!STATE.settings.workerUrl) return;
+    try{
+      var res = await fetch(STATE.settings.workerUrl + '/maintenance');
+      if (!res.ok) return;
+      var data = await res.json();
+      MAINT_FORM_ENABLED = !!data.enabled;
+      els.maintenanceToggle.querySelectorAll('button').forEach(function(x){ x.classList.toggle('active', (x.dataset.mt==='on')===MAINT_FORM_ENABLED); });
+      els.maintTitleInput.value = data.title || '';
+      els.maintMessageInput.value = data.message || '';
+      els.maintReturnInput.value = data.returnEta || '';
+    }catch(e){ /* leave form blank if unreachable */ }
+  }
+
+  els.saveMaintenanceBtn.addEventListener('click', async function(){
+    if (!STATE.settings.workerUrl || !STATE.settings.workerKey){
+      els.maintenanceStatus.textContent = 'Configure Worker URL and admin key above first.';
+      els.maintenanceStatus.style.color = 'var(--ban)';
+      return;
+    }
+    els.saveMaintenanceBtn.disabled = true;
+    els.maintenanceStatus.textContent = 'Saving...'; els.maintenanceStatus.style.color = 'var(--text-2)';
+    try{
+      var res = await fetch(STATE.settings.workerUrl + '/maintenance', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          adminKey: STATE.settings.workerKey,
+          enabled: MAINT_FORM_ENABLED,
+          title: els.maintTitleInput.value.trim(),
+          message: els.maintMessageInput.value.trim(),
+          returnEta: els.maintReturnInput.value.trim()
+        })
+      });
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not save.');
+      els.maintenanceStatus.textContent = MAINT_FORM_ENABLED ? 'Maintenance mode is now ON.' : 'Maintenance mode is now OFF.';
+      els.maintenanceStatus.style.color = '#4ade80';
+      logAudit('Maintenance', MAINT_FORM_ENABLED ? 'Turned maintenance mode <b>ON</b>' : 'Turned maintenance mode <b>OFF</b>');
+      showToast('Maintenance settings saved', 'ok');
+    }catch(err){
+      els.maintenanceStatus.textContent = err.message || 'Could not save.'; els.maintenanceStatus.style.color = 'var(--ban)';
+    }finally{
+      els.saveMaintenanceBtn.disabled = false;
+    }
   });
 
   function loadLedger(){
@@ -3447,9 +3536,49 @@
     try{ localStorage.removeItem('modlog:auth'); }catch(e){}
   }
 
+  var MAINTENANCE_STATE = { enabled: false, title:'', message:'', returnEta:'' };
+
+  async function fetchMaintenanceState(){
+    try{
+      var res = await fetch(AUTH_WORKER_URL + '/maintenance');
+      if (res.ok){
+        var data = await res.json();
+        if (data) MAINTENANCE_STATE = data;
+      }
+    }catch(e){ /* if unreachable, fail open rather than lock everyone out over a network hiccup */ }
+  }
+
+  function showMaintenanceScreen(){
+    els.authOverlay.style.display = 'flex';
+    document.getElementById('adminWrap').style.display = 'none';
+    els.playerWrap.style.display = 'none';
+    els.maintenanceView.style.display = 'block';
+    els.authNormalView.style.display = 'none';
+    els.maintTitleOut.textContent = MAINTENANCE_STATE.title || 'Under Maintenance';
+    els.maintMessageOut.textContent = MAINTENANCE_STATE.message || 'The site is temporarily closed for maintenance. Please check back soon.';
+    els.maintReturnOut.textContent = MAINTENANCE_STATE.returnEta ? ('Estimated return: ' + MAINTENANCE_STATE.returnEta) : '';
+  }
+
+  els.staffLoginLink.addEventListener('click', function(){
+    els.maintenanceView.style.display = 'none';
+    els.authNormalView.style.display = 'block';
+    els.authTabSignup.style.display = 'none';
+    els.authTabLogin.click();
+  });
+
   function routeByAuth(){
     var session = getSession();
     var adminWrapEl = document.getElementById('adminWrap');
+
+    if (MAINTENANCE_STATE.enabled && (!session || session.role !== 'owner')){
+      showMaintenanceScreen();
+      return;
+    }
+
+    els.authTabSignup.style.display = '';
+    els.maintenanceView.style.display = 'none';
+    els.authNormalView.style.display = 'block';
+
     if (!session){
       els.authOverlay.style.display = 'flex';
       adminWrapEl.style.display = 'none';
@@ -3461,6 +3590,7 @@
       els.playerWrap.style.display = 'none';
       adminWrapEl.style.display = 'block';
       checkLock();
+      loadMaintenanceIntoSettings();
     } else {
       adminWrapEl.style.display = 'none';
       els.playerWrap.style.display = 'block';
@@ -3490,6 +3620,9 @@
       });
       var data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Login failed.');
+      if (MAINTENANCE_STATE.enabled && data.role !== 'owner'){
+        throw new Error('The site is under maintenance. Only staff can log in right now.');
+      }
       setSession({ role: data.role, username: data.username, discordId: data.discordId||'', steamId: data.steamId||'' });
       els.loginMsg.textContent = '';
       els.loginPassword.value = '';
@@ -3502,6 +3635,7 @@
   });
 
   els.signupBtn.addEventListener('click', async function(){
+    if (MAINTENANCE_STATE.enabled){ els.signupMsg.textContent = 'Signups are closed while the site is under maintenance.'; els.signupMsg.style.color='var(--ban)'; return; }
     var username = els.signupUsername.value.trim();
     var password = els.signupPassword.value;
     var discordId = els.signupDiscordId.value.trim();
@@ -3558,7 +3692,10 @@
     askConfirm('Log out?', function(){ clearSession(); routeByAuth(); });
   });
 
-  routeByAuth();
+  (async function initApp(){
+    await fetchMaintenanceState();
+    routeByAuth();
+  })();
 })();
 </script>
 </body>
