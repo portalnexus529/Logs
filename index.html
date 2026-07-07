@@ -395,7 +395,17 @@
   .bulk-bar select{width:auto;padding:6px 10px;font-size:12.5px;}
   .entry-checkbox{margin-right:2px;}
 
-  .lock-overlay{position:fixed;inset:0;background:var(--bg);z-index:2000;display:flex;align-items:center;justify-content:center;}
+  .lock-overlay{position:fixed;inset:0;background:radial-gradient(circle at 50% 30%, var(--panel-2) 0%, var(--bg) 70%);z-index:2000;display:flex;align-items:center;justify-content:center;}
+
+  .auth-box{background:var(--panel);border:1px solid var(--border-soft);border-radius:14px;padding:36px 34px 30px;max-width:400px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.5);}
+  .auth-brand{text-align:center;margin-bottom:26px;}
+  .auth-logo{width:44px;height:44px;border-radius:11px;margin-bottom:14px;box-shadow:0 6px 20px rgba(0,0,0,0.35);}
+  .auth-brand h1{font-size:20px;font-weight:700;margin:0 0 4px;letter-spacing:-0.01em;}
+  .auth-brand p{font-size:12.5px;color:var(--text-3);margin:0;}
+  .auth-tabs{display:flex;gap:4px;background:var(--field);border:1px solid var(--border);border-radius:var(--radius-sm);padding:4px;margin-bottom:22px;}
+  .auth-tab{flex:1;background:none;border:none;color:var(--text-2);font-size:14px;font-weight:600;padding:10px 4px;border-radius:6px;cursor:pointer;}
+  .auth-tab.active{background:var(--accent);color:#0a0b0e;}
+  .auth-tab:not(.active):hover{color:var(--text);}
   @media (max-width:700px){.audit-row{grid-template-columns:1fr;gap:2px;}}
 
   .dash-section{display:block;}
@@ -417,9 +427,10 @@
 </head>
 <body>
 <div class="lock-overlay" id="lockOverlay" style="display:none;">
-  <div class="confirm-box" style="max-width:340px;text-align:center;">
-    <h3 style="font-size:16px;font-weight:700;margin:0 0 6px;">Locked</h3>
-    <p style="font-size:12.5px;color:var(--text-3);margin:0 0 16px;">Enter the access PIN to continue.</p>
+  <div class="auth-box" style="max-width:340px;text-align:center;">
+    <svg class="auth-logo" viewBox="0 0 24 24" style="margin:0 auto 16px;display:block;"><rect width="24" height="24" rx="6" fill="#0a0b0e"/><rect x="5.3" y="12" width="3.4" height="7" rx="1.7" fill="#ff5c5c"/><rect x="10.3" y="6.5" width="3.4" height="12.5" rx="1.7" fill="#ffa94d"/><rect x="15.3" y="9.5" width="3.4" height="9.5" rx="1.7" fill="#ffd43b"/></svg>
+    <h3 style="font-size:17px;font-weight:700;margin:0 0 6px;">Locked</h3>
+    <p style="font-size:12.5px;color:var(--text-3);margin:0 0 18px;">Enter the access PIN to continue.</p>
     <input type="password" id="lockPinInput" placeholder="PIN" style="text-align:center;font-size:18px;letter-spacing:.1em;margin-bottom:10px;">
     <div id="lockMsg" style="font-size:12.5px;color:var(--ban);min-height:16px;margin-bottom:10px;"></div>
     <button type="button" class="btn primary" id="lockUnlockBtn" style="width:100%;">Unlock</button>
@@ -427,10 +438,16 @@
 </div>
 
 <div class="lock-overlay" id="authOverlay" style="display:none;">
-  <div class="confirm-box" style="max-width:380px;">
-    <div style="display:flex;gap:4px;margin-bottom:18px;justify-content:center;border-bottom:1px solid var(--border-soft);">
-      <button type="button" class="tab-btn active" id="authTabLogin">Log in</button>
-      <button type="button" class="tab-btn" id="authTabSignup">Sign up</button>
+  <div class="auth-box">
+    <div class="auth-brand">
+      <svg class="auth-logo" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#0a0b0e"/><rect x="5.3" y="12" width="3.4" height="7" rx="1.7" fill="#ff5c5c"/><rect x="10.3" y="6.5" width="3.4" height="12.5" rx="1.7" fill="#ffa94d"/><rect x="15.3" y="9.5" width="3.4" height="9.5" rx="1.7" fill="#ffd43b"/></svg>
+      <h1 id="authBrandName">The Watchers</h1>
+      <p>Moderation dashboard &amp; player accounts</p>
+    </div>
+
+    <div class="auth-tabs">
+      <button type="button" class="auth-tab active" id="authTabLogin">Log in</button>
+      <button type="button" class="auth-tab" id="authTabSignup">Sign up</button>
     </div>
 
     <div id="loginFormBox">
@@ -1355,7 +1372,7 @@
   var els = {};
   ['gearBtn','settingsPanel','serverNameInput','webhookInput','ticketLinkInput','saveSettingsBtn','testWebhookBtn','exportBtn','importBtn','importFile',
    'lockOverlay','lockPinInput','lockMsg','lockUnlockBtn','accessPinInput','removePinBtn',
-   'authOverlay','authTabLogin','authTabSignup','loginFormBox','signupFormBox',
+   'authOverlay','authTabLogin','authTabSignup','authBrandName','loginFormBox','signupFormBox',
    'loginUsername','loginPassword','loginMsg','loginBtn',
    'signupUsername','signupPassword','signupDiscordId','signupSteamId','signupMsg','signupBtn',
    'playerWrap','playerWelcome','playerLogoutBtn','playerCasesFeed','ownerLogoutBtn',
@@ -1677,6 +1694,7 @@
     els.ticketLinkInput.value = STATE.settings.ticketLink || '';
     els.serverNameOut.textContent = STATE.settings.serverName || 'Community server';
     els.sideNavBrand.textContent = STATE.settings.serverName || 'Community server';
+    els.authBrandName.textContent = STATE.settings.serverName || 'Community server';
     els.workerUrlInput.value = STATE.settings.workerUrl || '';
     els.workerKeyInput.value = STATE.settings.workerKey || '';
     els.guildIdInput.value = STATE.settings.guildId || '';
@@ -1779,6 +1797,7 @@
     STATE.settings.ticketLink = els.ticketLinkInput.value.trim();
     els.serverNameOut.textContent = STATE.settings.serverName;
     els.sideNavBrand.textContent = STATE.settings.serverName;
+    els.authBrandName.textContent = STATE.settings.serverName;
     STATE.settings.workerUrl = els.workerUrlInput.value.trim().replace(/\/$/,'');
     STATE.settings.workerKey = els.workerKeyInput.value.trim();
     STATE.settings.guildId = els.guildIdInput.value.trim();
