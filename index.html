@@ -3187,6 +3187,22 @@
 
   function hexToInt(hex){ return parseInt(hex.replace('#',''), 16); }
 
+  function chunkText(text, maxLen){
+    if (text.length <= maxLen) return [text];
+    var chunks = [];
+    var remaining = text;
+    while (remaining.length > maxLen){
+      var cut = remaining.lastIndexOf('\n\n', maxLen);
+      if (cut < maxLen*0.5) cut = remaining.lastIndexOf('\n', maxLen);
+      if (cut < maxLen*0.5) cut = remaining.lastIndexOf(' ', maxLen);
+      if (cut < maxLen*0.5) cut = maxLen;
+      chunks.push(remaining.slice(0, cut).trim());
+      remaining = remaining.slice(cut).trim();
+    }
+    if (remaining) chunks.push(remaining);
+    return chunks;
+  }
+
   els.annPublishBtn.addEventListener('click', async function(){
     var title = els.annTitle.value.trim();
     var description = els.annDescription.value.trim();
@@ -3204,10 +3220,14 @@
 
     var embed = { color: hexToInt(els.annColor.value) };
     if (title) embed.title = title;
-    if (description) embed.description = description;
+    var descChunks = description ? chunkText(description, 4000) : [];
+    if (descChunks.length) embed.description = descChunks[0];
     if (els.annAuthorName.value.trim()) embed.author = { name: els.annAuthorName.value.trim(), icon_url: els.annAuthorIcon.value.trim()||undefined };
     if (els.annFooter.value.trim()) embed.footer = { text: els.annFooter.value.trim() };
     if (ANN_TS==='yes') embed.timestamp = new Date().toISOString();
+    var continuationEmbeds = descChunks.slice(1).map(function(chunk){
+      return { color: hexToInt(els.annColor.value), description: chunk };
+    });
 
     var content;
     var allowed_mentions = { parse: [] };
@@ -3231,29 +3251,37 @@
     setAnnFormMsg('Sending...', '');
 
     try{
-      var res;
-      if (uploadFiles.length){
-        var fd = new FormData();
-        uploadFiles.forEach(function(u, i){
-          var safeName = u.file.name.replace(/\s+/g,'_');
-          fd.append('files['+i+']', u.file, safeName);
-          if (u.slot==='thumb') embed.thumbnail = { url:'attachment://'+safeName };
-          if (u.slot==='image') embed.image = { url:'attachment://'+safeName };
-        });
-        var payload = { embeds:[embed] };
-        if (content){ payload.content = content; payload.allowed_mentions = allowed_mentions; }
-        fd.append('payload_json', JSON.stringify(payload));
-        res = await fetch(webhook, { method:'POST', body: fd });
-      } else {
-        var payload2 = { embeds:[embed] };
-        if (content){ payload2.content = content; payload2.allowed_mentions = allowed_mentions; }
-        res = await fetch(webhook, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload2) });
+      var allEmbeds = [embed].concat(continuationEmbeds);
+      var batches = [];
+      for (var i=0; i<allEmbeds.length; i+=10) batches.push(allEmbeds.slice(i, i+10));
+
+      for (var b=0; b<batches.length; b++){
+        var res;
+        if (b===0 && uploadFiles.length){
+          var fd = new FormData();
+          uploadFiles.forEach(function(u, i){
+            var safeName = u.file.name.replace(/\s+/g,'_');
+            fd.append('files['+i+']', u.file, safeName);
+            if (u.slot==='thumb') batches[0][0].thumbnail = { url:'attachment://'+safeName };
+            if (u.slot==='image') batches[0][0].image = { url:'attachment://'+safeName };
+          });
+          var payload = { embeds: batches[b] };
+          if (b===0 && content){ payload.content = content; payload.allowed_mentions = allowed_mentions; }
+          fd.append('payload_json', JSON.stringify(payload));
+          res = await fetch(webhook, { method:'POST', body: fd });
+        } else {
+          var payload2 = { embeds: batches[b] };
+          if (b===0 && content){ payload2.content = content; payload2.allowed_mentions = allowed_mentions; }
+          res = await fetch(webhook, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload2) });
+        }
+        if (!res.ok){
+          throw new Error('Discord rejected the message (status '+res.status+'). '+(await discordErrorDetail(res)));
+        }
+        if (batches.length > 1) setAnnFormMsg('Sending part '+(b+1)+' of '+batches.length+'...', '');
       }
-      if (!res.ok){
-        throw new Error('Discord rejected the message (status '+res.status+'). '+(await discordErrorDetail(res)));
-      }
+
       showToast('Announcement sent', 'ok');
-      setAnnFormMsg('Sent successfully.', 'ok');
+      setAnnFormMsg(batches.length>1 ? ('Sent across '+batches.length+' messages.') : 'Sent successfully.', 'ok');
       resetAnnForm();
     }catch(err){
       setAnnFormMsg(err.message || 'Could not send. Try again.', 'err');
