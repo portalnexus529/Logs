@@ -2727,7 +2727,9 @@
 
     if (entry.category) fields.push({ name:'Category', value: '**'+entry.category+'**', inline:true });
 
-    fields.push({ name:'Reason', value: '> ' + (entry.reason || 'No reason given').replace(/\n/g, '\n> ') });
+    chunkText('> ' + (entry.reason || 'No reason given').replace(/\n/g, '\n> '), 1000).forEach(function(chunk, i){
+      fields.push({ name: i===0 ? 'Reason' : "Reason (cont'd)", value: chunk });
+    });
 
     var bgFields = [];
     if (entry.joinTime) bgFields.push({ name:'Joined at', value: '**'+entry.joinTime+'**', inline:true });
@@ -2739,12 +2741,18 @@
     if (bgFields.length){
       fields.push({ name:'\u200b', value:'**Player background**' });
       fields = fields.concat(bgFields);
-      if (entry.bgNotes) fields.push({ name:'Notes', value: entry.bgNotes });
+      if (entry.bgNotes){
+        chunkText(entry.bgNotes, 1000).forEach(function(chunk, i){
+          fields.push({ name: i===0 ? 'Notes' : "Notes (cont'd)", value: chunk });
+        });
+      }
     }
 
     var linkProofs = (entry.proofs||[]).filter(function(p){ return p.type==='link'; });
     if (linkProofs.length){
-      fields.push({ name:'Proof links', value: linkProofs.map(function(p,i){ return (i+1)+'. '+p.url; }).join('\n') });
+      chunkText(linkProofs.map(function(p,i){ return (i+1)+'. '+p.url; }).join('\n'), 1000).forEach(function(chunk, i){
+        fields.push({ name: i===0 ? 'Proof links' : "Proof links (cont'd)", value: chunk });
+      });
     }
 
     if ((!isBanType(entry.action) || entry.appeal==='yes') && STATE.settings.ticketLink){
@@ -2966,7 +2974,6 @@
   });
 
   loadSettings();
-  checkLock();
   loadLedger();
 
   // ==================== Discord actions panel ====================
