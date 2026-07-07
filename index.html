@@ -2661,6 +2661,15 @@
     };
   }
 
+  async function discordErrorDetail(res){
+    try{
+      var errData = await res.json();
+      return errData.message ? (errData.message + (errData.errors ? ' \u2014 ' + JSON.stringify(errData.errors) : '')) : JSON.stringify(errData);
+    }catch(e){
+      try{ return await res.text(); }catch(e2){ return 'Check the webhook URL.'; }
+    }
+  }
+
   async function postToDiscord(entry){
     var webhook = STATE.settings.webhookUrl;
     if (!webhook) throw new Error('No webhook URL saved. Open settings and add one.');
@@ -2680,7 +2689,7 @@
       });
       fd.append('payload_json', JSON.stringify({ embeds: embeds }));
       var res = await fetch(webhook + '?wait=true', { method:'POST', body: fd });
-      if (!res.ok) throw new Error('Discord rejected the message (status '+res.status+'). Check the webhook URL.');
+      if (!res.ok) throw new Error('Discord rejected the message (status '+res.status+'). '+(await discordErrorDetail(res)));
       var data = await res.json();
       var urls = (data.attachments||[]).map(function(a){ return a.url; });
       var resultProofs = imageProofs.map(function(p, i){ return { type:'image', url: urls[i] || '' }; })
@@ -2688,7 +2697,7 @@
       return { proofs: resultProofs, messageId: data.id };
     } else {
       var res2 = await fetch(webhook + '?wait=true', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ embeds:[mainEmbed] }) });
-      if (!res2.ok) throw new Error('Discord rejected the message (status '+res2.status+'). Check the webhook URL.');
+      if (!res2.ok) throw new Error('Discord rejected the message (status '+res2.status+'). '+(await discordErrorDetail(res2)));
       var data2 = await res2.json();
       return { proofs: linkProofs.map(function(p){ return { type:'link', url:p.url }; }), messageId: data2.id };
     }
@@ -3240,7 +3249,9 @@
         if (content){ payload2.content = content; payload2.allowed_mentions = allowed_mentions; }
         res = await fetch(webhook, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload2) });
       }
-      if (!res.ok) throw new Error('Discord rejected the message (status '+res.status+'). Check the webhook URL.');
+      if (!res.ok){
+        throw new Error('Discord rejected the message (status '+res.status+'). '+(await discordErrorDetail(res)));
+      }
       showToast('Announcement sent', 'ok');
       setAnnFormMsg('Sent successfully.', 'ok');
       resetAnnForm();
