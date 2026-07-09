@@ -497,6 +497,14 @@
   </div>
 </div>
 
+<div class="wrap" id="applyWrap" style="display:none;max-width:640px;">
+  <div class="panel">
+    <div class="panel-body" id="applyBody">
+      <div class="empty-state">Loading...</div>
+    </div>
+  </div>
+</div>
+
 <div class="wrap" id="playerWrap" style="display:none;">
   <div class="topbar">
     <div class="topbar-left">
@@ -565,6 +573,15 @@
       <button type="button" class="nav-item" data-section="events">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         Events
+      </button>
+      <div class="nav-divider"></div>
+      <button type="button" class="nav-item" data-section="formbuilder">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg>
+        New form
+      </button>
+      <button type="button" class="nav-item" data-section="applications">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
+        Applications
       </button>
       <button type="button" class="nav-item" data-section="ledger">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
@@ -1077,6 +1094,56 @@
         </div>
       </div>
 
+      <div id="sectionFormBuilder" class="dash-section" style="display:none;">
+        <div class="panel">
+          <div class="panel-head"><h2>New form</h2></div>
+          <div class="panel-body">
+            <input type="hidden" id="fbEditingId">
+
+            <div class="field">
+              <label for="fbTitle">Form title</label>
+              <input type="text" id="fbTitle" placeholder="e.g. Moderator Application">
+            </div>
+            <div class="field">
+              <label for="fbDescription">Description <span style="color:var(--text-3);font-weight:400;">(optional)</span></label>
+              <textarea id="fbDescription" placeholder="Tell applicants what this is for and what you're looking for"></textarea>
+            </div>
+
+            <div class="field">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <label style="margin:0;">Questions</label>
+                <button type="button" class="btn small ghost" id="fbAddFieldBtn" style="padding:4px 10px;">+ Add question</button>
+              </div>
+              <div id="fbFieldsList"></div>
+            </div>
+
+            <button class="btn primary" id="fbSaveBtn" style="width:100%;">Save form</button>
+            <div id="fbFormMsg" style="font-size:12.5px;margin-top:8px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="sectionApplications" class="dash-section" style="display:none;">
+        <div class="panel">
+          <div class="panel-head"><h2>Applications</h2><button class="btn ghost small" id="appsRefreshBtn">Refresh</button></div>
+          <div class="panel-body">
+            <div id="appsFormMsg" style="font-size:12.5px;margin-bottom:10px;"></div>
+            <div id="appsList">
+              <div class="empty-state">Loading forms...</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel" id="appsResponsesPanel" style="display:none;margin-top:20px;">
+          <div class="panel-head"><h2 id="appsResponsesTitle">Responses</h2><button class="btn ghost small" id="appsBackBtn">Back to list</button></div>
+          <div class="panel-body">
+            <div id="appsResponsesList">
+              <div class="empty-state">Loading responses...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div id="sectionLedger" class="dash-section" style="display:none;">
         <div class="panel">
       <div class="panel-head"><h2>Cases</h2><button class="btn ghost small" id="clearAllBtn">Clear all</button></div>
@@ -1516,6 +1583,9 @@
    'evWebhookSelect','evCustomWebhookField','evCustomWebhookInput','evTitle','evDescription','evDateTime','evLocation',
    'evAddInfoBtn','evInfoFields','evColor','evImageDropzone','evImageFile','evImageList',
    'evPingType','evRoleField','evRoleId','evPublishBtn','evFormMsg',
+   'fbEditingId','fbTitle','fbDescription','fbAddFieldBtn','fbFieldsList','fbSaveBtn','fbFormMsg',
+   'appsRefreshBtn','appsFormMsg','appsList','appsResponsesPanel','appsResponsesTitle','appsBackBtn','appsResponsesList',
+   'applyWrap','applyBody',
    'webhookNameInput','webhookUrlInput','addWebhookBtn','webhookListUI',
    'workerUrlInput','workerKeyInput','guildIdInput',
    'discDmMessage','discGenerateDmBtn','discSendDmToggle',
@@ -1794,13 +1864,14 @@
     els.linkInlineInput.value=''; els.linkInlineRow.classList.remove('show');
   });
 
-  var SECTION_IDS = { dashboard:'sectionDashboard', game:'sectionGame', discord:'sectionDiscord', ann:'sectionAnn', events:'sectionEvents', ledger:'sectionLedger', audit:'sectionAudit', players:'sectionPlayers', lookup:'sectionLookup', settings:'sectionSettings' };
+  var SECTION_IDS = { dashboard:'sectionDashboard', game:'sectionGame', discord:'sectionDiscord', ann:'sectionAnn', events:'sectionEvents', formbuilder:'sectionFormBuilder', applications:'sectionApplications', ledger:'sectionLedger', audit:'sectionAudit', players:'sectionPlayers', lookup:'sectionLookup', settings:'sectionSettings' };
   function switchSection(target){
     document.querySelectorAll('.nav-item').forEach(function(b){ b.classList.toggle('active', b.dataset.section===target); });
     Object.keys(SECTION_IDS).forEach(function(key){
       var el = document.getElementById(SECTION_IDS[key]);
       if (el) el.style.display = (key===target) ? 'block' : 'none';
     });
+    if (target==='applications' && typeof loadApplications==='function') loadApplications();
   }
   document.querySelectorAll('.nav-item').forEach(function(btn){
     btn.addEventListener('click', function(){ switchSection(btn.dataset.section); });
@@ -3790,6 +3861,347 @@
     }
   });
 
+  // ==================== Form builder ====================
+  var FB_FIELDS = [];
+  var FIELD_TYPES = { short:'Short answer', paragraph:'Paragraph', choice:'Multiple choice', dropdown:'Dropdown' };
+
+  function renderFbFields(){
+    if (FB_FIELDS.length===0){ els.fbFieldsList.innerHTML = '<div class="empty-state" style="padding:20px;">No questions yet. Add one above.</div>'; return; }
+    els.fbFieldsList.innerHTML = FB_FIELDS.map(function(f, i){
+      var needsOptions = f.type==='choice' || f.type==='dropdown';
+      return '<div class="player-card" style="margin-bottom:10px;" data-fbfield="'+i+'">' +
+        '<div class="two-col" style="margin-bottom:8px;">' +
+          '<input type="text" placeholder="Question label" value="'+escapeHtml(f.label)+'" data-fb-label="'+i+'">' +
+          '<select data-fb-type="'+i+'">' +
+            Object.keys(FIELD_TYPES).map(function(t){ return '<option value="'+t+'"'+(t===f.type?' selected':'')+'>'+FIELD_TYPES[t]+'</option>'; }).join('') +
+          '</select>' +
+        '</div>' +
+        (needsOptions ? '<div class="field" style="margin-bottom:8px;"><input type="text" placeholder="Options, separated by commas" value="'+escapeHtml((f.options||[]).join(', '))+'" data-fb-options="'+i+'"></div>' : '') +
+        '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+          '<label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-2);cursor:pointer;margin:0;"><input type="checkbox" style="width:auto;" data-fb-required="'+i+'" '+(f.required?'checked':'')+'> Required</label>' +
+          '<button type="button" class="entry-del" data-fb-rm="'+i+'" title="Remove question">&times;</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    els.fbFieldsList.querySelectorAll('[data-fb-label]').forEach(function(inp){
+      inp.addEventListener('input', function(){ FB_FIELDS[Number(inp.dataset.fbLabel)].label = inp.value; });
+    });
+    els.fbFieldsList.querySelectorAll('[data-fb-type]').forEach(function(sel){
+      sel.addEventListener('change', function(){ FB_FIELDS[Number(sel.dataset.fbType)].type = sel.value; renderFbFields(); });
+    });
+    els.fbFieldsList.querySelectorAll('[data-fb-options]').forEach(function(inp){
+      inp.addEventListener('input', function(){
+        FB_FIELDS[Number(inp.dataset.fbOptions)].options = inp.value.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+      });
+    });
+    els.fbFieldsList.querySelectorAll('[data-fb-required]').forEach(function(cb){
+      cb.addEventListener('change', function(){ FB_FIELDS[Number(cb.dataset.fbRequired)].required = cb.checked; });
+    });
+    els.fbFieldsList.querySelectorAll('[data-fb-rm]').forEach(function(btn){
+      btn.addEventListener('click', function(){ FB_FIELDS.splice(Number(btn.dataset.fbRm),1); renderFbFields(); });
+    });
+  }
+
+  els.fbAddFieldBtn.addEventListener('click', function(){
+    FB_FIELDS.push({ id: 'q'+Date.now()+Math.random().toString(36).slice(2,6), label:'', type:'short', required:false, options:[] });
+    renderFbFields();
+  });
+
+  function setFbMsg(text, kind){ els.fbFormMsg.textContent = text||''; els.fbFormMsg.className = kind||''; }
+
+  function resetFormBuilder(){
+    els.fbEditingId.value = ''; els.fbTitle.value=''; els.fbDescription.value='';
+    FB_FIELDS = []; renderFbFields(); setFbMsg('','');
+  }
+
+  function loadFormIntoBuilder(form){
+    els.fbEditingId.value = form.id;
+    els.fbTitle.value = form.title || '';
+    els.fbDescription.value = form.description || '';
+    FB_FIELDS = (form.fields||[]).map(function(f){ return Object.assign({}, f); });
+    renderFbFields();
+    switchSection('formbuilder');
+  }
+
+  els.fbSaveBtn.addEventListener('click', async function(){
+    if (!STATE.settings.workerUrl || !STATE.settings.workerKey){
+      setFbMsg('Configure Worker URL and admin key in Settings first.', 'err'); return;
+    }
+    var title = els.fbTitle.value.trim();
+    if (!title){ setFbMsg('Add a form title.', 'err'); return; }
+    var cleanFields = FB_FIELDS.filter(function(f){ return f.label.trim(); });
+    if (cleanFields.length===0){ setFbMsg('Add at least one question.', 'err'); return; }
+
+    els.fbSaveBtn.disabled = true; setFbMsg('Saving...', '');
+    try{
+      var res = await fetch(STATE.settings.workerUrl + '/forms/save', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          adminKey: STATE.settings.workerKey,
+          id: els.fbEditingId.value || undefined,
+          title: title, description: els.fbDescription.value.trim(),
+          fields: cleanFields, status: 'open'
+        })
+      });
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not save form.');
+      setFbMsg('Form saved.', 'ok');
+      showToast('Form saved', 'ok');
+      logAudit('Form saved', 'Saved form <b>'+escapeHtml(title)+'</b>');
+      resetFormBuilder();
+      switchSection('applications');
+      loadApplications();
+    }catch(err){
+      setFbMsg(err.message || 'Could not save form.', 'err');
+    }finally{
+      els.fbSaveBtn.disabled = false;
+    }
+  });
+
+  // ==================== Applications ====================
+  var APPS_CACHE = [];
+
+  function setAppsMsg(text, kind){ els.appsFormMsg.textContent = text||''; els.appsFormMsg.className = kind||''; }
+
+  async function loadApplications(){
+    if (!STATE.settings.workerUrl || !STATE.settings.workerKey){
+      els.appsList.innerHTML = '<div class="empty-state">Configure Worker URL and admin key in Settings first.</div>';
+      return;
+    }
+    els.appsList.innerHTML = '<div class="empty-state">Loading forms...</div>';
+    try{
+      var res = await fetch(STATE.settings.workerUrl + '/forms/list', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ adminKey: STATE.settings.workerKey })
+      });
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not load forms.');
+      APPS_CACHE = data.forms || [];
+      renderApplicationsList();
+    }catch(err){
+      els.appsList.innerHTML = '<div class="empty-state">'+escapeHtml(err.message || 'Could not load forms.')+'</div>';
+    }
+  }
+
+  function renderApplicationsList(){
+    if (APPS_CACHE.length===0){ els.appsList.innerHTML = '<div class="empty-state">No forms yet. Create one under "New form".</div>'; return; }
+    els.appsList.innerHTML = APPS_CACHE.map(function(f){
+      var link = window.location.origin + window.location.pathname + '?apply=' + f.id;
+      return '<div class="player-card" style="margin-bottom:10px;">' +
+        '<div class="player-top">' +
+          '<div><div class="player-name">'+escapeHtml(f.title)+'</div>' +
+            '<span class="badge '+(f.status==='open'?'appeal-yes':'appeal-no')+'">'+(f.status==='open'?'Open':'Closed')+'</span>' +
+          '</div>' +
+        '</div>' +
+        (f.description ? '<div class="player-notes">'+escapeHtml(f.description)+'</div>' : '') +
+        '<div class="player-notes mono" style="word-break:break-all;">'+escapeHtml(link)+'</div>' +
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;">' +
+          '<button type="button" class="btn small" data-app-view="'+f.id+'">View responses</button>' +
+          '<button type="button" class="btn small ghost" data-app-edit="'+f.id+'">Edit</button>' +
+          '<button type="button" class="btn small ghost" data-app-toggle="'+f.id+'">'+(f.status==='open'?'Close':'Reopen')+'</button>' +
+          '<button type="button" class="btn small ghost" data-app-copy="'+f.id+'">Copy link</button>' +
+          '<button type="button" class="btn small ghost" data-app-delete="'+f.id+'" style="color:var(--ban);">Delete</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    els.appsList.querySelectorAll('[data-app-view]').forEach(function(btn){
+      btn.addEventListener('click', function(){ viewApplicationResponses(btn.dataset.appView); });
+    });
+    els.appsList.querySelectorAll('[data-app-edit]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var form = APPS_CACHE.find(function(f){ return f.id===btn.dataset.appEdit; });
+        if (form) loadFormIntoBuilder(form);
+      });
+    });
+    els.appsList.querySelectorAll('[data-app-toggle]').forEach(function(btn){
+      btn.addEventListener('click', async function(){
+        var form = APPS_CACHE.find(function(f){ return f.id===btn.dataset.appToggle; });
+        if (!form) return;
+        var newStatus = form.status==='open' ? 'closed' : 'open';
+        try{
+          var res = await fetch(STATE.settings.workerUrl + '/forms/save', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ adminKey: STATE.settings.workerKey, id: form.id, title: form.title, description: form.description, fields: form.fields, status: newStatus })
+          });
+          var data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Could not update form.');
+          showToast(newStatus==='open' ? 'Form reopened' : 'Form closed', 'ok');
+          logAudit('Form status changed', 'Set <b>'+escapeHtml(form.title)+'</b> to <b>'+newStatus+'</b>');
+          loadApplications();
+        }catch(err){
+          showToast(err.message || 'Could not update form.', 'err');
+        }
+      });
+    });
+    els.appsList.querySelectorAll('[data-app-copy]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var link = window.location.origin + window.location.pathname + '?apply=' + btn.dataset.appCopy;
+        if (navigator.clipboard) navigator.clipboard.writeText(link).then(function(){ showToast('Link copied', 'ok'); }).catch(function(){ showToast(link, 'ok'); });
+        else showToast(link, 'ok');
+      });
+    });
+    els.appsList.querySelectorAll('[data-app-delete]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var form = APPS_CACHE.find(function(f){ return f.id===btn.dataset.appDelete; });
+        askConfirm('Delete "'+(form?form.title:'this form')+'" and all its responses? This cannot be undone.', async function(){
+          try{
+            var res = await fetch(STATE.settings.workerUrl + '/forms/delete', {
+              method:'POST', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ adminKey: STATE.settings.workerKey, formId: btn.dataset.appDelete })
+            });
+            if (!res.ok) throw new Error('Could not delete form.');
+            showToast('Form deleted', 'ok');
+            logAudit('Form deleted', 'Deleted <b>'+escapeHtml(form?form.title:'form')+'</b>');
+            loadApplications();
+          }catch(err){
+            showToast(err.message || 'Could not delete form.', 'err');
+          }
+        }, 'Delete');
+      });
+    });
+  }
+
+  async function viewApplicationResponses(formId){
+    var form = APPS_CACHE.find(function(f){ return f.id===formId; });
+    els.appsResponsesTitle.textContent = 'Responses \u2014 ' + (form ? form.title : '');
+    els.appsResponsesPanel.style.display = 'block';
+    els.appsResponsesList.innerHTML = '<div class="empty-state">Loading responses...</div>';
+    els.appsResponsesPanel.scrollIntoView({ behavior:'smooth' });
+    try{
+      var res = await fetch(STATE.settings.workerUrl + '/forms/responses', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ adminKey: STATE.settings.workerKey, formId: formId })
+      });
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not load responses.');
+      var responses = data.responses || [];
+      if (responses.length===0){ els.appsResponsesList.innerHTML = '<div class="empty-state">No responses yet.</div>'; return; }
+      var fieldMap = {};
+      (form ? form.fields : []).forEach(function(f){ fieldMap[f.id] = f.label; });
+      els.appsResponsesList.innerHTML = responses.map(function(r){
+        var d = new Date(r.submittedAt);
+        var answersHtml = Object.keys(r.answers||{}).map(function(fid){
+          return '<div class="public-field-row"><label>'+escapeHtml(fieldMap[fid]||fid)+'</label><span style="text-align:right;max-width:60%;">'+escapeHtml(String(r.answers[fid]))+'</span></div>';
+        }).join('');
+        var submitterBits = [];
+        if (r.submitterName) submitterBits.push(r.submitterName);
+        if (r.submitterDiscordId) submitterBits.push('Discord '+r.submitterDiscordId);
+        if (r.submitterSteamId) submitterBits.push('Steam '+r.submitterSteamId);
+        return '<div class="player-card" style="margin-bottom:10px;">' +
+          '<div class="player-top"><div class="player-name">'+escapeHtml(submitterBits.join(' \u00b7 ') || 'Anonymous')+'</div><span class="entry-time">'+d.toLocaleString()+'</span></div>' +
+          answersHtml +
+        '</div>';
+      }).join('');
+    }catch(err){
+      els.appsResponsesList.innerHTML = '<div class="empty-state">'+escapeHtml(err.message || 'Could not load responses.')+'</div>';
+    }
+  }
+
+  els.appsRefreshBtn.addEventListener('click', loadApplications);
+  els.appsBackBtn.addEventListener('click', function(){ els.appsResponsesPanel.style.display = 'none'; });
+
+  // ==================== Public application-filling view ====================
+  async function checkApplyView(){
+    var params = new URLSearchParams(location.search);
+    var formId = params.get('apply');
+    if (!formId) return false;
+
+    document.getElementById('adminWrap').style.display = 'none';
+    els.playerWrap.style.display = 'none';
+    els.authOverlay.style.display = 'none';
+    els.lockOverlay.style.display = 'none';
+    els.applyWrap.style.display = 'block';
+
+    try{
+      var res = await fetch(AUTH_WORKER_URL + '/form?id=' + encodeURIComponent(formId));
+      var form = await res.json();
+      if (!res.ok) throw new Error(form.error || 'Form not found.');
+      if (form.status !== 'open'){
+        els.applyBody.innerHTML = '<h2 style="margin:0 0 8px;">'+escapeHtml(form.title)+'</h2><div class="empty-state">This form is currently closed and not accepting responses.</div>';
+        return true;
+      }
+      renderApplyForm(form);
+    }catch(err){
+      els.applyBody.innerHTML = '<div class="empty-state">'+escapeHtml(err.message || 'Could not load this form.')+'</div>';
+    }
+    return true;
+  }
+
+  function renderApplyForm(form){
+    var fieldsHtml = (form.fields||[]).map(function(f){
+      var reqMark = f.required ? ' <span style="color:var(--ban);">*</span>' : '';
+      var inner = '';
+      if (f.type==='paragraph'){
+        inner = '<textarea data-answer="'+f.id+'"></textarea>';
+      } else if (f.type==='choice'){
+        inner = (f.options||[]).map(function(opt, i){
+          return '<label style="display:flex;align-items:center;gap:8px;font-weight:400;text-transform:none;letter-spacing:0;margin-bottom:6px;cursor:pointer;">' +
+            '<input type="radio" name="q_'+f.id+'" value="'+escapeHtml(opt)+'" data-answer-radio="'+f.id+'" style="width:auto;"> '+escapeHtml(opt) +
+          '</label>';
+        }).join('');
+      } else if (f.type==='dropdown'){
+        inner = '<select data-answer="'+f.id+'"><option value="">Select...</option>' + (f.options||[]).map(function(opt){ return '<option value="'+escapeHtml(opt)+'">'+escapeHtml(opt)+'</option>'; }).join('') + '</select>';
+      } else {
+        inner = '<input type="text" data-answer="'+f.id+'">';
+      }
+      return '<div class="field"><label>'+escapeHtml(f.label)+reqMark+'</label>'+inner+'</div>';
+    }).join('');
+
+    els.applyBody.innerHTML =
+      '<h2 style="margin:0 0 6px;">'+escapeHtml(form.title)+'</h2>' +
+      (form.description ? '<p style="color:var(--text-2);font-size:13.5px;margin:0 0 20px;line-height:1.6;">'+escapeHtml(form.description)+'</p>' : '<div style="margin-bottom:16px;"></div>') +
+      '<div class="field"><label>Your name</label><input type="text" id="applySubmitterName"></div>' +
+      '<div class="two-col">' +
+        '<div class="field"><label>Discord user ID <span style="color:var(--text-3);font-weight:400;">(optional)</span></label><input type="text" id="applySubmitterDiscordId"></div>' +
+        '<div class="field"><label>SteamID64 <span style="color:var(--text-3);font-weight:400;">(optional)</span></label><input type="text" id="applySubmitterSteamId"></div>' +
+      '</div>' +
+      '<div style="border-top:1px solid var(--border-soft);margin:16px 0 20px;"></div>' +
+      fieldsHtml +
+      '<div id="applyMsg" style="font-size:12.5px;margin-bottom:10px;"></div>' +
+      '<button type="button" class="btn primary" id="applySubmitBtn" style="width:100%;">Submit application</button>';
+
+    document.getElementById('applySubmitBtn').addEventListener('click', async function(){
+      var msgEl = document.getElementById('applyMsg');
+      var answers = {};
+      var missing = false;
+      (form.fields||[]).forEach(function(f){
+        var val = '';
+        if (f.type==='choice'){
+          var checked = els.applyBody.querySelector('input[data-answer-radio="'+f.id+'"]:checked');
+          val = checked ? checked.value : '';
+        } else {
+          var el = els.applyBody.querySelector('[data-answer="'+f.id+'"]');
+          val = el ? el.value.trim() : '';
+        }
+        if (f.required && !val) missing = true;
+        answers[f.id] = val;
+      });
+      if (missing){ msgEl.textContent = 'Please fill in all required questions.'; msgEl.style.color = 'var(--ban)'; return; }
+
+      var btn = document.getElementById('applySubmitBtn');
+      btn.disabled = true; msgEl.textContent = 'Submitting...'; msgEl.style.color = 'var(--text-2)';
+      try{
+        var res = await fetch(AUTH_WORKER_URL + '/forms/submit', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({
+            formId: form.id, answers: answers,
+            submitterName: document.getElementById('applySubmitterName').value.trim(),
+            submitterDiscordId: document.getElementById('applySubmitterDiscordId').value.trim(),
+            submitterSteamId: document.getElementById('applySubmitterSteamId').value.trim()
+          })
+        });
+        var data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Could not submit.');
+        els.applyBody.innerHTML = '<h2 style="margin:0 0 8px;">Thanks!</h2><p style="color:var(--text-2);">Your application has been submitted.</p>';
+      }catch(err){
+        msgEl.textContent = err.message || 'Could not submit. Try again.'; msgEl.style.color = 'var(--ban)';
+        btn.disabled = false;
+      }
+    });
+  }
+
   // ==================== Auth (login / signup) ====================
   // This Worker URL is hardcoded because it must work for every visitor,
   // including ones who've never opened this site before (so it can't rely
@@ -3964,6 +4376,8 @@
   });
 
   (async function initApp(){
+    var isApplyView = await checkApplyView();
+    if (isApplyView) return;
     await fetchMaintenanceState();
     routeByAuth();
   })();
