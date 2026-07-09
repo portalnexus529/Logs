@@ -1691,6 +1691,12 @@
     els.durationRow.style.display = (STATE.durationMode==='temp') ? 'grid' : 'none';
   });
 
+  els.appealToggle.addEventListener('click', function(e){
+    var b = e.target.closest('button[data-v]'); if (!b) return;
+    STATE.appeal = b.dataset.v;
+    els.appealToggle.querySelectorAll('button').forEach(function(x){ x.classList.toggle('active', x===b); });
+  });
+
   // ---------- reason templates ----------
   var REASON_TEMPLATES = ['Cheating / hacking','Combat logging','Duping','Teaming','Base or loot exploiting','KOS rule violation','Harassment / toxicity','Hate speech / slurs','Griefing','Voice or chat rule violation'];
   var CATEGORY_OPTIONS_HTML = '<option value="">Uncategorized</option>' + REASON_TEMPLATES.map(function(t){ return '<option value="'+escapeHtml(t)+'">'+escapeHtml(t)+'</option>'; }).join('');
