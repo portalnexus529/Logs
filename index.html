@@ -515,6 +515,23 @@
       <button class="btn small" id="playerLogoutBtn">Log out</button>
     </div>
   </div>
+
+  <div class="panel" style="margin-bottom:20px;">
+    <div class="panel-head"><h2>Create a ticket</h2></div>
+    <div class="panel-body">
+      <div class="field">
+        <label for="ticketSubjectInput">Subject</label>
+        <input type="text" id="ticketSubjectInput" placeholder="e.g. Ban appeal, Report a player, General question">
+      </div>
+      <div class="field">
+        <label for="ticketDescInput">Details</label>
+        <textarea id="ticketDescInput" placeholder="Explain what's going on"></textarea>
+      </div>
+      <button class="btn primary" id="ticketCreateBtn" style="width:100%;">Create ticket</button>
+      <div id="ticketCreateMsg" style="font-size:12.5px;margin-top:8px;"></div>
+    </div>
+  </div>
+
   <div class="panel">
     <div class="panel-head"><h2>Your case history</h2></div>
     <div class="panel-body">
@@ -582,6 +599,15 @@
       <button type="button" class="nav-item" data-section="applications">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
         Applications
+      </button>
+      <div class="nav-divider"></div>
+      <button type="button" class="nav-item" data-section="ticketpanel">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v5"/><path d="M3 12a2 2 0 1 0 0 4"/><path d="M21 12a2 2 0 1 1 0 4"/><path d="M3 16v1a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-1"/></svg>
+        Ticket Panel
+      </button>
+      <button type="button" class="nav-item" data-section="tickettranscripts">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        Ticket Transcripts
       </button>
       <button type="button" class="nav-item" data-section="ledger">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
@@ -1144,6 +1170,62 @@
         </div>
       </div>
 
+      <div id="sectionTicketPanel" class="dash-section" style="display:none;">
+        <div class="panel">
+          <div class="panel-head"><h2>Ticket Panel</h2></div>
+          <div class="panel-body">
+            <div class="field">
+              <label for="tpChannelInput">Channel ID</label>
+              <input type="text" id="tpChannelInput" placeholder="Channel to post the panel in">
+            </div>
+            <div class="field">
+              <label for="tpTitleInput">Panel title</label>
+              <input type="text" id="tpTitleInput" placeholder="e.g. Need help? Open a ticket" value="Need help? Open a ticket">
+            </div>
+            <div class="field">
+              <label for="tpDescInput">Panel description</label>
+              <textarea id="tpDescInput" placeholder="Explain what tickets are for">Click a button below that matches your issue to open a private ticket with staff.</textarea>
+            </div>
+            <div class="field">
+              <label for="tpColorInput">Color</label>
+              <input type="color" id="tpColorInput" value="#5865f2" style="height:42px;padding:4px;max-width:120px;">
+            </div>
+
+            <div class="field">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <label style="margin:0;">Ticket type buttons</label>
+                <button type="button" class="btn small ghost" id="tpAddButtonBtn" style="padding:4px 10px;">+ Add button</button>
+              </div>
+              <div id="tpButtonsList"></div>
+              <p style="font-size:11.5px;color:var(--text-3);margin:8px 0 0;">Each button opens its own ticket type &mdash; e.g. "Report a Player", "Report a Cheater", "In-Game Support". Up to 5 buttons per row, up to 25 total.</p>
+            </div>
+
+            <button class="btn primary" id="tpPostBtn" style="width:100%;">Post panel to Discord</button>
+            <div id="tpFormMsg" style="font-size:12.5px;margin-top:8px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="sectionTicketTranscripts" class="dash-section" style="display:none;">
+        <div class="panel">
+          <div class="panel-head"><h2>Ticket Transcripts</h2><button class="btn ghost small" id="ttRefreshBtn">Refresh</button></div>
+          <div class="panel-body">
+            <div id="ttListMsg" style="font-size:12.5px;margin-bottom:10px;"></div>
+            <div id="ttList">
+              <div class="empty-state">Loading...</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel" id="ttViewPanel" style="display:none;margin-top:20px;">
+          <div class="panel-head"><h2 id="ttViewTitle">Transcript</h2><button class="btn ghost small" id="ttBackBtn">Back to list</button></div>
+          <div class="panel-body">
+            <div id="ttViewMeta" style="margin-bottom:16px;"></div>
+            <div id="ttViewMessages" class="ledger-list" style="max-height:600px;"></div>
+          </div>
+        </div>
+      </div>
+
       <div id="sectionLedger" class="dash-section" style="display:none;">
         <div class="panel">
       <div class="panel-head"><h2>Cases</h2><button class="btn ghost small" id="clearAllBtn">Clear all</button></div>
@@ -1385,6 +1467,23 @@
       </div>
 
       <div class="settings-note" style="border-top:1px solid var(--border-soft);padding-top:12px;">
+        <label style="margin-bottom:8px;">Ticket system</label>
+        <div class="two-col">
+          <div class="field">
+            <label style="font-size:11.5px;" for="ticketCategoryInput">Ticket category ID</label>
+            <input type="text" id="ticketCategoryInput" placeholder="Discord category ID tickets go under">
+          </div>
+          <div class="field">
+            <label style="font-size:11.5px;" for="ticketStaffRoleInput">Staff role ID <span style="color:var(--text-3);font-weight:400;">(optional)</span></label>
+            <input type="text" id="ticketStaffRoleInput" placeholder="Role that can see all tickets">
+          </div>
+        </div>
+        <button class="btn primary small" id="saveTicketConfigBtn">Save ticket settings</button>
+        <span id="ticketConfigStatus" style="font-size:12.5px;color:var(--text-2);margin-left:8px;"></span>
+        <p style="font-size:11.5px;color:var(--text-3);margin:8px 0 0;">Uses your bot and Server ID from "Bot actions" above. When a logged-in player creates a ticket, the bot makes a private channel under this category, visible only to them and (if set) this staff role. Build the actual panel message under the "Ticket Panel" page in the sidebar.</p>
+      </div>
+
+      <div class="settings-note" style="border-top:1px solid var(--border-soft);padding-top:12px;">
         <label style="margin-bottom:8px;">Maintenance mode</label>
         <div class="toggle-row" id="maintenanceToggle" style="margin-bottom:12px;max-width:220px;">
           <button type="button" data-mt="off" class="active">Off</button>
@@ -1559,6 +1658,8 @@
    'authOverlay','authTabLogin','authTabSignup','authBrandName','loginFormBox','signupFormBox',
    'maintenanceView','authNormalView','maintTitleOut','maintMessageOut','maintReturnOut','staffLoginLink',
    'maintenanceToggle','maintTitleInput','maintMessageInput','maintReturnInput','saveMaintenanceBtn','maintenanceStatus',
+   'ticketCategoryInput','ticketStaffRoleInput','saveTicketConfigBtn','ticketConfigStatus',
+   'ticketSubjectInput','ticketDescInput','ticketCreateBtn','ticketCreateMsg',
    'loginUsername','loginPassword','loginMsg','loginBtn',
    'signupUsername','signupPassword','signupDiscordId','signupSteamId','signupMsg','signupBtn',
    'playerWrap','playerWelcome','playerLogoutBtn','playerCasesFeed','ownerLogoutBtn',
@@ -1585,6 +1686,8 @@
    'evPingType','evRoleField','evRoleId','evPublishBtn','evFormMsg',
    'fbEditingId','fbTitle','fbDescription','fbAddFieldBtn','fbFieldsList','fbSaveBtn','fbFormMsg',
    'appsRefreshBtn','appsFormMsg','appsList','appsResponsesPanel','appsResponsesTitle','appsBackBtn','appsResponsesList',
+   'tpChannelInput','tpTitleInput','tpDescInput','tpColorInput','tpAddButtonBtn','tpButtonsList','tpPostBtn','tpFormMsg',
+   'ttRefreshBtn','ttListMsg','ttList','ttViewPanel','ttViewTitle','ttViewMeta','ttViewMessages','ttBackBtn',
    'applyWrap','applyBody',
    'webhookNameInput','webhookUrlInput','addWebhookBtn','webhookListUI',
    'workerUrlInput','workerKeyInput','guildIdInput',
@@ -1864,7 +1967,7 @@
     els.linkInlineInput.value=''; els.linkInlineRow.classList.remove('show');
   });
 
-  var SECTION_IDS = { dashboard:'sectionDashboard', game:'sectionGame', discord:'sectionDiscord', ann:'sectionAnn', events:'sectionEvents', formbuilder:'sectionFormBuilder', applications:'sectionApplications', ledger:'sectionLedger', audit:'sectionAudit', players:'sectionPlayers', lookup:'sectionLookup', settings:'sectionSettings' };
+  var SECTION_IDS = { dashboard:'sectionDashboard', game:'sectionGame', discord:'sectionDiscord', ann:'sectionAnn', events:'sectionEvents', formbuilder:'sectionFormBuilder', applications:'sectionApplications', ticketpanel:'sectionTicketPanel', tickettranscripts:'sectionTicketTranscripts', ledger:'sectionLedger', audit:'sectionAudit', players:'sectionPlayers', lookup:'sectionLookup', settings:'sectionSettings' };
   function switchSection(target){
     document.querySelectorAll('.nav-item').forEach(function(b){ b.classList.toggle('active', b.dataset.section===target); });
     Object.keys(SECTION_IDS).forEach(function(key){
@@ -1872,6 +1975,7 @@
       if (el) el.style.display = (key===target) ? 'block' : 'none';
     });
     if (target==='applications' && typeof loadApplications==='function') loadApplications();
+    if (target==='tickettranscripts' && typeof loadTranscripts==='function') loadTranscripts();
   }
   document.querySelectorAll('.nav-item').forEach(function(btn){
     btn.addEventListener('click', function(){ switchSection(btn.dataset.section); });
@@ -2080,6 +2184,47 @@
       els.maintReturnInput.value = data.returnEta || '';
     }catch(e){ /* leave form blank if unreachable */ }
   }
+
+  async function loadTicketConfigIntoSettings(){
+    if (!STATE.settings.workerUrl) return;
+    try{
+      var res = await fetch(STATE.settings.workerUrl + '/ticket-config');
+      if (!res.ok) return;
+      var data = await res.json();
+      els.ticketCategoryInput.value = data.categoryId || '';
+      els.ticketStaffRoleInput.value = data.staffRoleId || '';
+    }catch(e){ /* leave form blank if unreachable */ }
+  }
+
+  els.saveTicketConfigBtn.addEventListener('click', async function(){
+    if (!STATE.settings.workerUrl || !STATE.settings.workerKey || !STATE.settings.guildId){
+      els.ticketConfigStatus.textContent = 'Fill in Worker URL, admin key, and Server ID above first.';
+      els.ticketConfigStatus.style.color = 'var(--ban)';
+      return;
+    }
+    els.saveTicketConfigBtn.disabled = true;
+    els.ticketConfigStatus.textContent = 'Saving...'; els.ticketConfigStatus.style.color = 'var(--text-2)';
+    try{
+      var res = await fetch(STATE.settings.workerUrl + '/ticket-config', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          adminKey: STATE.settings.workerKey,
+          guildId: STATE.settings.guildId,
+          categoryId: els.ticketCategoryInput.value.trim(),
+          staffRoleId: els.ticketStaffRoleInput.value.trim()
+        })
+      });
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not save.');
+      els.ticketConfigStatus.textContent = 'Saved.'; els.ticketConfigStatus.style.color = '#4ade80';
+      logAudit('Ticket config', 'Updated ticket system settings');
+      showToast('Ticket settings saved', 'ok');
+    }catch(err){
+      els.ticketConfigStatus.textContent = err.message || 'Could not save.'; els.ticketConfigStatus.style.color = 'var(--ban)';
+    }finally{
+      els.saveTicketConfigBtn.disabled = false;
+    }
+  });
 
   els.saveMaintenanceBtn.addEventListener('click', async function(){
     if (!STATE.settings.workerUrl || !STATE.settings.workerKey){
@@ -4102,6 +4247,156 @@
   els.appsRefreshBtn.addEventListener('click', loadApplications);
   els.appsBackBtn.addEventListener('click', function(){ els.appsResponsesPanel.style.display = 'none'; });
 
+  // ==================== Ticket Panel builder ====================
+  var TP_BUTTONS = [{ label:'' }];
+
+  function renderTpButtons(){
+    els.tpButtonsList.innerHTML = TP_BUTTONS.map(function(b, i){
+      return '<div style="display:flex;gap:8px;margin-bottom:8px;">' +
+        '<input type="text" placeholder="e.g. Report a Player" value="'+escapeHtml(b.label)+'" data-tpbtn="'+i+'" style="flex:1;">' +
+        '<button type="button" class="dz-remove" data-tpbtn-rm="'+i+'">&times;</button>' +
+      '</div>';
+    }).join('');
+    els.tpButtonsList.querySelectorAll('[data-tpbtn]').forEach(function(inp){
+      inp.addEventListener('input', function(){ TP_BUTTONS[Number(inp.dataset.tpbtn)].label = inp.value; });
+    });
+    els.tpButtonsList.querySelectorAll('[data-tpbtn-rm]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        if (TP_BUTTONS.length<=1) return;
+        TP_BUTTONS.splice(Number(btn.dataset.tpbtnRm),1);
+        renderTpButtons();
+      });
+    });
+  }
+  renderTpButtons();
+
+  els.tpAddButtonBtn.addEventListener('click', function(){
+    if (TP_BUTTONS.length>=25){ setTpMsg('Maximum 25 buttons per panel.', 'err'); return; }
+    TP_BUTTONS.push({ label:'' });
+    renderTpButtons();
+  });
+
+  function setTpMsg(text, kind){ els.tpFormMsg.textContent = text||''; els.tpFormMsg.className = kind||''; }
+
+  els.tpPostBtn.addEventListener('click', async function(){
+    if (!STATE.settings.workerUrl || !STATE.settings.workerKey){
+      setTpMsg('Configure Worker URL and admin key in Settings first.', 'err'); return;
+    }
+    var channelId = els.tpChannelInput.value.trim();
+    var title = els.tpTitleInput.value.trim();
+    if (!channelId || !title){ setTpMsg('Add a channel ID and a panel title.', 'err'); return; }
+    var cleanButtons = TP_BUTTONS.filter(function(b){ return b.label.trim(); }).map(function(b){ return { label: b.label.trim() }; });
+    if (cleanButtons.length===0){ setTpMsg('Add at least one ticket type button.', 'err'); return; }
+
+    els.tpPostBtn.disabled = true;
+    setTpMsg('Posting...', '');
+    try{
+      var res = await fetch(STATE.settings.workerUrl + '/tickets/panel', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          adminKey: STATE.settings.workerKey,
+          channelId: channelId, title: title,
+          description: els.tpDescInput.value.trim(),
+          color: hexToInt(els.tpColorInput.value),
+          buttons: cleanButtons
+        })
+      });
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not post panel.');
+      setTpMsg('Panel posted to Discord.', 'ok');
+      logAudit('Ticket panel', 'Posted a ticket panel with '+cleanButtons.length+' button(s) to Discord');
+      showToast('Panel posted', 'ok');
+    }catch(err){
+      setTpMsg(err.message || 'Could not post panel.', 'err');
+    }finally{
+      els.tpPostBtn.disabled = false;
+    }
+  });
+
+  // ==================== Ticket Transcripts ====================
+  var TT_CACHE = [];
+
+  async function loadTranscripts(){
+    if (!STATE.settings.workerUrl || !STATE.settings.workerKey){
+      els.ttList.innerHTML = '<div class="empty-state">Configure Worker URL and admin key in Settings first.</div>';
+      return;
+    }
+    els.ttList.innerHTML = '<div class="empty-state">Loading...</div>';
+    try{
+      var res = await fetch(STATE.settings.workerUrl + '/tickets/transcripts/list', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ adminKey: STATE.settings.workerKey })
+      });
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not load transcripts.');
+      TT_CACHE = data.transcripts || [];
+      renderTranscriptsList();
+    }catch(err){
+      els.ttList.innerHTML = '<div class="empty-state">'+escapeHtml(err.message || 'Could not load transcripts.')+'</div>';
+    }
+  }
+
+  function renderTranscriptsList(){
+    if (TT_CACHE.length===0){ els.ttList.innerHTML = '<div class="empty-state">No closed tickets yet.</div>'; return; }
+    els.ttList.innerHTML = TT_CACHE.map(function(t){
+      var opened = t.openedAt ? new Date(t.openedAt).toLocaleString() : '\u2014';
+      var closed = t.closedAt ? new Date(t.closedAt).toLocaleString() : '\u2014';
+      return '<div class="player-card" style="margin-bottom:10px;">' +
+        '<div class="player-top">' +
+          '<div><div class="player-name">Ticket #'+escapeHtml(t.ticketNumber||'?')+' \u2014 '+escapeHtml(t.type||'Unknown')+'</div>' +
+          '<div class="entry-meta">Requester: '+escapeHtml(t.requesterDiscordId||'\u2014')+(t.claimedBy ? (' &middot; Claimed by '+escapeHtml(t.claimedBy)) : '')+'</div></div>' +
+          '<button type="button" class="btn small" data-tt-view="'+t.channelId+'">View</button>' +
+        '</div>' +
+        '<div class="entry-meta">Opened '+opened+' &middot; Closed '+closed+' &middot; '+(t.messageCount||0)+' message(s)</div>' +
+      '</div>';
+    }).join('');
+    els.ttList.querySelectorAll('[data-tt-view]').forEach(function(btn){
+      btn.addEventListener('click', function(){ viewTranscript(btn.dataset.ttView); });
+    });
+  }
+
+  async function viewTranscript(channelId){
+    var summary = TT_CACHE.find(function(t){ return t.channelId===channelId; });
+    els.ttViewTitle.textContent = 'Ticket #'+(summary?summary.ticketNumber:'') + ' \u2014 ' + (summary?summary.type:'');
+    els.ttViewPanel.style.display = 'block';
+    els.ttViewMessages.innerHTML = '<div class="empty-state">Loading...</div>';
+    els.ttViewPanel.scrollIntoView({ behavior:'smooth' });
+    try{
+      var res = await fetch(STATE.settings.workerUrl + '/tickets/transcripts/get', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ adminKey: STATE.settings.workerKey, channelId: channelId })
+      });
+      var t = await res.json();
+      if (!res.ok) throw new Error(t.error || 'Could not load transcript.');
+
+      var opened = t.openedAt ? new Date(t.openedAt).toLocaleString() : '\u2014';
+      var closed = t.closedAt ? new Date(t.closedAt).toLocaleString() : '\u2014';
+      els.ttViewMeta.innerHTML =
+        '<div class="public-field-row"><label>Requester</label><span>'+escapeHtml(t.requesterDiscordId||'\u2014')+'</span></div>' +
+        '<div class="public-field-row"><label>Claimed by</label><span>'+escapeHtml(t.claimedBy||'Unclaimed')+'</span></div>' +
+        '<div class="public-field-row"><label>Opened</label><span>'+opened+'</span></div>' +
+        '<div class="public-field-row"><label>Closed</label><span>'+closed+'</span></div>';
+
+      var messages = t.messages || [];
+      if (messages.length===0){
+        els.ttViewMessages.innerHTML = '<div class="empty-state">No messages were recorded.</div>';
+      } else {
+        els.ttViewMessages.innerHTML = messages.map(function(m){
+          var d = m.timestamp ? new Date(m.timestamp).toLocaleString() : '';
+          return '<div class="entry" style="display:block;">' +
+            '<div class="entry-top"><span class="entry-player" style="font-size:14px;">'+escapeHtml(m.author||'Unknown')+'</span><span class="entry-time">'+d+'</span></div>' +
+            '<div class="entry-reason">'+escapeHtml(m.content||'(no text content)')+'</div>' +
+          '</div>';
+        }).join('');
+      }
+    }catch(err){
+      els.ttViewMessages.innerHTML = '<div class="empty-state">'+escapeHtml(err.message || 'Could not load transcript.')+'</div>';
+    }
+  }
+
+  els.ttRefreshBtn.addEventListener('click', loadTranscripts);
+  els.ttBackBtn.addEventListener('click', function(){ els.ttViewPanel.style.display = 'none'; });
+
   // ==================== Public application-filling view ====================
   async function checkApplyView(){
     var params = new URLSearchParams(location.search);
@@ -4274,6 +4569,7 @@
       adminWrapEl.style.display = 'block';
       checkLock();
       loadMaintenanceIntoSettings();
+      loadTicketConfigIntoSettings();
     } else {
       adminWrapEl.style.display = 'none';
       els.playerWrap.style.display = 'block';
@@ -4371,6 +4667,37 @@
   }
 
   els.playerLogoutBtn.addEventListener('click', function(){ clearSession(); routeByAuth(); });
+
+  els.ticketCreateBtn.addEventListener('click', async function(){
+    var session = getSession();
+    if (!session || !session.discordId){
+      els.ticketCreateMsg.textContent = 'A Discord user ID is needed on your account to create tickets.';
+      els.ticketCreateMsg.style.color = 'var(--ban)';
+      return;
+    }
+    var subject = els.ticketSubjectInput.value.trim();
+    var description = els.ticketDescInput.value.trim();
+    if (!subject){ els.ticketCreateMsg.textContent = 'Add a subject for your ticket.'; els.ticketCreateMsg.style.color = 'var(--ban)'; return; }
+
+    els.ticketCreateBtn.disabled = true;
+    els.ticketCreateMsg.textContent = 'Creating your ticket...'; els.ticketCreateMsg.style.color = 'var(--text-2)';
+    try{
+      var res = await fetch(AUTH_WORKER_URL + '/tickets/create', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ requesterDiscordId: session.discordId, subject: subject, description: description })
+      });
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not create ticket.');
+      els.ticketCreateMsg.innerHTML = 'Ticket created! <a href="'+escapeHtml(data.link)+'" target="_blank" rel="noopener" style="color:var(--accent);">Open it in Discord</a>';
+      els.ticketCreateMsg.style.color = '#4ade80';
+      els.ticketSubjectInput.value=''; els.ticketDescInput.value='';
+    }catch(err){
+      els.ticketCreateMsg.textContent = err.message || 'Could not create ticket.'; els.ticketCreateMsg.style.color = 'var(--ban)';
+    }finally{
+      els.ticketCreateBtn.disabled = false;
+    }
+  });
+
   els.ownerLogoutBtn.addEventListener('click', function(){
     askConfirm('Log out?', function(){ clearSession(); routeByAuth(); }, 'Log out');
   });
