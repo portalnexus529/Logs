@@ -423,6 +423,76 @@
   .recent-item.kick{border-left-color:var(--kick);}
   .recent-item.warn{border-left-color:var(--warn);}
   .recent-item.dban, .recent-item.dkick{border-left-color:var(--discord);}
+
+  /* ===================== MOBILE RESPONSIVE PASS ===================== */
+  .mobile-menu-btn{display:none;}
+  .side-nav-close{display:none;}
+
+  @media (max-width:820px){
+    body{padding:14px 12px 100px;}
+
+    .topbar{flex-direction:column;align-items:stretch;gap:12px;}
+    .topbar-left h1{font-size:20px!important;}
+    .topbar-left p{font-size:12.5px!important;}
+    .topbar-right{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px;flex-wrap:nowrap;}
+    .chip{padding:8px 14px!important;flex-shrink:0;}
+    .chip .n{font-size:19px!important;}
+    .chip .l{font-size:10px!important;}
+
+    .mobile-menu-btn{display:flex;flex-shrink:0;}
+    .dash-body{grid-template-columns:1fr!important;gap:0;}
+    .side-nav{
+      display:none;
+      position:fixed; inset:0; z-index:1500;
+      background:var(--bg);
+      border-radius:0; border:none;
+      padding:16px; overflow-y:auto;
+      flex-direction:column;
+    }
+    .side-nav.open{display:flex;}
+    .side-nav-close{display:flex;margin-left:auto;margin-bottom:8px;}
+    .nav-item{padding:13px 12px;font-size:15.5px!important;}
+
+    .two-col, .settings-grid, .dash-body-inner, .grid{grid-template-columns:1fr!important;}
+    .dash-cards{grid-template-columns:repeat(2,1fr)!important;}
+
+    .panel-body{padding:14px!important;}
+    .field{margin-bottom:12px!important;}
+
+    .entry{flex-direction:column;}
+    .entry-thumb{width:100%;height:110px;}
+    .entry-top{flex-direction:column;align-items:flex-start!important;}
+    .entry-top > div{width:100%;flex-wrap:wrap;}
+    .badge-line{gap:5px;}
+
+    .seg button{min-width:72px!important;font-size:12.5px!important;padding:10px 3px!important;flex:1 1 45%;}
+
+    .auth-box, .confirm-box{max-width:calc(100vw - 32px)!important;padding:24px 18px!important;}
+    .lock-overlay, .confirm-overlay{padding:16px;box-sizing:border-box;}
+
+    .search-row{flex-direction:column;}
+    .search-row input, .search-row select{max-width:none!important;flex:none!important;}
+
+    .audit-row{grid-template-columns:1fr!important;gap:2px;}
+    .public-field-row{flex-direction:column;align-items:flex-start!important;gap:3px;}
+    .public-field-row span{text-align:left!important;max-width:100%!important;}
+
+    .player-top{flex-wrap:wrap;}
+    .player-actions{width:100%;}
+    .player-stats-grid{grid-template-columns:repeat(2,1fr)!important;}
+
+    .bulk-bar{gap:8px;}
+    .bulk-bar select{flex:1;}
+
+    .page-shell{grid-template-columns:1fr;}
+    .duration-row{grid-template-columns:1fr!important;}
+  }
+
+  @media (max-width:420px){
+    .dash-cards{grid-template-columns:1fr!important;}
+    .chip .n{font-size:17px!important;}
+    .chip{padding:7px 12px!important;}
+  }
 </style>
 </head>
 <body>
@@ -505,6 +575,14 @@
   </div>
 </div>
 
+<div class="wrap" id="statusWrap" style="display:none;max-width:480px;">
+  <div class="panel">
+    <div class="panel-body" id="statusBody" style="text-align:center;">
+      <div class="empty-state">Loading...</div>
+    </div>
+  </div>
+</div>
+
 <div class="wrap" id="playerWrap" style="display:none;">
   <div class="topbar">
     <div class="topbar-left">
@@ -529,9 +607,14 @@
 <div class="wrap" id="adminWrap">
 
   <div class="topbar">
-    <div class="topbar-left">
-      <h1 id="serverNameOut">Community server</h1>
-      <p>Moderation log &middot; publishes straight to Discord</p>
+    <div class="topbar-left" style="display:flex;align-items:center;gap:12px;">
+      <button type="button" class="icon-btn mobile-menu-btn" id="mobileMenuBtn" title="Menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div>
+        <h1 id="serverNameOut">Community server</h1>
+        <p>Moderation log &middot; publishes straight to Discord</p>
+      </div>
     </div>
     <div class="topbar-right">
       <div class="chip ban"><div class="n" id="statBan">0</div><div class="l">Bans</div></div>
@@ -545,7 +628,10 @@
 
   <div class="dash-body">
 
-    <nav class="side-nav">
+    <nav class="side-nav" id="sideNavEl">
+      <button type="button" class="icon-btn side-nav-close" id="sideNavCloseBtn" title="Close menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 10px 12px;">
         <div class="side-nav-brand" id="sideNavBrand" style="padding:0;">Menu</div>
         <button type="button" class="icon-btn" id="themeToggleBtn" title="Toggle light/dark theme" style="width:26px;height:26px;">
@@ -1414,6 +1500,34 @@
         <span id="maintenanceStatus" style="font-size:12.5px;color:var(--text-2);margin-left:8px;"></span>
         <p style="font-size:11.5px;color:var(--text-3);margin:8px 0 0;">While on, everyone except the owner account sees this message instead of the login/signup screen. Applies to every visitor immediately, since it's stored on your Worker, not just this browser.</p>
       </div>
+
+      <div class="settings-note" style="border-top:1px solid var(--border-soft);padding-top:12px;">
+        <label style="margin-bottom:8px;">Game server status</label>
+        <p style="font-size:11.5px;color:var(--text-3);margin:0 0 10px;">Separate from maintenance mode above &mdash; this is about your DayZ server, not this website. Posts a status message to Discord that updates in place (never spams a new message), plus a public web page anyone can check.</p>
+        <div class="field">
+          <label style="font-size:11.5px;">Status</label>
+          <div class="toggle-row" id="serverStatusToggle">
+            <button type="button" data-ss="online" class="active">\ud83d\udfe2 Online</button>
+            <button type="button" data-ss="maintenance">\ud83d\udfe1 Maintenance</button>
+            <button type="button" data-ss="offline">\ud83d\udd34 Offline</button>
+          </div>
+        </div>
+        <div class="field">
+          <label style="font-size:11.5px;" for="serverStatusTitleInput">Title <span style="color:var(--text-3);font-weight:400;">(optional, auto-generated if blank)</span></label>
+          <input type="text" id="serverStatusTitleInput" placeholder="e.g. Server Status: Online">
+        </div>
+        <div class="field">
+          <label style="font-size:11.5px;" for="serverStatusMessageInput">What's going on</label>
+          <textarea id="serverStatusMessageInput" placeholder="e.g. Server is up and running normally. / Restarting for a scheduled update, back in ~15 minutes."></textarea>
+        </div>
+        <div class="field">
+          <label style="font-size:11.5px;" for="serverStatusChannelInput">Discord channel ID</label>
+          <input type="text" id="serverStatusChannelInput" placeholder="Channel to post/update the status message in">
+        </div>
+        <button class="btn primary small" id="saveServerStatusBtn">Update status</button>
+        <button type="button" class="btn small ghost" id="copyStatusLinkBtn">Copy public status link</button>
+        <span id="serverStatusMsg" style="font-size:12.5px;color:var(--text-2);margin-left:8px;"></span>
+      </div>
       <p class="settings-note">
         The webhook URL and ledger are stored in this browser only (localStorage) &mdash; a static site like Netlify has no shared database behind it, so each admin's device keeps its own local copy. Every publish still posts to your Discord channel, which stays the permanent shared record for the whole team. Use export/import to back up or move your local ledger between devices.
       </p>
@@ -1567,10 +1681,12 @@
    'authOverlay','authTabLogin','authTabSignup','authBrandName','loginFormBox','signupFormBox',
    'maintenanceView','authNormalView','maintTitleOut','maintMessageOut','maintReturnOut','staffLoginLink',
    'maintenanceToggle','maintTitleInput','maintMessageInput','maintReturnInput','saveMaintenanceBtn','maintenanceStatus',
+   'serverStatusToggle','serverStatusTitleInput','serverStatusMessageInput','serverStatusChannelInput','saveServerStatusBtn','copyStatusLinkBtn','serverStatusMsg',
+   'statusWrap','statusBody',
    'loginUsername','loginPassword','loginMsg','loginBtn',
    'signupUsername','signupPassword','signupDiscordId','signupSteamId','signupMsg','signupBtn',
    'playerWrap','playerWelcome','playerLogoutBtn','playerCasesFeed','ownerLogoutBtn',
-   'sideNavBrand','themeToggleBtn','themeIcon',
+   'sideNavBrand','themeToggleBtn','themeIcon','mobileMenuBtn','sideNavCloseBtn','sideNavEl',
    'settingsStatus','serverNameOut','adminNameInput','addAdminBtn','adminList','actionToggle','durationBlock','durationToggle','durationRow','durationValue','durationUnit',
    'playerName','steamId','steamIdLabel','acctCreatedLabel','steamStatsRow','gameDiscordId','gameDiscordLookupLink','categorySelect','historyBox','joinTime','acctCreated','vacBans','gameBans','daysSinceBan','bgNotes',
    'reasonInput','templateRow','resolutionBlock','scopeField','banScope','appealToggle',
@@ -1880,10 +1996,14 @@
       if (el) el.style.display = (key===target) ? 'block' : 'none';
     });
     if (target==='applications' && typeof loadApplications==='function') loadApplications();
+    els.sideNavEl.classList.remove('open');
   }
   document.querySelectorAll('.nav-item').forEach(function(btn){
     btn.addEventListener('click', function(){ switchSection(btn.dataset.section); });
   });
+
+  els.mobileMenuBtn.addEventListener('click', function(){ els.sideNavEl.classList.add('open'); });
+  els.sideNavCloseBtn.addEventListener('click', function(){ els.sideNavEl.classList.remove('open'); });
 
   els.gameDiscordLookupLink.addEventListener('click', function(){
     var id = els.gameDiscordId.value.trim();
@@ -2138,6 +2258,70 @@
       els.saveMaintenanceBtn.disabled = false;
     }
   });
+
+  var SS_STATUS = 'online';
+  els.serverStatusToggle.addEventListener('click', function(e){
+    var b = e.target.closest('button[data-ss]'); if (!b) return;
+    SS_STATUS = b.dataset.ss;
+    els.serverStatusToggle.querySelectorAll('button').forEach(function(x){ x.classList.toggle('active', x===b); });
+  });
+
+  async function loadServerStatusIntoSettings(){
+    if (!STATE.settings.workerUrl) return;
+    try{
+      var res = await fetch(STATE.settings.workerUrl + '/server-status');
+      if (!res.ok) return;
+      var data = await res.json();
+      SS_STATUS = data.status || 'online';
+      els.serverStatusToggle.querySelectorAll('button').forEach(function(x){ x.classList.toggle('active', x.dataset.ss===SS_STATUS); });
+      els.serverStatusTitleInput.value = data.title || '';
+      els.serverStatusMessageInput.value = data.message || '';
+    }catch(e){ /* leave form as-is if unreachable */ }
+  }
+
+  els.saveServerStatusBtn.addEventListener('click', async function(){
+    if (!STATE.settings.workerUrl || !STATE.settings.workerKey){
+      els.serverStatusMsg.textContent = 'Configure Worker URL and admin key above first.';
+      els.serverStatusMsg.style.color = 'var(--ban)';
+      return;
+    }
+    var channelId = els.serverStatusChannelInput.value.trim();
+    if (!channelId){
+      els.serverStatusMsg.textContent = 'Add the Discord channel ID to post/update the status in.';
+      els.serverStatusMsg.style.color = 'var(--ban)';
+      return;
+    }
+    els.saveServerStatusBtn.disabled = true;
+    els.serverStatusMsg.textContent = 'Updating...'; els.serverStatusMsg.style.color = 'var(--text-2)';
+    try{
+      var res = await fetch(STATE.settings.workerUrl + '/server-status', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          adminKey: STATE.settings.workerKey,
+          status: SS_STATUS,
+          title: els.serverStatusTitleInput.value.trim(),
+          message: els.serverStatusMessageInput.value.trim(),
+          channelId: channelId
+        })
+      });
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not update status.');
+      els.serverStatusMsg.textContent = 'Status updated.'; els.serverStatusMsg.style.color = '#4ade80';
+      logAudit('Server status', 'Set server status to <b>'+SS_STATUS+'</b>');
+      showToast('Server status updated', 'ok');
+    }catch(err){
+      els.serverStatusMsg.textContent = err.message || 'Could not update status.'; els.serverStatusMsg.style.color = 'var(--ban)';
+    }finally{
+      els.saveServerStatusBtn.disabled = false;
+    }
+  });
+
+  els.copyStatusLinkBtn.addEventListener('click', function(){
+    var link = window.location.origin + window.location.pathname + '?status=1';
+    if (navigator.clipboard) navigator.clipboard.writeText(link).then(function(){ showToast('Status link copied', 'ok'); }).catch(function(){ showToast(link, 'ok'); });
+    else showToast(link, 'ok');
+  });
+
 
   function loadLedger(){
     try{
@@ -4171,6 +4355,41 @@
     return true;
   }
 
+  async function checkStatusView(){
+    var params = new URLSearchParams(location.search);
+    if (!params.has('status')) return false;
+
+    document.getElementById('adminWrap').style.display = 'none';
+    els.playerWrap.style.display = 'none';
+    els.authOverlay.style.display = 'none';
+    els.lockOverlay.style.display = 'none';
+    els.applyWrap.style.display = 'none';
+    els.statusWrap.style.display = 'block';
+
+    var STATUS_META = {
+      online: { label: 'Online', emoji: '\ud83d\udfe2', color: '#4ade80' },
+      offline: { label: 'Offline', emoji: '\ud83d\udd34', color: 'var(--ban)' },
+      maintenance: { label: 'Maintenance', emoji: '\ud83d\udfe1', color: 'var(--warn)' }
+    };
+
+    try{
+      var res = await fetch(AUTH_WORKER_URL + '/server-status');
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not load status.');
+      var meta = STATUS_META[data.status] || STATUS_META.online;
+      var updated = data.updatedAt ? new Date(data.updatedAt).toLocaleString() : 'Unknown';
+      els.statusBody.innerHTML =
+        '<div style="font-size:44px;margin-bottom:6px;">'+meta.emoji+'</div>' +
+        '<h2 style="margin:0 0 4px;color:'+meta.color+';">'+escapeHtml(data.title || ('Server Status: '+meta.label))+'</h2>' +
+        '<p style="color:var(--text-2);font-size:14px;line-height:1.6;margin:14px 0;">'+escapeHtml(data.message || 'No further details provided.')+'</p>' +
+        '<p style="color:var(--text-3);font-size:11.5px;margin:0;">Last updated '+updated+'</p>';
+    }catch(err){
+      els.statusBody.innerHTML = '<div class="empty-state">'+escapeHtml(err.message || 'Could not load server status.')+'</div>';
+    }
+    return true;
+  }
+
+
   function renderApplyForm(form){
     var fieldsHtml = (form.fields||[]).map(function(f){
       var reqMark = f.required ? ' <span style="color:var(--ban);">*</span>' : '';
@@ -4317,6 +4536,7 @@
       checkLock();
       loadMaintenanceIntoSettings();
       loadAppealFormOptions();
+      loadServerStatusIntoSettings();
     } else {
       adminWrapEl.style.display = 'none';
       els.playerWrap.style.display = 'block';
@@ -4422,6 +4642,8 @@
   (async function initApp(){
     var isApplyView = await checkApplyView();
     if (isApplyView) return;
+    var isStatusView = await checkStatusView();
+    if (isStatusView) return;
     await fetchMaintenanceState();
     routeByAuth();
   })();
