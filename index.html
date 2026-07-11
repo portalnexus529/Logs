@@ -2495,6 +2495,12 @@
   }
 
   var DIAG_FIXES = {
+    siteintegrity: [
+      'Something in the deployed HTML or JavaScript is missing or was edited incorrectly \u2014 an element ID or a function this site depends on can\'t be found.',
+      'Re-copy the full site file exactly as given, without editing individual lines, and re-deploy it to GitHub Pages (or wherever it\'s hosted).',
+      'If you intentionally edited the code, double-check you didn\'t delete or rename an id="..." attribute or a function definition.',
+      'Hard-refresh the page (Ctrl+Shift+R) after redeploying, in case an old broken version is cached.'
+    ],
     guildaccess: [
       'Confirm your bot is actually a member of your Discord server &mdash; if you removed and re-invited it, permissions or membership may have changed.',
       'Check Settings &rarr; "Server ID" is the correct guild ID (right-click your server icon &rarr; Copy Server ID with Developer Mode on).',
@@ -2604,6 +2610,7 @@
   }
 
   var DIAG_CHECKS = [
+    { id:'siteintegrity', label:'Site code & HTML integrity' },
     { id:'worker', label:'Worker connectivity' },
     { id:'latency', label:'Worker response time' },
     { id:'storage', label:'Storage (KV) read access' },
@@ -2655,6 +2662,39 @@
 
     var maintenanceData = null;
     var workerLatencyMs = null;
+
+    // Site code & HTML integrity — checked first, before anything network-related
+    await paced('siteintegrity', async function(){
+      var missingElements = [];
+      Object.keys(els).forEach(function(id){ if (!els[id]) missingElements.push(id); });
+
+      var functionChecks = {
+        renderLedger: typeof renderLedger==='function', renderPlayers: typeof renderPlayers==='function',
+        renderAuditLog: typeof renderAuditLog==='function', loadApplications: typeof loadApplications==='function',
+        loadBanAppeals: typeof loadBanAppeals==='function', buildMainEmbed: typeof buildMainEmbed==='function',
+        callBotAction: typeof callBotAction==='function', checkApplyView: typeof checkApplyView==='function',
+        checkStatusView: typeof checkStatusView==='function', routeByAuth: typeof routeByAuth==='function',
+        publishEntry: typeof publishEntry==='function', buildDmEmbed: typeof buildDmEmbed==='function',
+        loadLoginAttempts: typeof loadLoginAttempts==='function', generateDiagnosticPdf: typeof generateDiagnosticPdf==='function',
+        renderApplyForm: typeof renderApplyForm==='function', viewApplicationResponses: typeof viewApplicationResponses==='function',
+        switchSection: typeof switchSection==='function', getSession: typeof getSession==='function',
+        setSession: typeof setSession==='function', logAudit: typeof logAudit==='function',
+        escapeHtml: typeof escapeHtml==='function', showToast: typeof showToast==='function', askConfirm: typeof askConfirm==='function'
+      };
+      var missingFunctions = Object.keys(functionChecks).filter(function(name){ return !functionChecks[name]; });
+
+      var totalChecked = Object.keys(els).length + Object.keys(functionChecks).length;
+      var totalMissing = missingElements.length + missingFunctions.length;
+
+      if (totalMissing > 0){
+        var parts = [];
+        if (missingElements.length) parts.push(missingElements.length + ' missing element(s): ' + missingElements.slice(0,8).join(', ') + (missingElements.length>8?'...':''));
+        if (missingFunctions.length) parts.push(missingFunctions.length + ' missing function(s): ' + missingFunctions.join(', '));
+        diagSetResult('siteintegrity', 'fail', 'Checked ' + totalChecked + ' elements/functions, found ' + totalMissing + ' missing. ' + parts.join(' '), true);
+      } else {
+        diagSetResult('siteintegrity', 'pass', 'All ' + totalChecked + ' expected page elements and core functions are present and intact.');
+      }
+    });
 
     // 1. Worker connectivity
     await paced('worker', async function(){
