@@ -1336,7 +1336,7 @@
         <div class="panel" style="margin-top:20px;">
           <div class="panel-head"><h2>Login Security</h2><button class="btn ghost small" id="loginAttemptsRefreshBtn">Refresh</button></div>
           <div class="panel-body">
-            <p style="font-size:12.5px;color:var(--text-3);margin:0 0 14px;">Every attempt to log in as owner &mdash; successful or not &mdash; is recorded here with an IP address, whether or not it succeeded. To test it yourself, just try logging in with a wrong password a couple of times, then hit Refresh.</p>
+            <p style="font-size:12.5px;color:var(--text-3);margin:0 0 14px;">Every attempt to log in as owner &mdash; successful or not &mdash; is recorded here by device, not IP address. To test it yourself, just try logging in with a wrong password a couple of times, then hit Refresh.</p>
             <div id="loginAttemptsWarning" style="display:none;"></div>
             <div id="loginAttemptsList">
               <div class="empty-state">Loading...</div>
@@ -3373,10 +3373,9 @@
         var deviceTag = a.deviceId
           ? (isMe ? '<span style="font-size:10px;color:var(--text-3);">This device</span>' : '<button type="button" class="link-msg-btn" data-blockloginattempt="'+escapeHtml(a.deviceId)+'" style="color:var(--ban);">Block this device</button>')
           : '<span style="font-size:10px;color:var(--text-3);">No device ID</span>';
-        return '<div class="audit-row" style="grid-template-columns:150px 100px 1fr auto;">' +
+        return '<div class="audit-row" style="grid-template-columns:150px 100px 1fr;">' +
           '<span class="audit-time">'+timeStr+'</span>' +
           badge +
-          '<span class="audit-detail mono" style="font-size:12px;">IP '+escapeHtml(a.ip||'unknown')+'</span>' +
           '<span>'+deviceTag+'</span>' +
         '</div>';
       }).join('');
