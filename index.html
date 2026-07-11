@@ -5063,10 +5063,19 @@
               '<input type="text" placeholder="Optional note for the DM" data-response-note="'+r.id+'" style="flex:1;min-width:160px;">' +
               '<button type="button" class="btn small primary" data-response-notify="'+r.id+'">Send update DM</button>'
               : '<span style="font-size:11.5px;color:var(--text-3);">No Discord ID on file \u2014 can\'t DM this person</span>') +
+            '<button type="button" class="btn small ghost" data-response-copylink="'+r.id+'">Copy status link</button>' +
           '</div>' +
           '<div style="font-size:11.5px;margin-top:6px;" data-response-msg="'+r.id+'"></div>' +
         '</div>';
       }).join('');
+
+      els.appsResponsesList.querySelectorAll('[data-response-copylink]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          var link = window.location.origin + window.location.pathname + '?checkappeal=' + encodeURIComponent(formId) + ':' + encodeURIComponent(btn.dataset.responseCopylink);
+          if (navigator.clipboard) navigator.clipboard.writeText(link).then(function(){ showToast('Status link copied', 'ok'); }).catch(function(){ showToast(link, 'ok'); });
+          else showToast(link, 'ok');
+        });
+      });
 
       els.appsResponsesList.querySelectorAll('[data-response-status]').forEach(function(sel){
         sel.addEventListener('change', async function(){
@@ -5176,10 +5185,19 @@
               '<input type="text" placeholder="Optional note for the DM" data-ba-note="'+r.id+'" style="flex:1;min-width:160px;">' +
               '<button type="button" class="btn small primary" data-ba-notify="'+r.id+'">Send update DM</button>'
               : '<span style="font-size:11.5px;color:var(--text-3);">No Discord ID on file \u2014 can\'t DM this person</span>') +
+            '<button type="button" class="btn small ghost" data-ba-copylink="'+r.id+'">Copy status link</button>' +
           '</div>' +
           '<div style="font-size:11.5px;margin-top:6px;" data-ba-msg="'+r.id+'"></div>' +
         '</div>';
       }).join('');
+
+      els.banAppealsList.querySelectorAll('[data-ba-copylink]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          var link = window.location.origin + window.location.pathname + '?checkappeal=' + encodeURIComponent(STATE.settings.appealFormId) + ':' + encodeURIComponent(btn.dataset.baCopylink);
+          if (navigator.clipboard) navigator.clipboard.writeText(link).then(function(){ showToast('Status link copied', 'ok'); }).catch(function(){ showToast(link, 'ok'); });
+          else showToast(link, 'ok');
+        });
+      });
 
       els.banAppealsList.querySelectorAll('[data-ba-status]').forEach(function(sel){
         sel.addEventListener('change', async function(){
