@@ -4496,7 +4496,7 @@
     return STATE.settings.ticketLink || '';
   }
 
-  function buildDmEmbed(action, reason, durText, extraNote){
+  function buildDmEmbed(action, reason, durText, extraNote, discordUserId){
     var verb = action==='dban' ? 'banned from' : (action==='dtimeout' ? 'timed out in' : 'kicked from');
     var server = STATE.settings.serverName || 'the server';
     var embed = {
@@ -4512,6 +4512,10 @@
     var appealLink = getAppealLink();
     if (action==='dban' && DISC_STATE.appeal==='yes' && appealLink){
       embed.fields.push({ name:'Think this was a mistake?', value: 'You can appeal here: ' + appealLink });
+      if (STATE.settings.appealFormId && discordUserId){
+        var myAppealLink = window.location.origin + window.location.pathname + '?myappeal=' + encodeURIComponent(STATE.settings.appealFormId) + ':' + encodeURIComponent(discordUserId);
+        embed.fields.push({ name:'Already appealed?', value: 'Check the status of your appeal here: ' + myAppealLink });
+      }
     }
     return embed;
   }
@@ -4586,7 +4590,7 @@
       els.discPublishBtn.disabled = true;
       setDiscFormMsg((action==='dban'?'Banning':'Kicking')+' on Discord...', '');
       var sendingDm = DISC_SEND_DM==='yes';
-      var dmEmbed = sendingDm ? buildDmEmbed(action, reason, durText, els.discDmMessage.value) : null;
+      var dmEmbed = sendingDm ? buildDmEmbed(action, reason, durText, els.discDmMessage.value, userId) : null;
 
       var botResult;
       try{
@@ -5639,6 +5643,62 @@
     return true;
   }
 
+  async function checkMyAppealView(){
+    var params = new URLSearchParams(location.search);
+    var token = params.get('myappeal');
+    if (!token) return false;
+    var parts = token.split(':');
+    var formId = parts[0], discordId = parts.slice(1).join(':');
+
+    document.getElementById('adminWrap').style.display = 'none';
+    els.playerWrap.style.display = 'none';
+    els.authOverlay.style.display = 'none';
+    els.lockOverlay.style.display = 'none';
+    els.applyWrap.style.display = 'none';
+    els.statusWrap.style.display = 'none';
+    els.checkAppealWrap.style.display = 'block';
+
+    var STATUS_META = {
+      pending: { label: 'Pending', color: 'var(--warn)', bg: 'var(--warn-bg)' },
+      accepted: { label: 'Accepted', color: '#4ade80', bg: 'rgba(74,222,128,0.12)' },
+      denied: { label: 'Denied', color: 'var(--ban)', bg: 'var(--ban-bg)' }
+    };
+
+    try{
+      var res = await fetch(AUTH_WORKER_URL + '/forms/response-by-discord?formId=' + encodeURIComponent(formId) + '&discordId=' + encodeURIComponent(discordId));
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not check appeal status.');
+
+      if (!data.found){
+        var applyLink = window.location.origin + window.location.pathname + '?apply=' + encodeURIComponent(formId);
+        els.checkAppealBody.innerHTML =
+          '<h2 style="margin:0 0 12px;font-size:18px;">'+escapeHtml(data.formTitle||'Appeal')+'</h2>' +
+          '<div style="margin-bottom:16px;">' +
+            '<span style="display:inline-flex;align-items:center;gap:8px;background:var(--field);color:var(--text-2);padding:8px 18px;border-radius:20px;font-size:13px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;border:1px solid var(--border-soft);">Not appealed yet</span>' +
+          '</div>' +
+          '<p style="color:var(--text-2);font-size:13.5px;line-height:1.6;margin:0 0 18px;">You haven\'t submitted an appeal yet. If you\'d like to, use the link below.</p>' +
+          '<a href="'+escapeHtml(applyLink)+'" class="btn primary" style="display:inline-block;text-decoration:none;padding:10px 20px;">Submit an appeal</a>';
+        return true;
+      }
+
+      var meta = STATUS_META[data.status] || STATUS_META.pending;
+      var submitted = data.submittedAt ? new Date(data.submittedAt).toLocaleString() : 'Unknown';
+      var updated = data.statusUpdatedAt ? new Date(data.statusUpdatedAt).toLocaleString() : null;
+      els.checkAppealBody.innerHTML =
+        '<h2 style="margin:0 0 16px;font-size:18px;">'+escapeHtml(data.formTitle||'Submission')+'</h2>' +
+        '<div style="margin-bottom:18px;">' +
+          '<span style="display:inline-flex;align-items:center;gap:8px;background:'+meta.bg+';color:'+meta.color+';padding:8px 18px;border-radius:20px;font-size:13px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;">' +
+            '<span style="width:9px;height:9px;border-radius:50%;background:'+meta.color+';display:inline-block;"></span>' + meta.label +
+          '</span>' +
+        '</div>' +
+        (data.adminNote ? '<div style="background:var(--field);border:1px solid var(--border-soft);border-radius:var(--radius-sm);padding:14px;text-align:left;color:var(--text-2);font-size:13px;line-height:1.6;margin-bottom:14px;">'+formatUserText(data.adminNote)+'</div>' : '') +
+        '<p style="color:var(--text-3);font-size:11.5px;margin:0;">Submitted '+submitted+(updated ? (' &middot; Last updated '+updated) : '')+'</p>';
+    }catch(err){
+      els.checkAppealBody.innerHTML = '<div class="empty-state">'+escapeHtml(err.message || 'Could not check appeal status.')+'</div>';
+    }
+    return true;
+  }
+
 
   function renderApplyForm(form){
     var fieldsHtml = (form.fields||[]).map(function(f){
@@ -5936,6 +5996,8 @@
     if (isApplyView) return;
     var isCheckAppealView = await checkCheckAppealView();
     if (isCheckAppealView) return;
+    var isMyAppealView = await checkMyAppealView();
+    if (isMyAppealView) return;
     var isStatusView = await checkStatusView();
     if (isStatusView) return;
     await fetchMaintenanceState();
