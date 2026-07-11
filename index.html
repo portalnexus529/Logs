@@ -3657,7 +3657,7 @@
 
       var botResult;
       try{
-        botResult = await callBotAction(action, userId, reason, dmEmbed, entry.action==='dtimeout' ? (entry.expiresAt - Date.now()) : null);
+        botResult = await callBotAction(action, userId, reason, dmEmbed, entry.expiresAt ? (entry.expiresAt - Date.now()) : null);
       }catch(err){
         setDiscFormMsg(err.message || 'Bot action failed.', 'err');
         showToast(err.message || 'Bot action failed', 'err');
