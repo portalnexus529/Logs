@@ -4289,6 +4289,20 @@
     });
   }
 
+  function buildAppealStatusEmbed(formTitle, status, note){
+    var STATUS_TEXT = {
+      pending: { title: 'Your "'+formTitle+'" submission is under review', desc: "We've received your submission and it's currently being reviewed. We'll follow up with a decision soon.", color: 0xffd43b },
+      accepted: { title: 'Your "'+formTitle+'" has been accepted', desc: 'Good news \u2014 your submission has been reviewed and accepted.', color: 0x4ade80 },
+      denied: { title: 'Your "'+formTitle+'" has been denied', desc: 'After review, your submission has not been accepted at this time.', color: 0xff5c5c }
+    };
+    var t = STATUS_TEXT[status] || STATUS_TEXT.pending;
+    var embed = { title: t.title, description: t.desc, color: t.color, footer: { text: STATE.settings.serverName || 'Community server' }, timestamp: new Date().toISOString() };
+    if (note && note.trim()) embed.fields = [{ name:'Additional note', value: note.trim() }];
+    return embed;
+  }
+
+  var RESPONSE_STATUS_LABEL = { pending:'\ud83d\udfe1 Pending', accepted:'\u2705 Accepted', denied:'\u274c Denied' };
+
   async function viewApplicationResponses(formId){
     var form = APPS_CACHE.find(function(f){ return f.id===formId; });
     els.appsResponsesTitle.textContent = 'Responses \u2014 ' + (form ? form.title : '');
@@ -4315,11 +4329,68 @@
         if (r.submitterName) submitterBits.push(r.submitterName);
         if (r.submitterDiscordId) submitterBits.push('Discord '+r.submitterDiscordId);
         if (r.submitterSteamId) submitterBits.push('Steam '+r.submitterSteamId);
-        return '<div class="player-card" style="margin-bottom:10px;">' +
+        var status = r.status || 'pending';
+        var statusOptions = Object.keys(RESPONSE_STATUS_LABEL).map(function(s){
+          return '<option value="'+s+'"'+(s===status?' selected':'')+'>'+RESPONSE_STATUS_LABEL[s]+'</option>';
+        }).join('');
+        return '<div class="player-card" style="margin-bottom:10px;" data-response-card="'+r.id+'">' +
           '<div class="player-top"><div class="player-name">'+escapeHtml(submitterBits.join(' \u00b7 ') || 'Anonymous')+'</div><span class="entry-time">'+d.toLocaleString()+'</span></div>' +
           answersHtml +
+          '<div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap;">' +
+            '<select class="status-select" data-response-status="'+r.id+'" style="width:auto;">'+statusOptions+'</select>' +
+            (r.submitterDiscordId ?
+              '<input type="text" placeholder="Optional note for the DM" data-response-note="'+r.id+'" style="flex:1;min-width:160px;">' +
+              '<button type="button" class="btn small primary" data-response-notify="'+r.id+'">Send update DM</button>'
+              : '<span style="font-size:11.5px;color:var(--text-3);">No Discord ID on file \u2014 can\'t DM this person</span>') +
+          '</div>' +
+          '<div style="font-size:11.5px;margin-top:6px;" data-response-msg="'+r.id+'"></div>' +
         '</div>';
       }).join('');
+
+      els.appsResponsesList.querySelectorAll('[data-response-status]').forEach(function(sel){
+        sel.addEventListener('change', async function(){
+          var responseId = sel.dataset.responseStatus;
+          try{
+            var r2 = await fetch(STATE.settings.workerUrl + '/forms/responses/status', {
+              method:'POST', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ adminKey: STATE.settings.workerKey, formId: formId, responseId: responseId, status: sel.value })
+            });
+            if (!r2.ok) throw new Error('Could not update status.');
+            showToast('Status updated', 'ok');
+            logAudit('Appeal status', 'Set response status to <b>'+sel.value+'</b> on '+(form?form.title:'a form'));
+          }catch(err){
+            showToast(err.message || 'Could not update status.', 'err');
+          }
+        });
+      });
+
+      els.appsResponsesList.querySelectorAll('[data-response-notify]').forEach(function(btn){
+        btn.addEventListener('click', async function(){
+          var responseId = btn.dataset.responseNotify;
+          var responseObj = responses.find(function(x){ return x.id===responseId; });
+          var statusSel = els.appsResponsesList.querySelector('[data-response-status="'+responseId+'"]');
+          var noteInput = els.appsResponsesList.querySelector('[data-response-note="'+responseId+'"]');
+          var msgEl = els.appsResponsesList.querySelector('[data-response-msg="'+responseId+'"]');
+          if (!responseObj || !responseObj.submitterDiscordId) return;
+          btn.disabled = true; msgEl.textContent = 'Sending...'; msgEl.style.color = 'var(--text-2)';
+          try{
+            var embed = buildAppealStatusEmbed(form ? form.title : 'submission', statusSel.value, noteInput ? noteInput.value : '');
+            var r3 = await fetch(STATE.settings.workerUrl + '/dm/send', {
+              method:'POST', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ adminKey: STATE.settings.workerKey, userId: responseObj.submitterDiscordId, embed: embed })
+            });
+            var d3 = await r3.json();
+            if (!r3.ok) throw new Error(d3.error || 'Could not send DM.');
+            msgEl.textContent = 'DM sent.'; msgEl.style.color = '#4ade80';
+            showToast('Update DM sent', 'ok');
+            logAudit('Appeal notified', 'Sent status update DM ('+statusSel.value+') for '+(form?form.title:'a form'));
+          }catch(err){
+            msgEl.textContent = err.message || 'Could not send DM.'; msgEl.style.color = 'var(--ban)';
+          }finally{
+            btn.disabled = false;
+          }
+        });
+      });
     }catch(err){
       els.appsResponsesList.innerHTML = '<div class="empty-state">'+escapeHtml(err.message || 'Could not load responses.')+'</div>';
     }
