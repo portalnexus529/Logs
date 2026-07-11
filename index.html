@@ -1258,6 +1258,7 @@
         <div class="panel">
           <div class="panel-head"><h2>Ban Appeals <span style="display:inline-flex;align-items:center;gap:5px;font-size:10.5px;color:var(--text-3);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-left:8px;"><span style="width:6px;height:6px;border-radius:50%;background:#4ade80;display:inline-block;animation:livePulse 1.6s ease-in-out infinite;"></span>Live</span></h2><button class="btn ghost small" id="banAppealsRefreshBtn">Refresh</button></div>
           <div class="panel-body">
+            <p style="font-size:11.5px;color:var(--text-3);margin:0 0 14px;line-height:1.6;background:var(--field);border:1px solid var(--border-soft);border-radius:var(--radius-sm);padding:10px 12px;">Heads up: Discord blocks bots from DMing anyone they don't share a server with. Since banning removes someone from your server, "Send update DM" can fail for banned users with a "no mutual guilds" error &mdash; this is a Discord platform rule, not something fixable here. It usually still works for kicks or warnings, since those people often remain server members.</p>
             <div id="banAppealsMsg" style="font-size:12.5px;margin-bottom:10px;"></div>
             <div id="banAppealsList">
               <div class="empty-state">Loading...</div>
@@ -4986,6 +4987,20 @@
     });
   }
 
+  function translateDmError(rawDetail){
+    var text = String(rawDetail || '');
+    if (text.indexOf('50278') !== -1){
+      return 'This person can\'t be DMed because they no longer share your server with the bot (this is normal for banned users \u2014 Discord requires a bot and a user to be in a server together to message them, and banning removes that). There\'s no way around this from the bot side. If it matters for this case, they\'d need to rejoin the server before a DM could go through.';
+    }
+    if (text.indexOf('50007') !== -1){
+      return 'This person has DMs from server members turned off, or has blocked the bot. This is a setting on their end \u2014 there\'s no way to override it from here.';
+    }
+    if (text.indexOf('10013') !== -1){
+      return 'That Discord user ID doesn\'t match a real account \u2014 double check it was copied correctly.';
+    }
+    return rawDetail;
+  }
+
   function buildAppealStatusEmbed(formTitle, status, note){
     var STATUS_TEXT = {
       pending: { title: 'Your "'+formTitle+'" submission is under review', desc: "We've received your submission and it's currently being reviewed. We'll follow up with a decision soon.", color: 0xffd43b },
@@ -5077,7 +5092,7 @@
               body: JSON.stringify({ adminKey: STATE.settings.workerKey, userId: responseObj.submitterDiscordId, embed: embed })
             });
             var d3 = await r3.json();
-            if (!r3.ok) throw new Error(d3.error ? (d3.error + (d3.detail ? ': '+d3.detail : '')) : 'Could not send DM.');
+            if (!r3.ok) throw new Error(d3.detail ? translateDmError(d3.detail) : (d3.error || 'Could not send DM.'));
             msgEl.textContent = 'DM sent.'; msgEl.style.color = '#4ade80';
             showToast('Update DM sent', 'ok');
             logAudit('Appeal notified', 'Sent status update DM ('+statusSel.value+') for '+(form?form.title:'a form'));
@@ -5185,7 +5200,7 @@
               body: JSON.stringify({ adminKey: STATE.settings.workerKey, userId: responseObj.submitterDiscordId, embed: embed })
             });
             var d3 = await r3.json();
-            if (!r3.ok) throw new Error(d3.error ? (d3.error + (d3.detail ? ': '+d3.detail : '')) : 'Could not send DM.');
+            if (!r3.ok) throw new Error(d3.detail ? translateDmError(d3.detail) : (d3.error || 'Could not send DM.'));
             msgEl.textContent = 'DM sent.'; msgEl.style.color = '#4ade80';
             showToast('Update DM sent', 'ok');
             logAudit('Appeal notified', 'Sent status update DM ('+statusSel.value+') for a ban appeal');
