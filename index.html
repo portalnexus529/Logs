@@ -3369,12 +3369,37 @@
         var badge = a.success
           ? '<span class="badge appeal-yes">Success</span>'
           : '<span class="badge appeal-no">Failed'+(a.reason?(' \u2014 '+escapeHtml(a.reason)):'')+'</span>';
-        return '<div class="audit-row" style="grid-template-columns:150px 100px 1fr;">' +
+        var isMe = a.deviceId && a.deviceId === DEVICE_ID;
+        var deviceTag = a.deviceId
+          ? (isMe ? '<span style="font-size:10px;color:var(--text-3);">This device</span>' : '<button type="button" class="link-msg-btn" data-blockloginattempt="'+escapeHtml(a.deviceId)+'" style="color:var(--ban);">Block this device</button>')
+          : '<span style="font-size:10px;color:var(--text-3);">No device ID</span>';
+        return '<div class="audit-row" style="grid-template-columns:150px 100px 1fr auto;">' +
           '<span class="audit-time">'+timeStr+'</span>' +
           badge +
-          '<span class="audit-detail mono" style="font-size:12px;">IP '+escapeHtml(a.ip||'unknown')+(a.deviceId ? (' &middot; device '+escapeHtml(a.deviceId.slice(0,16))+'...') : '')+'</span>' +
+          '<span class="audit-detail mono" style="font-size:12px;">IP '+escapeHtml(a.ip||'unknown')+'</span>' +
+          '<span>'+deviceTag+'</span>' +
         '</div>';
       }).join('');
+
+      els.loginAttemptsList.querySelectorAll('[data-blockloginattempt]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          var deviceId = btn.dataset.blockloginattempt;
+          askConfirm('Block this device from logging in as owner? Remember: this blocks a stored device ID, not a real credential \u2014 if you suspect they actually know the password, change OWNER_PASSWORD in Cloudflare too.', async function(){
+            try{
+              var res = await fetch(STATE.settings.workerUrl + '/devices/block', {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ adminKey: STATE.settings.workerKey, deviceId: deviceId })
+              });
+              if (!res.ok) throw new Error('Could not block device.');
+              showToast('Device blocked', 'ok');
+              logAudit('Device blocked', 'Blocked device <b>'+escapeHtml(deviceId)+'</b> from login attempt history');
+              loadLoginAttempts();
+            }catch(err){
+              showToast(err.message || 'Could not block device.', 'err');
+            }
+          }, 'Block device');
+        });
+      });
     }catch(err){
       els.loginAttemptsList.innerHTML = '<div class="empty-state">'+escapeHtml(err.message || 'Could not load login attempts.')+'</div>';
     }
