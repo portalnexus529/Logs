@@ -362,7 +362,7 @@
   .nav-item.active{background:var(--accent-bg);color:var(--accent);font-weight:600;}
 
   .audit-list{display:flex;flex-direction:column;gap:2px;max-height:70vh;overflow-y:auto;}
-  .audit-row{display:grid;grid-template-columns:150px 130px 1fr;gap:14px;padding:10px 8px;border-bottom:1px solid var(--border-soft);font-size:13px;align-items:baseline;}
+  .audit-row{display:grid;grid-template-columns:150px 130px 1fr auto;gap:14px;padding:10px 8px;border-bottom:1px solid var(--border-soft);font-size:13px;align-items:baseline;}
   .audit-row:last-child{border-bottom:none;}
   .audit-time{color:var(--text-3);font-size:12px;}
   .audit-tag{font-size:11px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;color:var(--accent);}
@@ -686,6 +686,10 @@
       <button type="button" class="nav-item" data-section="applications">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
         Applications
+      </button>
+      <button type="button" class="nav-item" data-section="banappeals">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        Ban Appeals
       </button>
       <button type="button" class="nav-item" data-section="ledger">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
@@ -1249,6 +1253,18 @@
         </div>
       </div>
 
+      <div id="sectionBanAppeals" class="dash-section" style="display:none;">
+        <div class="panel">
+          <div class="panel-head"><h2>Ban Appeals</h2><button class="btn ghost small" id="banAppealsRefreshBtn">Refresh</button></div>
+          <div class="panel-body">
+            <div id="banAppealsMsg" style="font-size:12.5px;margin-bottom:10px;"></div>
+            <div id="banAppealsList">
+              <div class="empty-state">Loading...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div id="sectionLedger" class="dash-section" style="display:none;">
         <div class="panel">
       <div class="panel-head"><h2>Cases</h2><button class="btn ghost small" id="clearAllBtn">Clear all</button></div>
@@ -1504,6 +1520,13 @@
       </div>
 
       <div class="settings-note" style="border-top:1px solid var(--border-soft);padding-top:12px;">
+        <label style="margin-bottom:8px;">Blocked devices</label>
+        <p style="font-size:11.5px;color:var(--text-3);margin:0 0 10px;">Devices blocked from the Audit logs page show up here. This is a soft deterrent (tied to browser storage, not a real credential) &mdash; if you suspect a genuine unauthorized login, change OWNER_PASSWORD in Cloudflare instead, which locks out everyone until they re-enter the new password.</p>
+        <button type="button" class="btn small ghost" id="refreshBlockedDevicesBtn">Refresh list</button>
+        <div class="proof-list" id="blockedDevicesList" style="margin-top:10px;"></div>
+      </div>
+
+      <div class="settings-note" style="border-top:1px solid var(--border-soft);padding-top:12px;">
         <label style="margin-bottom:8px;">Maintenance mode</label>
         <div class="toggle-row" id="maintenanceToggle" style="margin-bottom:12px;max-width:220px;">
           <button type="button" data-mt="off" class="active">Off</button>
@@ -1723,6 +1746,7 @@
    'serverStatusToggle','serverStatusTitleInput','serverStatusMessageInput','serverStatusChannelInput','saveServerStatusBtn','copyStatusLinkBtn','serverStatusMsg',
    'sweepTempBansBtn','sweepResultOut',
    'diagRunBtn','diagProgressTrack','diagProgressFill','diagResultsList',
+   'refreshBlockedDevicesBtn','blockedDevicesList',
    'statusWrap','statusBody',
    'loginUsername','loginPassword','loginMsg','loginBtn',
    'signupUsername','signupPassword','signupDiscordId','signupSteamId','signupMsg','signupBtn',
@@ -1750,6 +1774,7 @@
    'evPingType','evRoleField','evRoleId','evPublishBtn','evFormMsg',
    'fbEditingId','fbTitle','fbDescription','fbAddFieldBtn','fbFieldsList','fbSaveBtn','fbFormMsg',
    'appsRefreshBtn','appsFormMsg','appsList','appsResponsesPanel','appsResponsesTitle','appsBackBtn','appsResponsesList',
+   'banAppealsRefreshBtn','banAppealsMsg','banAppealsList',
    'applyWrap','applyBody',
    'webhookNameInput','webhookUrlInput','addWebhookBtn','webhookListUI',
    'workerUrlInput','workerKeyInput','guildIdInput',
@@ -2029,7 +2054,7 @@
     els.linkInlineInput.value=''; els.linkInlineRow.classList.remove('show');
   });
 
-  var SECTION_IDS = { dashboard:'sectionDashboard', game:'sectionGame', discord:'sectionDiscord', ann:'sectionAnn', events:'sectionEvents', formbuilder:'sectionFormBuilder', applications:'sectionApplications', ledger:'sectionLedger', audit:'sectionAudit', players:'sectionPlayers', lookup:'sectionLookup', settings:'sectionSettings', diagnostics:'sectionDiagnostics' };
+  var SECTION_IDS = { dashboard:'sectionDashboard', game:'sectionGame', discord:'sectionDiscord', ann:'sectionAnn', events:'sectionEvents', formbuilder:'sectionFormBuilder', applications:'sectionApplications', banappeals:'sectionBanAppeals', ledger:'sectionLedger', audit:'sectionAudit', players:'sectionPlayers', lookup:'sectionLookup', settings:'sectionSettings', diagnostics:'sectionDiagnostics' };
   function switchSection(target){
     document.querySelectorAll('.nav-item').forEach(function(b){ b.classList.toggle('active', b.dataset.section===target); });
     Object.keys(SECTION_IDS).forEach(function(key){
@@ -2037,6 +2062,8 @@
       if (el) el.style.display = (key===target) ? 'block' : 'none';
     });
     if (target==='applications' && typeof loadApplications==='function') loadApplications();
+    if (target==='audit' && typeof loadServerAuditLog==='function') loadServerAuditLog();
+    if (target==='banappeals' && typeof loadBanAppeals==='function') loadBanAppeals();
     els.sideNavEl.classList.remove('open');
   }
   document.querySelectorAll('.nav-item').forEach(function(btn){
@@ -2363,6 +2390,46 @@
     else showToast(link, 'ok');
   });
 
+  async function loadBlockedDevices(){
+    if (!STATE.settings.workerUrl || !STATE.settings.workerKey){
+      els.blockedDevicesList.innerHTML = '<div style="font-size:12px;color:var(--text-3);">Configure Worker URL and admin key first.</div>';
+      return;
+    }
+    els.blockedDevicesList.innerHTML = '<div style="font-size:12px;color:var(--text-3);">Loading...</div>';
+    try{
+      var res = await fetch(STATE.settings.workerUrl + '/devices/blocked-list', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ adminKey: STATE.settings.workerKey })
+      });
+      var data = await res.json();
+      if (!res.ok) throw new Error('Could not load blocked devices.');
+      var ids = data.deviceIds || [];
+      if (ids.length===0){ els.blockedDevicesList.innerHTML = '<div style="font-size:12px;color:var(--text-3);">No devices currently blocked.</div>'; return; }
+      els.blockedDevicesList.innerHTML = ids.map(function(id){
+        return '<div class="proof-item"><span class="label mono">'+escapeHtml(id)+'</span><button type="button" class="rm" data-unblock="'+escapeHtml(id)+'" title="Unblock">&times;</button></div>';
+      }).join('');
+      els.blockedDevicesList.querySelectorAll('[data-unblock]').forEach(function(btn){
+        btn.addEventListener('click', async function(){
+          try{
+            var r2 = await fetch(STATE.settings.workerUrl + '/devices/unblock', {
+              method:'POST', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ adminKey: STATE.settings.workerKey, deviceId: btn.dataset.unblock })
+            });
+            if (!r2.ok) throw new Error('Could not unblock.');
+            showToast('Device unblocked', 'ok');
+            logAudit('Device unblocked', 'Unblocked device <b>'+escapeHtml(btn.dataset.unblock)+'</b>');
+            loadBlockedDevices();
+          }catch(err){
+            showToast(err.message || 'Could not unblock.', 'err');
+          }
+        });
+      });
+    }catch(err){
+      els.blockedDevicesList.innerHTML = '<div style="font-size:12px;color:var(--ban);">'+escapeHtml(err.message||'Could not load.')+'</div>';
+    }
+  }
+  els.refreshBlockedDevicesBtn.addEventListener('click', loadBlockedDevices);
+
   els.sweepTempBansBtn.addEventListener('click', async function(){
     if (!STATE.settings.workerUrl || !STATE.settings.workerKey){
       showToast('Configure Worker URL and admin key first.', 'err');
@@ -2400,25 +2467,105 @@
     document.getElementById('diagicon-'+id).className = 'diag-icon checking';
     document.getElementById('diagdetail-'+id).textContent = 'Checking...';
   }
-  function diagSetResult(id, kind, detail){
+
+  var DIAG_FIXES = {
+    guildaccess: [
+      'Confirm your bot is actually a member of your Discord server &mdash; if you removed and re-invited it, permissions or membership may have changed.',
+      'Check Settings &rarr; "Server ID" is the correct guild ID (right-click your server icon &rarr; Copy Server ID with Developer Mode on).',
+      'Re-invite the bot using an OAuth2 URL with the "bot" scope and the permissions you originally granted (Ban/Kick/Timeout/Manage Channels).'
+    ],
+    appealform: [
+      'Settings &rarr; "Ban appeal form" &rarr; confirm a form is actually selected.',
+      'If you deleted that form from the Applications page, pick a different one (or create a new one under "New form") and re-select it here.',
+      'Click "Refresh list" next to the dropdown if the form you expect isn\'t showing up.'
+    ],
+    kvwrite: [
+      'This shares the same cause as "Worker connectivity" and "Storage read access" above &mdash; fix those first.',
+      'Cloudflare &rarr; your Worker &rarr; Settings &rarr; Bindings &rarr; confirm the CASES KV namespace is bound and hasn\'t been deleted or renamed.'
+    ],
+    devices: [
+      'This is informational only, not necessarily an error.',
+      'Review blocked devices under Settings &rarr; "Blocked devices" and unblock any that shouldn\'t be there.'
+    ],
+    worker: [
+      'Open <b>Settings</b> and check the "Worker URL" field &mdash; make sure it exactly matches your deployed Worker\'s URL (starts with https://, no typos, no trailing slash).',
+      'Cloudflare dashboard &rarr; Workers &amp; Pages &rarr; open your Worker &rarr; confirm it shows as deployed, not an error state.',
+      'Try opening the Worker URL directly in a new browser tab. A small JSON message like {"error":"Method not allowed"} is normal and means it\'s alive. A blank page or "site can\'t be reached" means the Worker is down or the URL is wrong.',
+      'If you recently edited the Worker code, make sure you clicked <b>Deploy</b>, not just Save.'
+    ],
+    storage: [
+      'This check depends on the Worker being reachable first &mdash; fix "Worker connectivity" above, then re-run the diagnostic.',
+      'If the Worker is reachable but this still fails: Cloudflare &rarr; your Worker &rarr; Settings &rarr; Bindings &rarr; confirm a KV namespace is bound with the exact variable name <b>CASES</b>.'
+    ],
+    botauth: [
+      'Discord Developer Portal &rarr; your application &rarr; <b>Bot</b> page.',
+      'Click <b>Reset Token</b> to generate a new bot token, and copy it immediately &mdash; Discord only shows it once.',
+      'Cloudflare &rarr; your Worker &rarr; Settings &rarr; Variables and Secrets &rarr; edit <b>BOT_TOKEN</b> &rarr; paste the new token &rarr; Save and deploy.',
+      'Re-run this diagnostic to confirm it now passes.'
+    ],
+    adminkey: [
+      'Open <b>Settings</b> on this site and check the "Admin key" field under Bot actions.',
+      'Compare it to the <b>ADMIN_KEY</b> secret in Cloudflare &rarr; your Worker &rarr; Settings &rarr; Variables and Secrets (existing secret values can\'t be viewed, only replaced).',
+      'Easiest fix if unsure: make up a new key (any random string), set it as ADMIN_KEY in Cloudflare, then paste that exact same value into this site\'s Settings &rarr; Admin key field &rarr; Save settings.',
+      'Double check there are no extra spaces at the start or end when pasting either value.'
+    ],
+    maintenance: [
+      'Settings &rarr; "Maintenance mode" section.',
+      'Toggle it to <b>Off</b>.',
+      'Click "Save maintenance settings".'
+    ],
+    serverstatus: [
+      'Settings &rarr; "Game server status" section.',
+      'Update the status, title, and message to reflect what\'s actually happening.',
+      'Click "Update status" &mdash; this edits the same Discord message in place and updates the public status page immediately.'
+    ],
+    tempbans: [
+      'Cloudflare &rarr; your Worker &rarr; <b>Triggers</b> tab &rarr; Cron Triggers.',
+      'Confirm a trigger exists with schedule <b>*/2 * * * *</b> &mdash; if missing, click "Add Cron Trigger" and add it.',
+      'Make sure "Admin key authorization" above is passing too, since this check needs it to run at all.',
+      'You can always click "Check expired temp bans now" further up this Settings page to run the same check manually, any time.'
+    ],
+    pin: [
+      'This one is optional, not an error.',
+      'To set one: Settings &rarr; "Access PIN" field &rarr; type a PIN &rarr; Save settings.'
+    ]
+  };
+
+  function diagSetResult(id, kind, detail, showFix){
     var iconMap = { pass:'\u2713', fail:'\u2715', info:'i' };
     var el = document.getElementById('diagicon-'+id);
     el.className = 'diag-icon ' + kind;
     el.textContent = iconMap[kind] || '';
-    document.getElementById('diagdetail-'+id).textContent = detail;
+    var fixHtml = '';
+    if (showFix && DIAG_FIXES[id]){
+      fixHtml = '<details style="margin-top:8px;">' +
+        '<summary style="cursor:pointer;color:var(--accent);font-size:12px;font-weight:600;">How to fix this</summary>' +
+        '<ol style="margin:8px 0 0;padding-left:18px;font-size:12px;color:var(--text-2);line-height:1.8;">' +
+        DIAG_FIXES[id].map(function(step){ return '<li>'+step+'</li>'; }).join('') +
+        '</ol></details>';
+    }
+    document.getElementById('diagdetail-'+id).innerHTML = escapeHtml(detail) + fixHtml;
   }
 
   var DIAG_CHECKS = [
     { id:'worker', label:'Worker connectivity' },
-    { id:'storage', label:'Storage (KV) access' },
+    { id:'latency', label:'Worker response time' },
+    { id:'storage', label:'Storage (KV) read access' },
+    { id:'kvwrite', label:'Storage (KV) write access' },
     { id:'botauth', label:'Discord bot authentication' },
     { id:'adminkey', label:'Admin key authorization' },
+    { id:'guildaccess', label:'Bot access to your Discord server' },
+    { id:'appealform', label:'Ban appeal form reachability' },
     { id:'maintenance', label:'Website maintenance mode' },
     { id:'serverstatus', label:'Game server status' },
     { id:'tempbans', label:'Temporary ban tracking' },
+    { id:'devices', label:'Blocked device list' },
     { id:'auditlog', label:'Local audit activity (last 24h)' },
     { id:'pin', label:'Access PIN protection' }
   ];
+
+  function diagSleep(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
+  var DIAG_MIN_STEP_MS = 550;
 
   els.diagRunBtn.addEventListener('click', async function(){
     if (!STATE.settings.workerUrl){
@@ -2433,36 +2580,79 @@
     var total = DIAG_CHECKS.length;
     var done = 0;
     function advance(){ done++; els.diagProgressFill.style.width = Math.round((done/total)*100) + '%'; }
+    async function paced(id, work){
+      diagSetChecking(id);
+      var started = Date.now();
+      await work();
+      var elapsed = Date.now() - started;
+      if (elapsed < DIAG_MIN_STEP_MS) await diagSleep(DIAG_MIN_STEP_MS - elapsed);
+      advance();
+    }
 
-    var maintenanceData = null, botCheckStatus = null, botCheckOk = null;
+    var maintenanceData = null;
+    var workerLatencyMs = null;
 
     // 1. Worker connectivity
-    diagSetChecking('worker');
-    try{
-      var wRes = await fetch(STATE.settings.workerUrl + '/maintenance');
-      if (!wRes.ok) throw new Error('status ' + wRes.status);
-      maintenanceData = await wRes.json();
-      diagSetResult('worker', 'pass', 'Worker responded successfully.');
-    }catch(err){
-      diagSetResult('worker', 'fail', 'Could not reach the Worker: ' + (err.message || 'unknown error') + '. Check the Worker URL in Settings and that it\'s deployed.');
-    }
-    advance();
+    await paced('worker', async function(){
+      try{
+        var t0 = Date.now();
+        var wRes = await fetch(STATE.settings.workerUrl + '/maintenance');
+        workerLatencyMs = Date.now() - t0;
+        if (!wRes.ok) throw new Error('status ' + wRes.status);
+        maintenanceData = await wRes.json();
+        diagSetResult('worker', 'pass', 'Worker responded successfully.');
+      }catch(err){
+        diagSetResult('worker', 'fail', 'Could not reach the Worker: ' + (err.message || 'unknown error') + '.', true);
+      }
+    });
 
-    // 2. Storage (KV) access — piggybacks on the same call
-    diagSetChecking('storage');
-    if (maintenanceData){
-      diagSetResult('storage', 'pass', 'Read a valid record back from KV storage.');
-    } else {
-      diagSetResult('storage', 'fail', 'Could not confirm \u2014 Worker was unreachable, so storage could not be tested.');
-    }
-    advance();
+    // 2. Response latency
+    await paced('latency', async function(){
+      if (workerLatencyMs === null){
+        diagSetResult('latency', 'fail', 'Could not measure \u2014 Worker was unreachable.', true);
+      } else if (workerLatencyMs > 1500){
+        diagSetResult('latency', 'info', 'Slow response: ' + workerLatencyMs + 'ms. Usually fine, but worth watching if it stays this high.');
+      } else {
+        diagSetResult('latency', 'pass', workerLatencyMs + 'ms response time.');
+      }
+    });
 
-    // 3 & 4. Bot auth + admin key
+    // 3. Storage (KV) read
+    await paced('storage', async function(){
+      if (maintenanceData){
+        diagSetResult('storage', 'pass', 'Read a valid record back from KV storage.');
+      } else {
+        diagSetResult('storage', 'fail', 'Could not confirm \u2014 Worker was unreachable, so storage could not be tested.', true);
+      }
+    });
+
+    // 4. Storage (KV) write
+    await paced('kvwrite', async function(){
+      if (!STATE.settings.workerKey){
+        diagSetResult('kvwrite', 'fail', 'Admin key not set \u2014 cannot test writes.', true);
+        return;
+      }
+      try{
+        var kvRes = await fetch(STATE.settings.workerUrl + '/diagnostics/kv-write-test', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ adminKey: STATE.settings.workerKey })
+        });
+        var kvData = await kvRes.json();
+        if (kvRes.ok && kvData.ok) diagSetResult('kvwrite', 'pass', 'Wrote a test value and read it back successfully.');
+        else diagSetResult('kvwrite', 'fail', 'Write/read-back test failed.', true);
+      }catch(err){
+        diagSetResult('kvwrite', 'fail', 'Request failed: ' + (err.message||'unknown error'), true);
+      }
+    });
+
+    // 5 & 6. Bot auth + admin key
+    var adminKeyOk = false;
     diagSetChecking('botauth');
     diagSetChecking('adminkey');
+    var authStarted = Date.now();
     if (!STATE.settings.workerKey){
-      diagSetResult('botauth', 'fail', 'Admin key not set in Settings \u2014 cannot test.');
-      diagSetResult('adminkey', 'fail', 'Admin key not set in Settings.');
+      diagSetResult('botauth', 'fail', 'Admin key not set in Settings \u2014 cannot test.', true);
+      diagSetResult('adminkey', 'fail', 'Admin key not set in Settings.', true);
     } else {
       try{
         var bRes = await fetch(STATE.settings.workerUrl + '/diagnostics/bot-check', {
@@ -2470,80 +2660,137 @@
           body: JSON.stringify({ adminKey: STATE.settings.workerKey })
         });
         if (bRes.status === 401){
-          diagSetResult('adminkey', 'fail', 'The Worker rejected this admin key \u2014 it doesn\'t match ADMIN_KEY on the Worker.');
-          diagSetResult('botauth', 'fail', 'Could not test \u2014 admin key was rejected before reaching this check.');
+          diagSetResult('adminkey', 'fail', 'The Worker rejected this admin key \u2014 it doesn\'t match ADMIN_KEY on the Worker.', true);
+          diagSetResult('botauth', 'fail', 'Could not test \u2014 admin key was rejected before reaching this check.', true);
         } else {
           var bData = await bRes.json();
+          adminKeyOk = true;
           diagSetResult('adminkey', 'pass', 'Admin key accepted by the Worker.');
           if (bData.ok){
             diagSetResult('botauth', 'pass', 'Bot token is valid, logged in as '+escapeHtml(bData.username||'the bot')+'.');
           } else {
-            diagSetResult('botauth', 'fail', 'Bot token was rejected by Discord (status '+(bData.status||'?')+'). It may be revoked or reset \u2014 check BOT_TOKEN in Cloudflare.');
+            diagSetResult('botauth', 'fail', 'Bot token was rejected by Discord (status '+(bData.status||'?')+').', true);
           }
         }
       }catch(err){
-        diagSetResult('botauth', 'fail', 'Request failed: ' + (err.message||'unknown error'));
-        diagSetResult('adminkey', 'fail', 'Could not test.');
+        diagSetResult('botauth', 'fail', 'Request failed: ' + (err.message||'unknown error'), true);
+        diagSetResult('adminkey', 'fail', 'Could not test.', true);
       }
     }
+    var authElapsed = Date.now() - authStarted;
+    if (authElapsed < DIAG_MIN_STEP_MS) await diagSleep(DIAG_MIN_STEP_MS - authElapsed);
     advance(); advance();
 
-    // 5. Maintenance mode
-    diagSetChecking('maintenance');
-    if (maintenanceData){
-      diagSetResult('maintenance', maintenanceData.enabled ? 'info' : 'pass', maintenanceData.enabled ? ('ON \u2014 "'+(maintenanceData.title||'Under Maintenance')+'"') : 'Off \u2014 site is open normally.');
-    } else {
-      diagSetResult('maintenance', 'fail', 'Could not check \u2014 Worker was unreachable.');
-    }
-    advance();
-
-    // 6. Server status
-    diagSetChecking('serverstatus');
-    try{
-      var sRes = await fetch(STATE.settings.workerUrl + '/server-status');
-      var sData = await sRes.json();
-      if (!sRes.ok) throw new Error('status ' + sRes.status);
-      var statusLabels = { online:'Online', offline:'Offline', maintenance:'Maintenance' };
-      diagSetResult('serverstatus', sData.status==='offline' ? 'fail' : (sData.status==='maintenance' ? 'info' : 'pass'), 'Currently set to: '+(statusLabels[sData.status]||sData.status||'Online'));
-    }catch(err){
-      diagSetResult('serverstatus', 'fail', 'Could not check server status.');
-    }
-    advance();
-
-    // 7. Temp ban tracking
-    diagSetChecking('tempbans');
-    if (STATE.settings.workerKey){
+    // 7. Guild access
+    await paced('guildaccess', async function(){
+      if (!adminKeyOk || !STATE.settings.guildId){
+        diagSetResult('guildaccess', 'fail', !STATE.settings.guildId ? 'No Server ID configured in Settings.' : 'Could not test \u2014 admin key check failed above.', true);
+        return;
+      }
       try{
-        var tRes = await fetch(STATE.settings.workerUrl + '/tempbans/sweep', {
+        var gRes = await fetch(STATE.settings.workerUrl + '/diagnostics/guild-check', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ adminKey: STATE.settings.workerKey, guildId: STATE.settings.guildId })
+        });
+        var gData = await gRes.json();
+        if (gData.ok) diagSetResult('guildaccess', 'pass', 'Bot can see your server: "'+escapeHtml(gData.name||'')+'".');
+        else diagSetResult('guildaccess', 'fail', 'Bot cannot access this server (status '+(gData.status||'?')+'). It may have been removed from the server.', true);
+      }catch(err){
+        diagSetResult('guildaccess', 'fail', 'Request failed: ' + (err.message||'unknown error'), true);
+      }
+    });
+
+    // 8. Appeal form reachability
+    await paced('appealform', async function(){
+      if (!STATE.settings.appealFormId){
+        diagSetResult('appealform', 'info', 'No ban appeal form selected in Settings. Optional, but appeal links won\'t work without one.', true);
+        return;
+      }
+      try{
+        var fRes = await fetch(AUTH_WORKER_URL + '/form?id=' + encodeURIComponent(STATE.settings.appealFormId));
+        var fData = await fRes.json();
+        if (fRes.ok) diagSetResult('appealform', 'pass', 'Form found: "'+escapeHtml(fData.title||'')+'" ('+(fData.status==='open'?'open':'closed')+').');
+        else diagSetResult('appealform', 'fail', 'The selected appeal form no longer exists.', true);
+      }catch(err){
+        diagSetResult('appealform', 'fail', 'Request failed: ' + (err.message||'unknown error'), true);
+      }
+    });
+
+    // 9. Maintenance mode
+    await paced('maintenance', async function(){
+      if (maintenanceData){
+        diagSetResult('maintenance', maintenanceData.enabled ? 'info' : 'pass', maintenanceData.enabled ? ('ON \u2014 "'+(maintenanceData.title||'Under Maintenance')+'"') : 'Off \u2014 site is open normally.', maintenanceData.enabled);
+      } else {
+        diagSetResult('maintenance', 'fail', 'Could not check \u2014 Worker was unreachable.', true);
+      }
+    });
+
+    // 10. Server status
+    await paced('serverstatus', async function(){
+      try{
+        var sRes = await fetch(STATE.settings.workerUrl + '/server-status');
+        var sData = await sRes.json();
+        if (!sRes.ok) throw new Error('status ' + sRes.status);
+        var statusLabels = { online:'Online', offline:'Offline', maintenance:'Maintenance' };
+        diagSetResult('serverstatus', sData.status==='offline' ? 'fail' : (sData.status==='maintenance' ? 'info' : 'pass'), 'Currently set to: '+(statusLabels[sData.status]||sData.status||'Online'), sData.status!=='online');
+      }catch(err){
+        diagSetResult('serverstatus', 'fail', 'Could not check server status.', true);
+      }
+    });
+
+    // 11. Temp ban tracking
+    await paced('tempbans', async function(){
+      if (STATE.settings.workerKey){
+        try{
+          var tRes = await fetch(STATE.settings.workerUrl + '/tempbans/sweep', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ adminKey: STATE.settings.workerKey })
+          });
+          var tData = await tRes.json();
+          if (!tRes.ok) throw new Error(tData.error || 'failed');
+          diagSetResult('tempbans', 'pass', tData.checked+' tracked, '+tData.pending.length+' still pending, '+tData.unbanned+' just auto-unbanned.'+(tData.errors.length ? (' '+tData.errors.length+' error(s) occurred.') : ''));
+        }catch(err){
+          diagSetResult('tempbans', 'fail', 'Sweep failed: ' + (err.message||'unknown error'), true);
+        }
+      } else {
+        diagSetResult('tempbans', 'fail', 'Admin key not set \u2014 cannot check.', true);
+      }
+    });
+
+    // 12. Blocked device list
+    await paced('devices', async function(){
+      if (!adminKeyOk){
+        diagSetResult('devices', 'fail', 'Could not check \u2014 admin key check failed above.', true);
+        return;
+      }
+      try{
+        var dRes = await fetch(STATE.settings.workerUrl + '/devices/blocked-list', {
           method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({ adminKey: STATE.settings.workerKey })
         });
-        var tData = await tRes.json();
-        if (!tRes.ok) throw new Error(tData.error || 'failed');
-        diagSetResult('tempbans', 'pass', tData.checked+' tracked, '+tData.pending.length+' still pending, '+tData.unbanned+' just auto-unbanned.'+(tData.errors.length ? (' '+tData.errors.length+' error(s) occurred.') : ''));
+        var dData = await dRes.json();
+        var count = (dData.deviceIds || []).length;
+        diagSetResult('devices', count > 0 ? 'info' : 'pass', count + ' device(s) currently blocked.', count > 0);
       }catch(err){
-        diagSetResult('tempbans', 'fail', 'Sweep failed: ' + (err.message||'unknown error'));
+        diagSetResult('devices', 'fail', 'Request failed: ' + (err.message||'unknown error'));
       }
-    } else {
-      diagSetResult('tempbans', 'fail', 'Admin key not set \u2014 cannot check.');
-    }
-    advance();
+    });
 
-    // 8. Local audit activity
-    diagSetChecking('auditlog');
-    var dayAgo = Date.now() - 86400000;
-    var recentCount = (typeof AUDIT_LOG !== 'undefined' ? AUDIT_LOG : []).filter(function(a){ return a.ts >= dayAgo; }).length;
-    diagSetResult('auditlog', 'info', recentCount + ' action(s) logged in this browser in the last 24 hours.');
-    advance();
+    // 13. Local audit activity
+    await paced('auditlog', async function(){
+      var dayAgo = Date.now() - 86400000;
+      var recentCount = (typeof AUDIT_LOG !== 'undefined' ? AUDIT_LOG : []).filter(function(a){ return a.ts >= dayAgo; }).length;
+      diagSetResult('auditlog', 'info', recentCount + ' action(s) logged in this browser in the last 24 hours.');
+    });
 
-    // 9. PIN protection (informational)
-    diagSetChecking('pin');
-    if (STATE.settings.pinHash){
-      diagSetResult('pin', 'pass', 'An access PIN is configured.');
-    } else {
-      diagSetResult('pin', 'info', 'No PIN set. Optional, but adds a layer before the login screen \u2014 configurable in Settings.');
-    }
-    advance();
+    // 14. PIN protection
+    await paced('pin', async function(){
+      if (STATE.settings.pinHash){
+        diagSetResult('pin', 'pass', 'An access PIN is configured.');
+      } else {
+        diagSetResult('pin', 'info', 'No PIN set. Optional, but adds a layer before the login screen \u2014 configurable in Settings.', true);
+      }
+    });
 
     els.diagRunBtn.disabled = false;
     showToast('Diagnostic complete', 'ok');
@@ -2803,20 +3050,43 @@
     try{ localStorage.setItem('modlog:auditLog', JSON.stringify(AUDIT_LOG)); }catch(e){}
   }
   function logAudit(action, detail){
-    AUDIT_LOG.unshift({ ts: Date.now(), action: action, detail: detail });
+    AUDIT_LOG.unshift({ ts: Date.now(), action: action, detail: detail, deviceId: DEVICE_ID });
     saveAuditLog();
     renderAuditLog();
+    if (STATE.settings.workerUrl && STATE.settings.workerKey){
+      fetch(STATE.settings.workerUrl + '/audit/log', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ adminKey: STATE.settings.workerKey, action: action, detail: detail, deviceId: DEVICE_ID, deviceLabel: getDeviceLabel() })
+      }).catch(function(){ /* best-effort; local copy above is the fallback if this fails */ });
+    }
   }
+  var SERVER_AUDIT_LOG = null;
+
+  async function loadServerAuditLog(){
+    if (!STATE.settings.workerUrl || !STATE.settings.workerKey) return;
+    try{
+      var res = await fetch(STATE.settings.workerUrl + '/audit/list', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ adminKey: STATE.settings.workerKey })
+      });
+      if (!res.ok) return;
+      var data = await res.json();
+      SERVER_AUDIT_LOG = data.entries || [];
+      renderAuditLog();
+    }catch(e){ /* fall back to local-only view if unreachable */ }
+  }
+
   function renderAuditLog(){
     if (!els.auditList) return;
     var q = (els.auditSearch && els.auditSearch.value || '').trim().toLowerCase();
-    var list = AUDIT_LOG;
+    var source = SERVER_AUDIT_LOG !== null ? SERVER_AUDIT_LOG : AUDIT_LOG;
+    var list = source;
     if (q){
       list = list.filter(function(a){
         return (a.action+' '+a.detail).toLowerCase().indexOf(q)!==-1;
       });
     }
-    if (list.length===0){ els.auditList.innerHTML = '<div class="empty-state">'+(AUDIT_LOG.length===0?'Nothing recorded yet.':'No matching entries.')+'</div>'; return; }
+    if (list.length===0){ els.auditList.innerHTML = '<div class="empty-state">'+(source.length===0?'Nothing recorded yet.':'No matching entries.')+'</div>'; return; }
 
     var groups = {};
     var order = [];
@@ -2829,13 +3099,37 @@
       var rows = groups[cat].map(function(a){
         var d = new Date(a.ts);
         var timeStr = d.toLocaleDateString(undefined,{month:'short',day:'numeric'}) + ' \u00b7 ' + d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
-        return '<div class="audit-row"><span class="audit-time">'+timeStr+'</span><span class="audit-tag">'+escapeHtml(a.action)+'</span><span class="audit-detail">'+a.detail+'</span></div>';
+        var isMe = !a.deviceId || a.deviceId === DEVICE_ID;
+        var deviceTag = isMe
+          ? '<span style="font-size:10px;color:var(--text-3);">You</span>'
+          : '<span style="font-size:10px;color:#0a0b0e;background:var(--warn);padding:2px 7px;border-radius:10px;font-weight:700;">'+escapeHtml(a.deviceLabel||'Other device')+'</span>' +
+            '<button type="button" class="link-msg-btn" data-blockdevice="'+escapeHtml(a.deviceId)+'" style="color:var(--ban);margin-left:6px;">Block this device</button>';
+        return '<div class="audit-row"><span class="audit-time">'+timeStr+'</span><span class="audit-tag">'+escapeHtml(a.action)+'</span><span class="audit-detail">'+a.detail+'</span><span style="display:flex;align-items:center;gap:4px;justify-self:end;">'+deviceTag+'</span></div>';
       }).join('');
       return '<details class="bg-section" open style="margin-bottom:8px;">' +
         '<summary>'+escapeHtml(cat)+' <span style="color:var(--text-3);font-weight:400;">('+groups[cat].length+')</span></summary>' +
         '<div class="bg-body" style="padding:0;">'+rows+'</div>' +
       '</details>';
     }).join('');
+
+    els.auditList.querySelectorAll('[data-blockdevice]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var deviceId = btn.dataset.blockdevice;
+        askConfirm('Block this device from logging in as owner? Remember: this only blocks that device\'s stored ID, and can be undone by clearing browser data on their end. If you suspect real unauthorized access, changing your OWNER_PASSWORD in Cloudflare is the actual reliable fix.', async function(){
+          try{
+            var res = await fetch(STATE.settings.workerUrl + '/devices/block', {
+              method:'POST', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ adminKey: STATE.settings.workerKey, deviceId: deviceId })
+            });
+            if (!res.ok) throw new Error('Could not block device.');
+            showToast('Device blocked', 'ok');
+            logAudit('Device blocked', 'Blocked device <b>'+escapeHtml(deviceId)+'</b> from logging in');
+          }catch(err){
+            showToast(err.message || 'Could not block device.', 'err');
+          }
+        }, 'Block device');
+      });
+    });
   }
   els.auditSearch && els.auditSearch.addEventListener('input', renderAuditLog);
   els.clearAuditBtn && els.clearAuditBtn.addEventListener('click', function(){
@@ -4629,6 +4923,112 @@
   els.appsRefreshBtn.addEventListener('click', loadApplications);
   els.appsBackBtn.addEventListener('click', function(){ els.appsResponsesPanel.style.display = 'none'; });
 
+  // ==================== Ban Appeals (dedicated page) ====================
+  async function loadBanAppeals(){
+    if (!STATE.settings.appealFormId){
+      els.banAppealsMsg.textContent = '';
+      els.banAppealsList.innerHTML = '<div class="empty-state">No ban appeal form is selected yet. Go to Settings and pick one under "Ban appeal form".</div>';
+      return;
+    }
+    if (!STATE.settings.workerUrl || !STATE.settings.workerKey){
+      els.banAppealsList.innerHTML = '<div class="empty-state">Configure Worker URL and admin key in Settings first.</div>';
+      return;
+    }
+    els.banAppealsList.innerHTML = '<div class="empty-state">Loading...</div>';
+    try{
+      var formRes = await fetch(AUTH_WORKER_URL + '/form?id=' + encodeURIComponent(STATE.settings.appealFormId));
+      var form = await formRes.json();
+      if (!formRes.ok) throw new Error(form.error || 'The selected appeal form could not be found.');
+
+      var res = await fetch(STATE.settings.workerUrl + '/forms/responses', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ adminKey: STATE.settings.workerKey, formId: STATE.settings.appealFormId })
+      });
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not load appeals.');
+      var responses = data.responses || [];
+      if (responses.length===0){ els.banAppealsList.innerHTML = '<div class="empty-state">No appeals submitted yet.</div>'; return; }
+
+      var fieldMap = {};
+      (form.fields||[]).forEach(function(f){ fieldMap[f.id] = f.label; });
+
+      els.banAppealsList.innerHTML = responses.map(function(r){
+        var d = new Date(r.submittedAt);
+        var answersHtml = Object.keys(r.answers||{}).map(function(fid){
+          return '<div class="public-field-row"><label>'+escapeHtml(fieldMap[fid]||fid)+'</label><span style="text-align:right;max-width:60%;">'+escapeHtml(String(r.answers[fid]))+'</span></div>';
+        }).join('');
+        var submitterBits = [];
+        if (r.submitterName) submitterBits.push(r.submitterName);
+        if (r.submitterDiscordId) submitterBits.push('Discord '+r.submitterDiscordId);
+        if (r.submitterSteamId) submitterBits.push('Steam '+r.submitterSteamId);
+        var status = r.status || 'pending';
+        var statusOptions = Object.keys(RESPONSE_STATUS_LABEL).map(function(s){
+          return '<option value="'+s+'"'+(s===status?' selected':'')+'>'+RESPONSE_STATUS_LABEL[s]+'</option>';
+        }).join('');
+        return '<div class="player-card" style="margin-bottom:10px;" data-ba-card="'+r.id+'">' +
+          '<div class="player-top"><div class="player-name">'+escapeHtml(submitterBits.join(' \u00b7 ') || 'Anonymous')+'</div><span class="entry-time">'+d.toLocaleString()+'</span></div>' +
+          answersHtml +
+          '<div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap;">' +
+            '<select class="status-select" data-ba-status="'+r.id+'" style="width:auto;">'+statusOptions+'</select>' +
+            (r.submitterDiscordId ?
+              '<input type="text" placeholder="Optional note for the DM" data-ba-note="'+r.id+'" style="flex:1;min-width:160px;">' +
+              '<button type="button" class="btn small primary" data-ba-notify="'+r.id+'">Send update DM</button>'
+              : '<span style="font-size:11.5px;color:var(--text-3);">No Discord ID on file \u2014 can\'t DM this person</span>') +
+          '</div>' +
+          '<div style="font-size:11.5px;margin-top:6px;" data-ba-msg="'+r.id+'"></div>' +
+        '</div>';
+      }).join('');
+
+      els.banAppealsList.querySelectorAll('[data-ba-status]').forEach(function(sel){
+        sel.addEventListener('change', async function(){
+          var responseId = sel.dataset.baStatus;
+          try{
+            var r2 = await fetch(STATE.settings.workerUrl + '/forms/responses/status', {
+              method:'POST', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ adminKey: STATE.settings.workerKey, formId: STATE.settings.appealFormId, responseId: responseId, status: sel.value })
+            });
+            if (!r2.ok) throw new Error('Could not update status.');
+            showToast('Status updated', 'ok');
+            logAudit('Appeal status', 'Set appeal status to <b>'+sel.value+'</b>');
+          }catch(err){
+            showToast(err.message || 'Could not update status.', 'err');
+          }
+        });
+      });
+
+      els.banAppealsList.querySelectorAll('[data-ba-notify]').forEach(function(btn){
+        btn.addEventListener('click', async function(){
+          var responseId = btn.dataset.baNotify;
+          var responseObj = responses.find(function(x){ return x.id===responseId; });
+          var statusSel = els.banAppealsList.querySelector('[data-ba-status="'+responseId+'"]');
+          var noteInput = els.banAppealsList.querySelector('[data-ba-note="'+responseId+'"]');
+          var msgEl = els.banAppealsList.querySelector('[data-ba-msg="'+responseId+'"]');
+          if (!responseObj || !responseObj.submitterDiscordId) return;
+          btn.disabled = true; msgEl.textContent = 'Sending...'; msgEl.style.color = 'var(--text-2)';
+          try{
+            var embed = buildAppealStatusEmbed(form.title || 'ban appeal', statusSel.value, noteInput ? noteInput.value : '');
+            var r3 = await fetch(STATE.settings.workerUrl + '/dm/send', {
+              method:'POST', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ adminKey: STATE.settings.workerKey, userId: responseObj.submitterDiscordId, embed: embed })
+            });
+            var d3 = await r3.json();
+            if (!r3.ok) throw new Error(d3.error || 'Could not send DM.');
+            msgEl.textContent = 'DM sent.'; msgEl.style.color = '#4ade80';
+            showToast('Update DM sent', 'ok');
+            logAudit('Appeal notified', 'Sent status update DM ('+statusSel.value+') for a ban appeal');
+          }catch(err){
+            msgEl.textContent = err.message || 'Could not send DM.'; msgEl.style.color = 'var(--ban)';
+          }finally{
+            btn.disabled = false;
+          }
+        });
+      });
+    }catch(err){
+      els.banAppealsList.innerHTML = '<div class="empty-state">'+escapeHtml(err.message || 'Could not load appeals.')+'</div>';
+    }
+  }
+  els.banAppealsRefreshBtn.addEventListener('click', loadBanAppeals);
+
   // ==================== Public application-filling view ====================
   async function checkApplyView(){
     var params = new URLSearchParams(location.search);
@@ -4782,6 +5182,22 @@
   // If you ever move to a different Worker, update this one line.
   var AUTH_WORKER_URL = 'https://watchers-actions.cousdoncollege.workers.dev';
 
+  function getDeviceId(){
+    var id = null;
+    try{ id = localStorage.getItem('modlog:deviceId'); }catch(e){}
+    if (!id){
+      id = 'dev-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,10);
+      try{ localStorage.setItem('modlog:deviceId', id); }catch(e){}
+    }
+    return id;
+  }
+  function getDeviceLabel(){
+    var label = null;
+    try{ label = localStorage.getItem('modlog:deviceLabel'); }catch(e){}
+    return label || 'Unnamed device';
+  }
+  var DEVICE_ID = getDeviceId();
+
   function getSession(){
     try{ return JSON.parse(localStorage.getItem('modlog:auth') || 'null'); }catch(e){ return null; }
   }
@@ -4849,6 +5265,7 @@
       loadMaintenanceIntoSettings();
       loadAppealFormOptions();
       loadServerStatusIntoSettings();
+      loadBlockedDevices();
     } else {
       adminWrapEl.style.display = 'none';
       els.playerWrap.style.display = 'block';
@@ -4874,12 +5291,20 @@
     try{
       var res = await fetch(AUTH_WORKER_URL + '/login', {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ username: username, password: password })
+        body: JSON.stringify({ username: username, password: password, deviceId: DEVICE_ID })
       });
       var data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Login failed.');
       if (MAINTENANCE_STATE.enabled && data.role !== 'owner'){
         throw new Error('The site is under maintenance. Only staff can log in right now.');
+      }
+      if (data.role === 'owner'){
+        var existingLabel = null;
+        try{ existingLabel = localStorage.getItem('modlog:deviceLabel'); }catch(e){}
+        if (!existingLabel){
+          var chosen = window.prompt('Name this device (e.g. "My laptop", "Work PC") so it\'s recognizable in the audit log:', '');
+          try{ localStorage.setItem('modlog:deviceLabel', (chosen && chosen.trim()) || 'Unnamed device'); }catch(e){}
+        }
       }
       setSession({ role: data.role, username: data.username, discordId: data.discordId||'', steamId: data.steamId||'' });
       els.loginMsg.textContent = '';
