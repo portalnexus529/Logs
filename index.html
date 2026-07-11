@@ -515,6 +515,7 @@
       <button class="btn small" id="playerLogoutBtn">Log out</button>
     </div>
   </div>
+
   <div class="panel">
     <div class="panel-head"><h2>Your case history</h2></div>
     <div class="panel-body">
@@ -1330,6 +1331,16 @@
         <input type="url" id="ticketLinkInput" placeholder="https://discord.gg/...">
       </div>
       <div class="field">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <label for="appealFormSelect" style="margin:0;">Ban appeal form <span style="color:var(--text-3);font-weight:400;">(optional)</span></label>
+          <button type="button" class="btn small ghost" id="refreshAppealFormsBtn" style="padding:4px 10px;">Refresh list</button>
+        </div>
+        <select id="appealFormSelect">
+          <option value="">None &mdash; use the ticket/appeal link above instead</option>
+        </select>
+        <p style="font-size:11.5px;color:var(--text-3);margin:6px 0 0;">Build the actual form under "New form" first. Once picked here, appealable Discord bans automatically include a link to it in the DM.</p>
+      </div>
+      <div class="field">
         <label for="accessPinInput">Access PIN <span style="color:var(--text-3);font-weight:400;">(optional, leave blank to disable)</span></label>
         <div style="display:flex;gap:8px;">
           <input type="text" id="accessPinInput" placeholder="e.g. 4-8 digit PIN" style="flex:1;">
@@ -1551,10 +1562,10 @@
 <script>
 (function(){
   var STATE = { action:'ban', durationMode:'perm', appeal:'yes', proofs:[], entries:[], caseSeq:0,
-    settings:{ serverName:'Community server', webhookUrl:'', ticketLink:'https://discord.gg/26UfjmMTA3', investigators:[], webhooks:[], announcementTemplates:[], workerUrl:'', workerKey:'', guildId:'', pinHash:'' } };
+    settings:{ serverName:'Community server', webhookUrl:'', ticketLink:'https://discord.gg/26UfjmMTA3', investigators:[], webhooks:[], announcementTemplates:[], workerUrl:'', workerKey:'', guildId:'', pinHash:'', appealFormId:'' } };
 
   var els = {};
-  ['gearBtn','settingsPanel','serverNameInput','webhookInput','ticketLinkInput','saveSettingsBtn','testWebhookBtn','exportBtn','importBtn','importFile',
+  ['gearBtn','settingsPanel','serverNameInput','webhookInput','ticketLinkInput','appealFormSelect','refreshAppealFormsBtn','saveSettingsBtn','testWebhookBtn','exportBtn','importBtn','importFile',
    'lockOverlay','lockPinInput','lockMsg','lockUnlockBtn','accessPinInput','removePinBtn',
    'authOverlay','authTabLogin','authTabSignup','authBrandName','loginFormBox','signupFormBox',
    'maintenanceView','authNormalView','maintTitleOut','maintMessageOut','maintReturnOut','staffLoginLink',
@@ -2003,6 +2014,7 @@
     STATE.settings.serverName = els.serverNameInput.value.trim() || 'Community server';
     STATE.settings.webhookUrl = els.webhookInput.value.trim();
     STATE.settings.ticketLink = els.ticketLinkInput.value.trim();
+    STATE.settings.appealFormId = els.appealFormSelect.value;
     els.serverNameOut.textContent = STATE.settings.serverName;
     els.sideNavBrand.textContent = STATE.settings.serverName;
     els.authBrandName.textContent = STATE.settings.serverName;
@@ -2066,6 +2078,23 @@
     MAINT_FORM_ENABLED = b.dataset.mt === 'on';
     els.maintenanceToggle.querySelectorAll('button').forEach(function(x){ x.classList.toggle('active', x===b); });
   });
+
+  async function loadAppealFormOptions(){
+    if (!STATE.settings.workerUrl || !STATE.settings.workerKey) return;
+    try{
+      var res = await fetch(STATE.settings.workerUrl + '/forms/list', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ adminKey: STATE.settings.workerKey })
+      });
+      var data = await res.json();
+      if (!res.ok) return;
+      var forms = data.forms || [];
+      var current = STATE.settings.appealFormId || '';
+      els.appealFormSelect.innerHTML = '<option value="">None &mdash; use the ticket/appeal link above instead</option>' +
+        forms.map(function(f){ return '<option value="'+f.id+'"'+(f.id===current?' selected':'')+'>'+escapeHtml(f.title)+' ('+(f.status==='open'?'Open':'Closed')+')</option>'; }).join('');
+    }catch(e){ /* leave dropdown as-is if unreachable */ }
+  }
+  els.refreshAppealFormsBtn.addEventListener('click', loadAppealFormOptions);
 
   async function loadMaintenanceIntoSettings(){
     if (!STATE.settings.workerUrl) return;
@@ -3016,8 +3045,9 @@
       });
     }
 
-    if ((!isBanType(entry.action) || entry.appeal==='yes') && STATE.settings.ticketLink){
-      fields.push({ name:'Think this was a mistake?', value: 'Open a ticket to dispute this: ' + STATE.settings.ticketLink });
+    var appealLinkForEmbed = getAppealLink();
+    if ((!isBanType(entry.action) || entry.appeal==='yes') && appealLinkForEmbed){
+      fields.push({ name:'Think this was a mistake?', value: 'Open a ticket to dispute this: ' + appealLinkForEmbed });
     }
 
     return fields;
@@ -3346,14 +3376,22 @@
     els.discSendDmToggle.querySelectorAll('button').forEach(function(x){ x.classList.toggle('active', x===b); });
   });
 
+  function getAppealLink(){
+    if (STATE.settings.appealFormId){
+      return window.location.origin + window.location.pathname + '?apply=' + STATE.settings.appealFormId;
+    }
+    return STATE.settings.ticketLink || '';
+  }
+
   els.discGenerateDmBtn.addEventListener('click', function(){
     var action = DISC_STATE.action;
     var reason = els.discReasonInput.value.trim() || '(no reason given)';
     var server = STATE.settings.serverName || 'the server';
     var verb = action==='dban' ? 'banned' : 'kicked';
     var msg = 'You have been ' + verb + ' from ' + server + '.\n\nReason: ' + reason;
-    if (action==='dban' && DISC_STATE.appeal==='yes' && STATE.settings.ticketLink){
-      msg += '\n\nIf you believe this was a mistake, you can appeal here: ' + STATE.settings.ticketLink;
+    var appealLink = getAppealLink();
+    if (action==='dban' && DISC_STATE.appeal==='yes' && appealLink){
+      msg += '\n\nIf you believe this was a mistake, you can appeal here: ' + appealLink;
     }
     els.discDmMessage.value = msg;
   });
@@ -4274,6 +4312,7 @@
       adminWrapEl.style.display = 'block';
       checkLock();
       loadMaintenanceIntoSettings();
+      loadAppealFormOptions();
     } else {
       adminWrapEl.style.display = 'none';
       els.playerWrap.style.display = 'block';
@@ -4371,6 +4410,7 @@
   }
 
   els.playerLogoutBtn.addEventListener('click', function(){ clearSession(); routeByAuth(); });
+
   els.ownerLogoutBtn.addEventListener('click', function(){
     askConfirm('Log out?', function(){ clearSession(); routeByAuth(); }, 'Log out');
   });
