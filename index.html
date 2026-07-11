@@ -512,6 +512,7 @@
   .diag-label{font-size:13.5px;font-weight:600;color:var(--text);}
   .diag-detail{font-size:12px;color:var(--text-2);margin-top:2px;line-height:1.5;}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 <div class="lock-overlay" id="lockOverlay" style="display:none;">
@@ -1331,6 +1332,17 @@
             </div>
           </div>
         </div>
+
+        <div class="panel" style="margin-top:20px;">
+          <div class="panel-head"><h2>Login Security</h2><button class="btn ghost small" id="loginAttemptsRefreshBtn">Refresh</button></div>
+          <div class="panel-body">
+            <p style="font-size:12.5px;color:var(--text-3);margin:0 0 14px;">Every attempt to log in as owner &mdash; successful or not &mdash; is recorded here with an IP address, whether or not it succeeded. To test it yourself, just try logging in with a wrong password a couple of times, then hit Refresh.</p>
+            <div id="loginAttemptsWarning" style="display:none;"></div>
+            <div id="loginAttemptsList">
+              <div class="empty-state">Loading...</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div id="sectionPlayers" class="dash-section" style="display:none;">
@@ -1757,6 +1769,7 @@
    'sweepTempBansBtn','sweepResultOut',
    'diagRunBtn','diagProgressTrack','diagProgressFill','diagResultsList',
    'refreshBlockedDevicesBtn','blockedDevicesList',
+   'loginAttemptsRefreshBtn','loginAttemptsWarning','loginAttemptsList',
    'statusWrap','statusBody',
    'checkAppealWrap','checkAppealBody',
    'loginUsername','loginPassword','loginMsg','loginBtn',
@@ -2075,7 +2088,7 @@
       if (el) el.style.display = (key===target) ? 'block' : 'none';
     });
     if (target==='applications' && typeof loadApplications==='function') loadApplications();
-    if (target==='audit' && typeof loadServerAuditLog==='function') loadServerAuditLog();
+    if (target==='audit' && typeof loadServerAuditLog==='function'){ loadServerAuditLog(); loadLoginAttempts(); }
     if (target==='banappeals' && typeof loadBanAppeals==='function') loadBanAppeals();
     els.sideNavEl.classList.remove('open');
   }
@@ -2571,6 +2584,7 @@
     ]
   };
 
+  var DIAG_RESULTS = [];
   function diagSetResult(id, kind, detail, showFix){
     var iconMap = { pass:'\u2713', fail:'\u2715', info:'i' };
     var el = document.getElementById('diagicon-'+id);
@@ -2585,6 +2599,8 @@
         '</ol></details>';
     }
     document.getElementById('diagdetail-'+id).innerHTML = escapeHtml(detail) + fixHtml;
+    var checkDef = DIAG_CHECKS.find(function(c){ return c.id===id; });
+    DIAG_RESULTS.push({ id: id, label: checkDef ? checkDef.label : id, kind: kind, detail: detail, fix: (showFix && DIAG_FIXES[id]) ? DIAG_FIXES[id] : null });
   }
 
   var DIAG_CHECKS = [
@@ -2623,6 +2639,7 @@
     els.diagProgressTrack.style.display = 'block';
     els.diagProgressFill.style.width = '0%';
     els.diagResultsList.innerHTML = DIAG_CHECKS.map(function(c){ return diagRowHtml(c.id, c.label); }).join('');
+    DIAG_RESULTS = [];
 
     var total = DIAG_CHECKS.length;
     var done = 0;
@@ -2964,7 +2981,83 @@
 
     els.diagRunBtn.disabled = false;
     showToast('Diagnostic complete', 'ok');
+    generateDiagnosticPdf();
   });
+
+  function generateDiagnosticPdf(){
+    try{
+      var jsPDFLib = window.jspdf && window.jspdf.jsPDF;
+      if (!jsPDFLib){ showToast('PDF library did not load; skipping report download.', 'err'); return; }
+      var doc = new jsPDFLib({ unit:'pt', format:'a4' });
+      var pageW = doc.internal.pageSize.getWidth();
+      var margin = 44;
+      var y = margin;
+      var lineH = 14;
+
+      function ensureRoom(extra){
+        if (y + extra > 780){ doc.addPage(); y = margin; }
+      }
+
+      doc.setFont('helvetica','bold'); doc.setFontSize(17);
+      doc.text((STATE.settings.serverName || 'Server') + ' \u2014 Diagnostic Report', margin, y);
+      y += 22;
+      doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(110,110,110);
+      doc.text('Generated ' + new Date().toLocaleString(), margin, y);
+      y += 24;
+
+      var counts = { pass:0, fail:0, info:0 };
+      DIAG_RESULTS.forEach(function(r){ counts[r.kind] = (counts[r.kind]||0)+1; });
+      doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(20,20,20);
+      doc.text('Summary: ' + counts.pass + ' passed, ' + counts.fail + ' failed, ' + counts.info + ' informational', margin, y);
+      y += 22;
+      doc.setDrawColor(210,210,210); doc.line(margin, y, pageW-margin, y);
+      y += 20;
+
+      var colorMap = { pass:[34,150,90], fail:[210,60,60], info:[190,140,20] };
+      var labelMap = { pass:'PASS', fail:'FAIL', info:'INFO' };
+
+      DIAG_RESULTS.forEach(function(r){
+        ensureRoom(50);
+        doc.setFont('helvetica','bold'); doc.setFontSize(11);
+        var c = colorMap[r.kind] || [80,80,80];
+        doc.setTextColor(c[0], c[1], c[2]);
+        doc.text('[' + (labelMap[r.kind]||r.kind.toUpperCase()) + ']', margin, y);
+        doc.setTextColor(20,20,20);
+        doc.text(r.label, margin + 55, y);
+        y += lineH;
+
+        doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(90,90,90);
+        var detailLines = doc.splitTextToSize(r.detail || '', pageW - margin*2 - 10);
+        detailLines.forEach(function(line){
+          ensureRoom(lineH);
+          doc.text(line, margin + 10, y);
+          y += lineH - 2;
+        });
+
+        if (r.fix && r.fix.length){
+          ensureRoom(lineH);
+          doc.setFont('helvetica','italic'); doc.setFontSize(9); doc.setTextColor(120,120,120);
+          doc.text('How to fix:', margin + 10, y);
+          y += lineH - 3;
+          r.fix.forEach(function(step, i){
+            var plain = String(step).replace(/<[^>]+>/g,'').replace(/&mdash;/g,'-').replace(/&rarr;/g,'->').replace(/&amp;/g,'&');
+            var fixLines = doc.splitTextToSize((i+1) + '. ' + plain, pageW - margin*2 - 20);
+            fixLines.forEach(function(line){
+              ensureRoom(lineH);
+              doc.text(line, margin + 18, y);
+              y += lineH - 3;
+            });
+          });
+        }
+        y += 10;
+      });
+
+      var fname = 'diagnostic-report-' + new Date().toISOString().slice(0,19).replace(/[:T]/g,'-') + '.pdf';
+      doc.save(fname);
+    }catch(err){
+      showToast('Could not generate PDF report: ' + (err.message||'unknown error'), 'err');
+    }
+  }
 
 
   function loadLedger(){
@@ -3245,6 +3338,48 @@
       renderAuditLog();
     }catch(e){ /* fall back to local-only view if unreachable */ }
   }
+
+  async function loadLoginAttempts(){
+    if (!STATE.settings.workerUrl || !STATE.settings.workerKey){
+      els.loginAttemptsList.innerHTML = '<div class="empty-state">Configure Worker URL and admin key in Settings first.</div>';
+      return;
+    }
+    try{
+      var res = await fetch(STATE.settings.workerUrl + '/login-attempts/list', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ adminKey: STATE.settings.workerKey })
+      });
+      if (!res.ok) throw new Error('Could not load login attempts.');
+      var data = await res.json();
+      var attempts = data.attempts || [];
+      if (attempts.length===0){ els.loginAttemptsList.innerHTML = '<div class="empty-state">No login attempts recorded yet.</div>'; els.loginAttemptsWarning.style.display='none'; return; }
+
+      var hourAgo = Date.now() - 3600000;
+      var recentFails = attempts.filter(function(a){ return !a.success && a.ts>=hourAgo; });
+      if (recentFails.length >= 3){
+        els.loginAttemptsWarning.style.display = 'block';
+        els.loginAttemptsWarning.innerHTML = '<div class="history-box warn" style="margin:0 0 14px;">\u26a0\ufe0f <b>'+recentFails.length+' failed login attempt(s) in the last hour.</b> If you don\'t recognize this activity, consider changing OWNER_PASSWORD in Cloudflare immediately.</div>';
+      } else {
+        els.loginAttemptsWarning.style.display = 'none';
+      }
+
+      els.loginAttemptsList.innerHTML = attempts.map(function(a){
+        var d = new Date(a.ts);
+        var timeStr = d.toLocaleDateString(undefined,{month:'short',day:'numeric'}) + ' \u00b7 ' + d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+        var badge = a.success
+          ? '<span class="badge appeal-yes">Success</span>'
+          : '<span class="badge appeal-no">Failed'+(a.reason?(' \u2014 '+escapeHtml(a.reason)):'')+'</span>';
+        return '<div class="audit-row" style="grid-template-columns:150px 100px 1fr;">' +
+          '<span class="audit-time">'+timeStr+'</span>' +
+          badge +
+          '<span class="audit-detail mono" style="font-size:12px;">IP '+escapeHtml(a.ip||'unknown')+(a.deviceId ? (' &middot; device '+escapeHtml(a.deviceId.slice(0,16))+'...') : '')+'</span>' +
+        '</div>';
+      }).join('');
+    }catch(err){
+      els.loginAttemptsList.innerHTML = '<div class="empty-state">'+escapeHtml(err.message || 'Could not load login attempts.')+'</div>';
+    }
+  }
+  els.loginAttemptsRefreshBtn.addEventListener('click', loadLoginAttempts);
 
   function renderAuditLog(){
     if (!els.auditList) return;
@@ -5064,6 +5199,7 @@
               '<button type="button" class="btn small primary" data-response-notify="'+r.id+'">Send update DM</button>'
               : '<span style="font-size:11.5px;color:var(--text-3);">No Discord ID on file \u2014 can\'t DM this person</span>') +
             '<button type="button" class="btn small ghost" data-response-copylink="'+r.id+'">Copy status link</button>' +
+            '<button type="button" class="btn small ghost" data-response-delete="'+r.id+'" style="color:var(--ban);">Delete</button>' +
           '</div>' +
           '<div style="font-size:11.5px;margin-top:6px;" data-response-msg="'+r.id+'"></div>' +
         '</div>';
@@ -5074,6 +5210,27 @@
           var link = window.location.origin + window.location.pathname + '?checkappeal=' + encodeURIComponent(formId) + ':' + encodeURIComponent(btn.dataset.responseCopylink);
           if (navigator.clipboard) navigator.clipboard.writeText(link).then(function(){ showToast('Status link copied', 'ok'); }).catch(function(){ showToast(link, 'ok'); });
           else showToast(link, 'ok');
+        });
+      });
+
+      els.appsResponsesList.querySelectorAll('[data-response-delete]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          var responseId = btn.dataset.responseDelete;
+          askConfirm('Delete this response permanently? This cannot be undone.', async function(){
+            try{
+              var r4 = await fetch(STATE.settings.workerUrl + '/forms/responses/delete', {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ adminKey: STATE.settings.workerKey, formId: formId, responseId: responseId })
+              });
+              if (!r4.ok) throw new Error('Could not delete response.');
+              var card = els.appsResponsesList.querySelector('[data-response-card="'+responseId+'"]');
+              if (card) card.remove();
+              showToast('Response deleted', 'ok');
+              logAudit('Response deleted', 'Deleted a response for '+(form?form.title:'a form'));
+            }catch(err){
+              showToast(err.message || 'Could not delete response.', 'err');
+            }
+          }, 'Delete');
         });
       });
 
@@ -5186,6 +5343,7 @@
               '<button type="button" class="btn small primary" data-ba-notify="'+r.id+'">Send update DM</button>'
               : '<span style="font-size:11.5px;color:var(--text-3);">No Discord ID on file \u2014 can\'t DM this person</span>') +
             '<button type="button" class="btn small ghost" data-ba-copylink="'+r.id+'">Copy status link</button>' +
+            '<button type="button" class="btn small ghost" data-ba-delete="'+r.id+'" style="color:var(--ban);">Delete</button>' +
           '</div>' +
           '<div style="font-size:11.5px;margin-top:6px;" data-ba-msg="'+r.id+'"></div>' +
         '</div>';
@@ -5196,6 +5354,27 @@
           var link = window.location.origin + window.location.pathname + '?checkappeal=' + encodeURIComponent(STATE.settings.appealFormId) + ':' + encodeURIComponent(btn.dataset.baCopylink);
           if (navigator.clipboard) navigator.clipboard.writeText(link).then(function(){ showToast('Status link copied', 'ok'); }).catch(function(){ showToast(link, 'ok'); });
           else showToast(link, 'ok');
+        });
+      });
+
+      els.banAppealsList.querySelectorAll('[data-ba-delete]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          var responseId = btn.dataset.baDelete;
+          askConfirm('Delete this appeal permanently? This cannot be undone.', async function(){
+            try{
+              var r4 = await fetch(STATE.settings.workerUrl + '/forms/responses/delete', {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ adminKey: STATE.settings.workerKey, formId: STATE.settings.appealFormId, responseId: responseId })
+              });
+              if (!r4.ok) throw new Error('Could not delete appeal.');
+              var card = els.banAppealsList.querySelector('[data-ba-card="'+responseId+'"]');
+              if (card) card.remove();
+              showToast('Appeal deleted', 'ok');
+              logAudit('Appeal deleted', 'Deleted a ban appeal response');
+            }catch(err){
+              showToast(err.message || 'Could not delete appeal.', 'err');
+            }
+          }, 'Delete');
         });
       });
 
@@ -5658,7 +5837,7 @@
     if (document.hidden) return;
     if (CURRENT_SECTION==='applications' && typeof loadApplications==='function') loadApplications();
     else if (CURRENT_SECTION==='banappeals' && typeof loadBanAppeals==='function') loadBanAppeals();
-    else if (CURRENT_SECTION==='audit' && typeof loadServerAuditLog==='function') loadServerAuditLog();
+    else if (CURRENT_SECTION==='audit' && typeof loadServerAuditLog==='function'){ loadServerAuditLog(); loadLoginAttempts(); }
   }, AUTO_REFRESH_MS);
 
   (async function initApp(){
