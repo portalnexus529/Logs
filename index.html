@@ -2672,12 +2672,11 @@
       if (e.category) badges += '<span class="badge scope">'+escapeHtml(e.category)+'</span>';
       if (e.action==='ban' && e.banScope) badges += '<span class="badge scope">'+({game:'Game ban',discord:'Discord ban',both:'Game + Discord'})[e.banScope]+'</span>';
       if (isBanType(e.action) && e.appeal) badges += '<span class="badge '+(e.appeal==='yes'?'appeal-yes':'appeal-no')+'">'+(e.appeal==='yes'?'Appealable':'Not appealable')+'</span>';
-      var showUnbanBtn = false;
+      var showUnbanBtn = (e.action==='dban' && !e.unbannedAt);
       if (hasDuration(e.action) && e.expiresAt){
         var msLeft = e.expiresAt - Date.now();
         if (msLeft <= 0){
           badges += '<span class="badge expiry-due">Expired '+Math.ceil(-msLeft/86400000)+'d ago</span>';
-          if (e.action==='dban' && !e.unbannedAt) showUnbanBtn = true;
         } else {
           var daysLeft = msLeft/86400000;
           var label = daysLeft >= 1 ? Math.ceil(daysLeft)+'d left' : Math.ceil(msLeft/3600000)+'h left';
