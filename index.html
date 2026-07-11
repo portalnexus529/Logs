@@ -493,6 +493,23 @@
     .chip .n{font-size:17px!important;}
     .chip{padding:7px 12px!important;}
   }
+
+  .diag-progress-track{height:6px;background:var(--field);border:1px solid var(--border-soft);border-radius:20px;margin-top:14px;overflow:hidden;}
+  .diag-progress-fill{height:100%;width:0%;background:var(--accent);border-radius:20px;transition:width .35s ease;background-image:linear-gradient(90deg,var(--accent) 0%,#8fb4f5 50%,var(--accent) 100%);background-size:200% 100%;animation:diagShimmer 1.4s linear infinite;}
+  @keyframes diagShimmer{0%{background-position:200% 0;}100%{background-position:0 0;}}
+
+  .diag-row{display:flex;align-items:flex-start;gap:12px;padding:12px 4px;border-bottom:1px solid var(--border-soft);}
+  .diag-row:last-child{border-bottom:none;}
+  .diag-icon{width:22px;height:22px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:1px;}
+  .diag-icon.pending{background:var(--field);border:1px solid var(--border);}
+  .diag-icon.checking{background:var(--accent-bg);border:2px solid var(--accent);border-top-color:transparent;animation:diagSpin .7s linear infinite;}
+  .diag-icon.pass{background:rgba(74,222,128,0.15);color:#4ade80;}
+  .diag-icon.fail{background:var(--ban-bg);color:var(--ban);}
+  .diag-icon.info{background:var(--accent-bg);color:var(--accent);}
+  @keyframes diagSpin{to{transform:rotate(360deg);}}
+  .diag-body{flex:1;min-width:0;}
+  .diag-label{font-size:13.5px;font-weight:600;color:var(--text);}
+  .diag-detail{font-size:12px;color:var(--text-2);margin-top:2px;line-height:1.5;}
 </style>
 </head>
 <body>
@@ -692,6 +709,10 @@
       <button type="button" class="nav-item" data-section="settings">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         Settings
+      </button>
+      <button type="button" class="nav-item" data-section="diagnostics">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        Diagnostics
       </button>
     </nav>
 
@@ -1476,6 +1497,10 @@
           </div>
         </div>
         <p style="font-size:11.5px;color:var(--text-3);margin:4px 0 0;">These are stored only in this browser, same as your webhook URL. Never paste your actual bot token here or anywhere in this site.</p>
+        <div style="border-top:1px solid var(--border-soft);margin:14px 0 10px;"></div>
+        <button type="button" class="btn small" id="sweepTempBansBtn">Check expired temp bans now</button>
+        <p style="font-size:11.5px;color:var(--text-3);margin:8px 0 0;">Runs the same check your Cron Trigger does, right now, so you can see exactly what it finds instead of waiting.</p>
+        <pre id="sweepResultOut" style="font-size:11.5px;color:var(--text-2);background:var(--field);border:1px solid var(--border-soft);border-radius:var(--radius-sm);padding:10px;margin-top:8px;white-space:pre-wrap;display:none;"></pre>
       </div>
 
       <div class="settings-note" style="border-top:1px solid var(--border-soft);padding-top:12px;">
@@ -1532,6 +1557,20 @@
         The webhook URL and ledger are stored in this browser only (localStorage) &mdash; a static site like Netlify has no shared database behind it, so each admin's device keeps its own local copy. Every publish still posts to your Discord channel, which stays the permanent shared record for the whole team. Use export/import to back up or move your local ledger between devices.
       </p>
     </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="sectionDiagnostics" class="dash-section" style="display:none;">
+        <div class="panel">
+          <div class="panel-head"><h2>Diagnostics</h2></div>
+          <div class="panel-body">
+            <p style="font-size:12.5px;color:var(--text-3);margin:0 0 16px;line-height:1.6;">Checks that your Worker, bot, and storage are reachable and correctly configured, and surfaces anything currently active (maintenance mode, server status, pending temp bans). This is a connectivity and configuration check, not a full security audit &mdash; it can't detect intrusions on its own, but it will catch broken credentials, expired tokens, or a Worker that's gone down.</p>
+            <button class="btn primary" id="diagRunBtn" style="width:100%;">Run full diagnostic</button>
+            <div class="diag-progress-track" id="diagProgressTrack" style="display:none;">
+              <div class="diag-progress-fill" id="diagProgressFill"></div>
+            </div>
+            <div id="diagResultsList" style="margin-top:16px;"></div>
           </div>
         </div>
       </div>
@@ -1682,6 +1721,8 @@
    'maintenanceView','authNormalView','maintTitleOut','maintMessageOut','maintReturnOut','staffLoginLink',
    'maintenanceToggle','maintTitleInput','maintMessageInput','maintReturnInput','saveMaintenanceBtn','maintenanceStatus',
    'serverStatusToggle','serverStatusTitleInput','serverStatusMessageInput','serverStatusChannelInput','saveServerStatusBtn','copyStatusLinkBtn','serverStatusMsg',
+   'sweepTempBansBtn','sweepResultOut',
+   'diagRunBtn','diagProgressTrack','diagProgressFill','diagResultsList',
    'statusWrap','statusBody',
    'loginUsername','loginPassword','loginMsg','loginBtn',
    'signupUsername','signupPassword','signupDiscordId','signupSteamId','signupMsg','signupBtn',
@@ -1988,7 +2029,7 @@
     els.linkInlineInput.value=''; els.linkInlineRow.classList.remove('show');
   });
 
-  var SECTION_IDS = { dashboard:'sectionDashboard', game:'sectionGame', discord:'sectionDiscord', ann:'sectionAnn', events:'sectionEvents', formbuilder:'sectionFormBuilder', applications:'sectionApplications', ledger:'sectionLedger', audit:'sectionAudit', players:'sectionPlayers', lookup:'sectionLookup', settings:'sectionSettings' };
+  var SECTION_IDS = { dashboard:'sectionDashboard', game:'sectionGame', discord:'sectionDiscord', ann:'sectionAnn', events:'sectionEvents', formbuilder:'sectionFormBuilder', applications:'sectionApplications', ledger:'sectionLedger', audit:'sectionAudit', players:'sectionPlayers', lookup:'sectionLookup', settings:'sectionSettings', diagnostics:'sectionDiagnostics' };
   function switchSection(target){
     document.querySelectorAll('.nav-item').forEach(function(b){ b.classList.toggle('active', b.dataset.section===target); });
     Object.keys(SECTION_IDS).forEach(function(key){
@@ -2320,6 +2361,192 @@
     var link = window.location.origin + window.location.pathname + '?status=1';
     if (navigator.clipboard) navigator.clipboard.writeText(link).then(function(){ showToast('Status link copied', 'ok'); }).catch(function(){ showToast(link, 'ok'); });
     else showToast(link, 'ok');
+  });
+
+  els.sweepTempBansBtn.addEventListener('click', async function(){
+    if (!STATE.settings.workerUrl || !STATE.settings.workerKey){
+      showToast('Configure Worker URL and admin key first.', 'err');
+      return;
+    }
+    els.sweepTempBansBtn.disabled = true;
+    els.sweepResultOut.style.display = 'block';
+    els.sweepResultOut.textContent = 'Checking...';
+    try{
+      var res = await fetch(STATE.settings.workerUrl + '/tempbans/sweep', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ adminKey: STATE.settings.workerKey })
+      });
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Sweep failed.');
+      els.sweepResultOut.textContent = JSON.stringify(data, null, 2);
+      if (data.unbanned > 0) showToast('Unbanned '+data.unbanned+' expired temp ban(s)', 'ok');
+      else if (data.checked === 0) showToast('No temp bans are being tracked at all', 'err');
+      else showToast('Checked '+data.checked+', none expired yet', 'ok');
+    }catch(err){
+      els.sweepResultOut.textContent = 'Error: ' + (err.message || 'Unknown error');
+    }finally{
+      els.sweepTempBansBtn.disabled = false;
+    }
+  });
+
+  // ==================== Diagnostics ====================
+  function diagRowHtml(id, label){
+    return '<div class="diag-row" id="diagrow-'+id+'">' +
+      '<div class="diag-icon pending" id="diagicon-'+id+'">&nbsp;</div>' +
+      '<div class="diag-body"><div class="diag-label">'+label+'</div><div class="diag-detail" id="diagdetail-'+id+'">Waiting...</div></div>' +
+    '</div>';
+  }
+  function diagSetChecking(id){
+    document.getElementById('diagicon-'+id).className = 'diag-icon checking';
+    document.getElementById('diagdetail-'+id).textContent = 'Checking...';
+  }
+  function diagSetResult(id, kind, detail){
+    var iconMap = { pass:'\u2713', fail:'\u2715', info:'i' };
+    var el = document.getElementById('diagicon-'+id);
+    el.className = 'diag-icon ' + kind;
+    el.textContent = iconMap[kind] || '';
+    document.getElementById('diagdetail-'+id).textContent = detail;
+  }
+
+  var DIAG_CHECKS = [
+    { id:'worker', label:'Worker connectivity' },
+    { id:'storage', label:'Storage (KV) access' },
+    { id:'botauth', label:'Discord bot authentication' },
+    { id:'adminkey', label:'Admin key authorization' },
+    { id:'maintenance', label:'Website maintenance mode' },
+    { id:'serverstatus', label:'Game server status' },
+    { id:'tempbans', label:'Temporary ban tracking' },
+    { id:'auditlog', label:'Local audit activity (last 24h)' },
+    { id:'pin', label:'Access PIN protection' }
+  ];
+
+  els.diagRunBtn.addEventListener('click', async function(){
+    if (!STATE.settings.workerUrl){
+      showToast('Configure Worker URL in Settings first.', 'err');
+      return;
+    }
+    els.diagRunBtn.disabled = true;
+    els.diagProgressTrack.style.display = 'block';
+    els.diagProgressFill.style.width = '0%';
+    els.diagResultsList.innerHTML = DIAG_CHECKS.map(function(c){ return diagRowHtml(c.id, c.label); }).join('');
+
+    var total = DIAG_CHECKS.length;
+    var done = 0;
+    function advance(){ done++; els.diagProgressFill.style.width = Math.round((done/total)*100) + '%'; }
+
+    var maintenanceData = null, botCheckStatus = null, botCheckOk = null;
+
+    // 1. Worker connectivity
+    diagSetChecking('worker');
+    try{
+      var wRes = await fetch(STATE.settings.workerUrl + '/maintenance');
+      if (!wRes.ok) throw new Error('status ' + wRes.status);
+      maintenanceData = await wRes.json();
+      diagSetResult('worker', 'pass', 'Worker responded successfully.');
+    }catch(err){
+      diagSetResult('worker', 'fail', 'Could not reach the Worker: ' + (err.message || 'unknown error') + '. Check the Worker URL in Settings and that it\'s deployed.');
+    }
+    advance();
+
+    // 2. Storage (KV) access — piggybacks on the same call
+    diagSetChecking('storage');
+    if (maintenanceData){
+      diagSetResult('storage', 'pass', 'Read a valid record back from KV storage.');
+    } else {
+      diagSetResult('storage', 'fail', 'Could not confirm \u2014 Worker was unreachable, so storage could not be tested.');
+    }
+    advance();
+
+    // 3 & 4. Bot auth + admin key
+    diagSetChecking('botauth');
+    diagSetChecking('adminkey');
+    if (!STATE.settings.workerKey){
+      diagSetResult('botauth', 'fail', 'Admin key not set in Settings \u2014 cannot test.');
+      diagSetResult('adminkey', 'fail', 'Admin key not set in Settings.');
+    } else {
+      try{
+        var bRes = await fetch(STATE.settings.workerUrl + '/diagnostics/bot-check', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ adminKey: STATE.settings.workerKey })
+        });
+        if (bRes.status === 401){
+          diagSetResult('adminkey', 'fail', 'The Worker rejected this admin key \u2014 it doesn\'t match ADMIN_KEY on the Worker.');
+          diagSetResult('botauth', 'fail', 'Could not test \u2014 admin key was rejected before reaching this check.');
+        } else {
+          var bData = await bRes.json();
+          diagSetResult('adminkey', 'pass', 'Admin key accepted by the Worker.');
+          if (bData.ok){
+            diagSetResult('botauth', 'pass', 'Bot token is valid, logged in as '+escapeHtml(bData.username||'the bot')+'.');
+          } else {
+            diagSetResult('botauth', 'fail', 'Bot token was rejected by Discord (status '+(bData.status||'?')+'). It may be revoked or reset \u2014 check BOT_TOKEN in Cloudflare.');
+          }
+        }
+      }catch(err){
+        diagSetResult('botauth', 'fail', 'Request failed: ' + (err.message||'unknown error'));
+        diagSetResult('adminkey', 'fail', 'Could not test.');
+      }
+    }
+    advance(); advance();
+
+    // 5. Maintenance mode
+    diagSetChecking('maintenance');
+    if (maintenanceData){
+      diagSetResult('maintenance', maintenanceData.enabled ? 'info' : 'pass', maintenanceData.enabled ? ('ON \u2014 "'+(maintenanceData.title||'Under Maintenance')+'"') : 'Off \u2014 site is open normally.');
+    } else {
+      diagSetResult('maintenance', 'fail', 'Could not check \u2014 Worker was unreachable.');
+    }
+    advance();
+
+    // 6. Server status
+    diagSetChecking('serverstatus');
+    try{
+      var sRes = await fetch(STATE.settings.workerUrl + '/server-status');
+      var sData = await sRes.json();
+      if (!sRes.ok) throw new Error('status ' + sRes.status);
+      var statusLabels = { online:'Online', offline:'Offline', maintenance:'Maintenance' };
+      diagSetResult('serverstatus', sData.status==='offline' ? 'fail' : (sData.status==='maintenance' ? 'info' : 'pass'), 'Currently set to: '+(statusLabels[sData.status]||sData.status||'Online'));
+    }catch(err){
+      diagSetResult('serverstatus', 'fail', 'Could not check server status.');
+    }
+    advance();
+
+    // 7. Temp ban tracking
+    diagSetChecking('tempbans');
+    if (STATE.settings.workerKey){
+      try{
+        var tRes = await fetch(STATE.settings.workerUrl + '/tempbans/sweep', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ adminKey: STATE.settings.workerKey })
+        });
+        var tData = await tRes.json();
+        if (!tRes.ok) throw new Error(tData.error || 'failed');
+        diagSetResult('tempbans', 'pass', tData.checked+' tracked, '+tData.pending.length+' still pending, '+tData.unbanned+' just auto-unbanned.'+(tData.errors.length ? (' '+tData.errors.length+' error(s) occurred.') : ''));
+      }catch(err){
+        diagSetResult('tempbans', 'fail', 'Sweep failed: ' + (err.message||'unknown error'));
+      }
+    } else {
+      diagSetResult('tempbans', 'fail', 'Admin key not set \u2014 cannot check.');
+    }
+    advance();
+
+    // 8. Local audit activity
+    diagSetChecking('auditlog');
+    var dayAgo = Date.now() - 86400000;
+    var recentCount = (typeof AUDIT_LOG !== 'undefined' ? AUDIT_LOG : []).filter(function(a){ return a.ts >= dayAgo; }).length;
+    diagSetResult('auditlog', 'info', recentCount + ' action(s) logged in this browser in the last 24 hours.');
+    advance();
+
+    // 9. PIN protection (informational)
+    diagSetChecking('pin');
+    if (STATE.settings.pinHash){
+      diagSetResult('pin', 'pass', 'An access PIN is configured.');
+    } else {
+      diagSetResult('pin', 'info', 'No PIN set. Optional, but adds a layer before the login screen \u2014 configurable in Settings.');
+    }
+    advance();
+
+    els.diagRunBtn.disabled = false;
+    showToast('Diagnostic complete', 'ok');
   });
 
 
@@ -2860,7 +3087,10 @@
           badges += '<span class="badge expiry-due">Expired '+Math.ceil(-msLeft/86400000)+'d ago</span>';
         } else {
           var daysLeft = msLeft/86400000;
-          var label = daysLeft >= 1 ? Math.ceil(daysLeft)+'d left' : Math.ceil(msLeft/3600000)+'h left';
+          var label;
+          if (daysLeft >= 1) label = Math.ceil(daysLeft)+'d left';
+          else if (msLeft >= 3600000) label = Math.ceil(msLeft/3600000)+'h left';
+          else label = Math.max(1, Math.ceil(msLeft/60000))+'m left';
           badges += '<span class="badge expiry-ok">Expires in '+label+'</span>';
         }
       }
