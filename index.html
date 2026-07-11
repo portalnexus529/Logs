@@ -575,7 +575,7 @@
   </div>
 </div>
 
-<div class="wrap" id="statusWrap" style="display:none;max-width:480px;">
+<div class="wrap" id="statusWrap" style="display:none;max-width:560px;">
   <div class="panel">
     <div class="panel-body" id="statusBody" style="text-align:center;">
       <div class="empty-state">Loading...</div>
@@ -4355,6 +4355,13 @@
     return true;
   }
 
+  function formatUserText(text){
+    var escaped = escapeHtml(text || '');
+    escaped = escaped.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    escaped = escaped.replace(/\n/g, '<br>');
+    return escaped;
+  }
+
   async function checkStatusView(){
     var params = new URLSearchParams(location.search);
     if (!params.has('status')) return false;
@@ -4367,9 +4374,9 @@
     els.statusWrap.style.display = 'block';
 
     var STATUS_META = {
-      online: { label: 'Online', emoji: '\ud83d\udfe2', color: '#4ade80' },
-      offline: { label: 'Offline', emoji: '\ud83d\udd34', color: 'var(--ban)' },
-      maintenance: { label: 'Maintenance', emoji: '\ud83d\udfe1', color: 'var(--warn)' }
+      online: { label: 'Online', color: '#4ade80', bg: 'rgba(74,222,128,0.12)' },
+      offline: { label: 'Offline', color: 'var(--ban)', bg: 'var(--ban-bg)' },
+      maintenance: { label: 'Maintenance', color: 'var(--warn)', bg: 'var(--warn-bg)' }
     };
 
     try{
@@ -4379,10 +4386,14 @@
       var meta = STATUS_META[data.status] || STATUS_META.online;
       var updated = data.updatedAt ? new Date(data.updatedAt).toLocaleString() : 'Unknown';
       els.statusBody.innerHTML =
-        '<div style="font-size:44px;margin-bottom:6px;">'+meta.emoji+'</div>' +
-        '<h2 style="margin:0 0 4px;color:'+meta.color+';">'+escapeHtml(data.title || ('Server Status: '+meta.label))+'</h2>' +
-        '<p style="color:var(--text-2);font-size:14px;line-height:1.6;margin:14px 0;">'+escapeHtml(data.message || 'No further details provided.')+'</p>' +
-        '<p style="color:var(--text-3);font-size:11.5px;margin:0;">Last updated '+updated+'</p>';
+        '<div style="text-align:center;margin-bottom:22px;">' +
+          '<span style="display:inline-flex;align-items:center;gap:8px;background:'+meta.bg+';color:'+meta.color+';padding:8px 18px;border-radius:20px;font-size:13px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;">' +
+            '<span style="width:9px;height:9px;border-radius:50%;background:'+meta.color+';display:inline-block;"></span>' + meta.label +
+          '</span>' +
+        '</div>' +
+        '<h2 style="margin:0 0 16px;text-align:center;font-size:19px;">'+escapeHtml(data.title || (STATE.settings.serverName || 'Server') + ' Status')+'</h2>' +
+        '<div style="background:var(--field);border:1px solid var(--border-soft);border-radius:var(--radius-sm);padding:16px 18px;text-align:left;color:var(--text-2);font-size:13.5px;line-height:1.7;">'+formatUserText(data.message || 'No further details provided.')+'</div>' +
+        '<p style="color:var(--text-3);font-size:11.5px;margin:16px 0 0;text-align:center;">Last updated '+updated+'</p>';
     }catch(err){
       els.statusBody.innerHTML = '<div class="empty-state">'+escapeHtml(err.message || 'Could not load server status.')+'</div>';
     }
@@ -4499,7 +4510,7 @@
     els.maintenanceView.style.display = 'block';
     els.authNormalView.style.display = 'none';
     els.maintTitleOut.textContent = MAINTENANCE_STATE.title || 'Under Maintenance';
-    els.maintMessageOut.textContent = MAINTENANCE_STATE.message || 'The site is temporarily closed for maintenance. Please check back soon.';
+    els.maintMessageOut.innerHTML = formatUserText(MAINTENANCE_STATE.message || 'The site is temporarily closed for maintenance. Please check back soon.');
     els.maintReturnOut.textContent = MAINTENANCE_STATE.returnEta ? ('Estimated return: ' + MAINTENANCE_STATE.returnEta) : '';
   }
 
