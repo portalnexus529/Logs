@@ -2490,6 +2490,33 @@
       'This is informational only, not necessarily an error.',
       'Review blocked devices under Settings &rarr; "Blocked devices" and unblock any that shouldn\'t be there.'
     ],
+    loginsecurity: [
+      'This check tries logging in with a deliberately wrong password to confirm your login gate actually rejects it.',
+      'If it did NOT reject a wrong password, that\'s serious &mdash; double check your OWNER_PASSWORD secret is actually set in Cloudflare (Worker &rarr; Settings &rarr; Variables and Secrets). An unset or empty secret can behave unexpectedly.',
+      'Re-run this diagnostic after fixing to confirm it now correctly rejects bad credentials.'
+    ],
+    webhooks: [
+      'Settings &rarr; check your main Discord webhook URL and any saved webhooks under "Saved webhooks".',
+      'A valid webhook URL looks like: https://discord.com/api/webhooks/&lt;id&gt;/&lt;token&gt;',
+      'Recreate any malformed ones from Discord &rarr; Channel Settings &rarr; Integrations &rarr; Webhooks.'
+    ],
+    forms: [
+      'This is informational \u2014 shows how many forms you have and their open/closed status.',
+      'If your ban appeal form shows as closed, go to Applications &rarr; find it &rarr; click "Reopen".'
+    ],
+    cases: [
+      'This is informational \u2014 flags cases missing a player name, reason, or with duplicate case numbers.',
+      'Go to Cases, search for the flagged entries, and edit or delete them as needed.',
+      'Duplicate case numbers are rare and usually harmless, but worth a look if flagged.'
+    ],
+    players: [
+      'This is informational \u2014 flags player entries with no SteamID64 or Discord ID at all, which makes them hard to match against future cases.',
+      'Go to Players, find the flagged entries, and add an identifier if you have one, or delete them if they\'re not useful.'
+    ],
+    localstorage: [
+      'Browsers typically allow 5\u201310MB of local storage per site. If you\'re getting close, consider using Settings &rarr; "Export ledger" to back up and then "Clear all" old resolved cases you no longer need locally.',
+      'This only affects this browser\'s local copy \u2014 your Discord channel remains the permanent record regardless.'
+    ],
     worker: [
       'Open <b>Settings</b> and check the "Worker URL" field &mdash; make sure it exactly matches your deployed Worker\'s URL (starts with https://, no typos, no trailing slash).',
       'Cloudflare dashboard &rarr; Workers &amp; Pages &rarr; open your Worker &rarr; confirm it shows as deployed, not an error state.',
@@ -2557,8 +2584,15 @@
     { id:'kvwrite', label:'Storage (KV) write access' },
     { id:'botauth', label:'Discord bot authentication' },
     { id:'adminkey', label:'Admin key authorization' },
+    { id:'loginsecurity', label:'Login gate security' },
     { id:'guildaccess', label:'Bot access to your Discord server' },
+    { id:'webhooks', label:'Webhook URL formats' },
     { id:'appealform', label:'Ban appeal form reachability' },
+    { id:'forms', label:'Forms overview' },
+    { id:'cases', label:'Case ledger integrity' },
+    { id:'players', label:'Player directory integrity' },
+    { id:'roster', label:'Admin roster' },
+    { id:'localstorage', label:'Browser storage usage' },
     { id:'maintenance', label:'Website maintenance mode' },
     { id:'serverstatus', label:'Game server status' },
     { id:'tempbans', label:'Temporary ban tracking' },
@@ -2684,6 +2718,25 @@
     if (authElapsed < DIAG_MIN_STEP_MS) await diagSleep(DIAG_MIN_STEP_MS - authElapsed);
     advance(); advance();
 
+    // Login gate security — try a deliberately wrong password, confirm it's rejected
+    await paced('loginsecurity', async function(){
+      try{
+        var lRes = await fetch(AUTH_WORKER_URL + '/login', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ username: 'owner', password: '__diagnostic_bogus_password_check__' })
+        });
+        if (lRes.status === 401){
+          diagSetResult('loginsecurity', 'pass', 'Login correctly rejected an incorrect password.');
+        } else if (lRes.ok){
+          diagSetResult('loginsecurity', 'fail', 'A deliberately wrong password was NOT rejected. This needs attention immediately.', true);
+        } else {
+          diagSetResult('loginsecurity', 'info', 'Got an unexpected response (status '+lRes.status+'), but not an acceptance \u2014 likely fine.');
+        }
+      }catch(err){
+        diagSetResult('loginsecurity', 'fail', 'Could not test: ' + (err.message||'unknown error'), true);
+      }
+    });
+
     // 7. Guild access
     await paced('guildaccess', async function(){
       if (!adminKeyOk || !STATE.settings.guildId){
@@ -2703,6 +2756,24 @@
       }
     });
 
+    // Webhook URL formats
+    await paced('webhooks', async function(){
+      var webhookPattern = /^https:\/\/discord(app)?\.com\/api\/webhooks\/\d+\/[\w-]+$/;
+      var problems = [];
+      if (STATE.settings.webhookUrl && !webhookPattern.test(STATE.settings.webhookUrl)) problems.push('main mod-log webhook');
+      (STATE.settings.webhooks||[]).forEach(function(w){
+        if (!webhookPattern.test(w.url)) problems.push('"'+w.name+'"');
+      });
+      var totalConfigured = (STATE.settings.webhookUrl?1:0) + (STATE.settings.webhooks||[]).length;
+      if (totalConfigured===0){
+        diagSetResult('webhooks', 'info', 'No webhooks configured yet.');
+      } else if (problems.length){
+        diagSetResult('webhooks', 'fail', 'Malformed URL(s): ' + problems.join(', ') + '.', true);
+      } else {
+        diagSetResult('webhooks', 'pass', totalConfigured + ' webhook(s) configured, all correctly formatted.');
+      }
+    });
+
     // 8. Appeal form reachability
     await paced('appealform', async function(){
       if (!STATE.settings.appealFormId){
@@ -2716,6 +2787,92 @@
         else diagSetResult('appealform', 'fail', 'The selected appeal form no longer exists.', true);
       }catch(err){
         diagSetResult('appealform', 'fail', 'Request failed: ' + (err.message||'unknown error'), true);
+      }
+    });
+
+    // Forms overview
+    var formsCache = null;
+    await paced('forms', async function(){
+      if (!STATE.settings.workerKey){
+        diagSetResult('forms', 'fail', 'Admin key not set \u2014 cannot check.', true);
+        return;
+      }
+      try{
+        var frRes = await fetch(STATE.settings.workerUrl + '/forms/list', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ adminKey: STATE.settings.workerKey })
+        });
+        var frData = await frRes.json();
+        if (!frRes.ok) throw new Error(frData.error || 'failed');
+        formsCache = frData.forms || [];
+        var openCount = formsCache.filter(function(f){ return f.status==='open'; }).length;
+        var appealClosed = STATE.settings.appealFormId && formsCache.some(function(f){ return f.id===STATE.settings.appealFormId && f.status!=='open'; });
+        if (appealClosed){
+          diagSetResult('forms', 'info', formsCache.length+' form(s) total, '+openCount+' open. Your selected ban appeal form is currently CLOSED.', true);
+        } else {
+          diagSetResult('forms', 'pass', formsCache.length+' form(s) total, '+openCount+' open.');
+        }
+      }catch(err){
+        diagSetResult('forms', 'fail', 'Could not load forms: ' + (err.message||'unknown error'), true);
+      }
+    });
+
+    // Case ledger integrity (local)
+    await paced('cases', async function(){
+      var entries = STATE.entries || [];
+      if (entries.length===0){
+        diagSetResult('cases', 'info', 'No cases logged in this browser yet.');
+        return;
+      }
+      var missing = entries.filter(function(e){ return !e.player || !e.reason; }).length;
+      var caseNoCounts = {};
+      entries.forEach(function(e){ if (e.caseNo) caseNoCounts[e.caseNo] = (caseNoCounts[e.caseNo]||0)+1; });
+      var dupes = Object.keys(caseNoCounts).filter(function(k){ return caseNoCounts[k]>1; }).length;
+      if (missing || dupes){
+        diagSetResult('cases', 'fail', entries.length+' case(s) total. '+missing+' missing a player/reason, '+dupes+' duplicate case number(s).', true);
+      } else {
+        diagSetResult('cases', 'pass', entries.length+' case(s), all with a player and reason, no duplicate numbers.');
+      }
+    });
+
+    // Player directory integrity (local)
+    await paced('players', async function(){
+      var players = (typeof PLAYERS !== 'undefined' ? PLAYERS : []);
+      if (players.length===0){
+        diagSetResult('players', 'info', 'No players in the directory yet.');
+        return;
+      }
+      var unlinkable = players.filter(function(p){ return !p.steamId && !p.discordId; }).length;
+      if (unlinkable){
+        diagSetResult('players', 'fail', players.length+' player(s) total. '+unlinkable+' have no SteamID64 or Discord ID at all.', true);
+      } else {
+        diagSetResult('players', 'pass', players.length+' player(s), all with at least one identifier.');
+      }
+    });
+
+    // Admin roster
+    await paced('roster', async function(){
+      var roster = STATE.settings.investigators || [];
+      diagSetResult('roster', roster.length ? 'pass' : 'info', roster.length ? (roster.length+' admin(s) on the roster.') : 'No admins added to the roster yet (used for case assignment).', roster.length===0);
+    });
+
+    // Browser storage usage
+    await paced('localstorage', async function(){
+      try{
+        var totalBytes = 0;
+        for (var i=0; i<localStorage.length; i++){
+          var k = localStorage.key(i);
+          var v = localStorage.getItem(k) || '';
+          totalBytes += k.length + v.length;
+        }
+        var kb = Math.round(totalBytes/1024);
+        if (kb > 4000){
+          diagSetResult('localstorage', 'info', '~'+kb+'KB used in this browser. Getting large \u2014 consider exporting and trimming old data.', true);
+        } else {
+          diagSetResult('localstorage', 'pass', '~'+kb+'KB used in this browser. Well within normal limits.');
+        }
+      }catch(err){
+        diagSetResult('localstorage', 'fail', 'Could not measure storage usage.');
       }
     });
 
@@ -3082,7 +3239,20 @@
   function renderAuditLog(){
     if (!els.auditList) return;
     var q = (els.auditSearch && els.auditSearch.value || '').trim().toLowerCase();
-    var source = SERVER_AUDIT_LOG !== null ? SERVER_AUDIT_LOG : AUDIT_LOG;
+    var source;
+    if (SERVER_AUDIT_LOG !== null){
+      var merged = SERVER_AUDIT_LOG.slice();
+      var seen = {};
+      SERVER_AUDIT_LOG.forEach(function(e){ seen[e.ts+'|'+e.action+'|'+e.detail] = true; });
+      AUDIT_LOG.forEach(function(e){
+        var key = e.ts+'|'+e.action+'|'+e.detail;
+        if (!seen[key]){ seen[key] = true; merged.push(e); }
+      });
+      merged.sort(function(a,b){ return (b.ts||0) - (a.ts||0); });
+      source = merged;
+    } else {
+      source = AUDIT_LOG;
+    }
     var list = source;
     if (q){
       list = list.filter(function(a){
