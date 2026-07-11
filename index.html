@@ -1612,6 +1612,8 @@
           <div class="panel-body">
             <p style="font-size:12.5px;color:var(--text-3);margin:0 0 16px;line-height:1.6;">Checks that your Worker, bot, and storage are reachable and correctly configured, and surfaces anything currently active (maintenance mode, server status, pending temp bans). This is a connectivity and configuration check, not a full security audit &mdash; it can't detect intrusions on its own, but it will catch broken credentials, expired tokens, or a Worker that's gone down.</p>
             <button class="btn primary" id="diagRunBtn" style="width:100%;">Run full diagnostic</button>
+            <button type="button" class="btn small ghost" id="downloadBackupBtn" style="width:100%;margin-top:8px;">Download a backup of this site</button>
+            <p style="font-size:11px;color:var(--text-3);margin:6px 0 0;">Saves the exact working copy of this page to your computer right now. If something ever breaks and you don't have AI help handy, you can restore this saved file yourself &mdash; no coding needed, just paste it back in on GitHub the same way you always deploy.</p>
             <div class="diag-progress-track" id="diagProgressTrack" style="display:none;">
               <div class="diag-progress-fill" id="diagProgressFill"></div>
             </div>
@@ -1767,7 +1769,7 @@
    'maintenanceToggle','maintTitleInput','maintMessageInput','maintReturnInput','saveMaintenanceBtn','maintenanceStatus',
    'serverStatusToggle','serverStatusTitleInput','serverStatusMessageInput','serverStatusChannelInput','saveServerStatusBtn','copyStatusLinkBtn','serverStatusMsg',
    'sweepTempBansBtn','sweepResultOut',
-   'diagRunBtn','diagProgressTrack','diagProgressFill','diagResultsList',
+   'diagRunBtn','diagProgressTrack','diagProgressFill','diagResultsList','downloadBackupBtn',
    'refreshBlockedDevicesBtn','blockedDevicesList',
    'loginAttemptsRefreshBtn','loginAttemptsWarning','loginAttemptsList',
    'statusWrap','statusBody',
@@ -2496,10 +2498,12 @@
 
   var DIAG_FIXES = {
     siteintegrity: [
-      'Something in the deployed HTML or JavaScript is missing or was edited incorrectly \u2014 an element ID or a function this site depends on can\'t be found.',
-      'Re-copy the full site file exactly as given, without editing individual lines, and re-deploy it to GitHub Pages (or wherever it\'s hosted).',
-      'If you intentionally edited the code, double-check you didn\'t delete or rename an id="..." attribute or a function definition.',
-      'Hard-refresh the page (Ctrl+Shift+R) after redeploying, in case an old broken version is cached.'
+      'You do not need to find or understand what\'s broken \u2014 the fix is just replacing the whole file with a working copy, no coding needed.',
+      'Go to your GitHub repository \u2192 click on index.html \u2192 click the pencil (edit) icon in the top right.',
+      'Click inside the code box, press Ctrl+A (Cmd+A on Mac) to select everything, then Delete.',
+      'Paste in a working copy of the file (use "Download a backup" below to always have one saved), then scroll down and click "Commit changes".',
+      'Wait about 30\u201360 seconds, then hard-refresh your site (Ctrl+Shift+R) and run this diagnostic again to confirm it now passes.',
+      'If you don\'t have a saved backup, come back and ask for the current site file again.'
     ],
     guildaccess: [
       'Confirm your bot is actually a member of your Discord server &mdash; if you removed and re-invited it, permissions or membership may have changed.',
@@ -2636,6 +2640,29 @@
 
   function diagSleep(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
   var DIAG_MIN_STEP_MS = 550;
+
+  els.downloadBackupBtn.addEventListener('click', async function(){
+    els.downloadBackupBtn.disabled = true;
+    var originalText = els.downloadBackupBtn.textContent;
+    els.downloadBackupBtn.textContent = 'Saving...';
+    try{
+      var res = await fetch(window.location.href, { cache:'no-store' });
+      var html = await res.text();
+      var blob = new Blob([html], { type:'text/html' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'site-backup-' + new Date().toISOString().slice(0,10) + '.html';
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Backup saved to your downloads', 'ok');
+    }catch(err){
+      showToast('Could not save a backup: ' + (err.message||'unknown error'), 'err');
+    }finally{
+      els.downloadBackupBtn.disabled = false;
+      els.downloadBackupBtn.textContent = originalText;
+    }
+  });
 
   els.diagRunBtn.addEventListener('click', async function(){
     if (!STATE.settings.workerUrl){
