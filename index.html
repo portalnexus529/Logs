@@ -845,11 +845,8 @@
         </div>
 
         <div class="field">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-            <label for="discDmMessage" style="margin:0;">DM to user <span style="color:var(--text-3);font-weight:400;">(sent before the ban/kick executes)</span></label>
-            <button type="button" class="btn small ghost" id="discGenerateDmBtn" style="padding:4px 10px;">Generate from reason</button>
-          </div>
-          <textarea id="discDmMessage" placeholder="You will be notified with this message before the action is carried out"></textarea>
+          <label for="discDmMessage" style="margin:0;">Personal note to include <span style="color:var(--text-3);font-weight:400;">(optional, sent as an embed with Reason, Duration, and Appeal fields already built in)</span></label>
+          <textarea id="discDmMessage" placeholder="Optional: add a short personal note above the standard fields"></textarea>
           <div class="toggle-row" id="discSendDmToggle" style="margin-top:8px;">
             <button type="button" data-sdm="yes" class="active">Send DM</button>
             <button type="button" data-sdm="no">Skip DM</button>
@@ -1599,7 +1596,7 @@
    'applyWrap','applyBody',
    'webhookNameInput','webhookUrlInput','addWebhookBtn','webhookListUI',
    'workerUrlInput','workerKeyInput','guildIdInput',
-   'discDmMessage','discGenerateDmBtn','discSendDmToggle',
+   'discDmMessage','discSendDmToggle',
    'ovOpen','ovPending','ovSolved','ovWeek','ovTotal','recentFeed','followupFeed',
    'auditList','clearAuditBtn','auditSearch',
    'dlUserId','dlLookupBtn','dlMsg','dlResult','dlAvatar','dlUsername','dlTag','dlCreated','dlId',
@@ -3382,20 +3379,27 @@
     return STATE.settings.ticketLink || '';
   }
 
-  els.discGenerateDmBtn.addEventListener('click', function(){
-    var action = DISC_STATE.action;
-    var reason = els.discReasonInput.value.trim() || '(no reason given)';
+  function buildDmEmbed(action, reason, durText, extraNote){
+    var verb = action==='dban' ? 'banned from' : (action==='dtimeout' ? 'timed out in' : 'kicked from');
     var server = STATE.settings.serverName || 'the server';
-    var verb = action==='dban' ? 'banned' : 'kicked';
-    var msg = 'You have been ' + verb + ' from ' + server + '.\n\nReason: ' + reason;
+    var embed = {
+      title: 'You have been ' + verb + ' ' + server,
+      color: COLOR_HEX[action],
+      fields: [],
+      footer: { text: server },
+      timestamp: new Date().toISOString()
+    };
+    if (extraNote && extraNote.trim()) embed.description = extraNote.trim();
+    embed.fields.push({ name:'Reason', value: reason || 'No reason given' });
+    if (hasDuration(action) && durText) embed.fields.push({ name:'Duration', value: durText });
     var appealLink = getAppealLink();
     if (action==='dban' && DISC_STATE.appeal==='yes' && appealLink){
-      msg += '\n\nIf you believe this was a mistake, you can appeal here: ' + appealLink;
+      embed.fields.push({ name:'Think this was a mistake?', value: 'You can appeal here: ' + appealLink });
     }
-    els.discDmMessage.value = msg;
-  });
+    return embed;
+  }
 
-  async function callBotAction(action, userId, reason, dmMessage, durationMsVal){
+  async function callBotAction(action, userId, reason, dmEmbed, durationMsVal){
     var workerUrl = STATE.settings.workerUrl;
     var workerKey = STATE.settings.workerKey;
     var guildId = STATE.settings.guildId;
@@ -3406,7 +3410,7 @@
     var res = await fetch(endpoint, {
       method:'POST',
       headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify({ adminKey: workerKey, guildId: guildId, userId: userId, reason: reason, dmMessage: dmMessage || undefined, durationMs: durationMsVal || undefined })
+      body: JSON.stringify({ adminKey: workerKey, guildId: guildId, userId: userId, reason: reason, dmEmbed: dmEmbed || undefined, durationMs: durationMsVal || undefined })
     });
     var data;
     try{ data = await res.json(); }catch(e){ data = {}; }
@@ -3464,11 +3468,12 @@
     async function proceed(){
       els.discPublishBtn.disabled = true;
       setDiscFormMsg((action==='dban'?'Banning':'Kicking')+' on Discord...', '');
-      var dmMessage = DISC_SEND_DM==='yes' ? els.discDmMessage.value.trim() : '';
+      var sendingDm = DISC_SEND_DM==='yes';
+      var dmEmbed = sendingDm ? buildDmEmbed(action, reason, durText, els.discDmMessage.value) : null;
 
       var botResult;
       try{
-        botResult = await callBotAction(action, userId, reason, dmMessage, entry.action==='dtimeout' ? (entry.expiresAt - Date.now()) : null);
+        botResult = await callBotAction(action, userId, reason, dmEmbed, entry.action==='dtimeout' ? (entry.expiresAt - Date.now()) : null);
       }catch(err){
         setDiscFormMsg(err.message || 'Bot action failed.', 'err');
         showToast(err.message || 'Bot action failed', 'err');
@@ -3483,9 +3488,9 @@
         DISC_STATE.proofs = []; renderDiscProofList();
 
         var dmNote = '';
-        if (dmMessage){ dmNote = botResult.dmSent ? ' DM delivered.' : (' DM could not be sent' + (botResult.dmError ? (' ('+botResult.dmError+')') : '') + '.'); }
+        if (sendingDm){ dmNote = botResult.dmSent ? ' DM delivered.' : (' DM could not be sent' + (botResult.dmError ? (' ('+botResult.dmError+')') : '') + '.'); }
         setDiscFormMsg('User '+(action==='dban'?'banned':'kicked')+' on Discord and logged as case #'+entry.caseNo+'.'+dmNote, 'ok');
-        showToast((action==='dban'?'Banned':'Kicked')+' on Discord'+(dmMessage && !botResult.dmSent ? ' (DM failed)' : ''), 'ok');
+        showToast((action==='dban'?'Banned':'Kicked')+' on Discord'+(sendingDm && !botResult.dmSent ? ' (DM failed)' : ''), 'ok');
       });
     }
 
