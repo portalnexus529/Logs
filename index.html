@@ -171,6 +171,12 @@
   .seg button[data-a="dban"].active .dot{background:var(--discord);}
   .seg button[data-a="dkick"].active{background:var(--discord-bg);border-color:var(--discord);color:#c7ccfb;}
   .seg button[data-a="dkick"].active .dot{background:var(--discord);}
+  .seg button[data-mg-status="accepted"].active{background:rgba(74,222,128,0.14);border-color:#4ade80;color:#86efac;}
+  .seg button[data-mg-status="accepted"].active .dot{background:#4ade80;}
+  .seg button[data-mg-status="denied"].active{background:var(--ban-bg);border-color:var(--ban);color:#fca5a5;}
+  .seg button[data-mg-status="denied"].active .dot{background:var(--ban);}
+  .seg button[data-mg-status="pending"].active{background:var(--warn-bg);border-color:var(--warn);color:#fde047;}
+  .seg button[data-mg-status="pending"].active .dot{background:var(--warn);}
 
   /* Duration */
   #durationBlock{display:none;margin-bottom:15px;}
@@ -730,6 +736,10 @@
       <button type="button" class="nav-item" data-section="banappeals">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
         Ban Appeals
+      </button>
+      <button type="button" class="nav-item" data-section="msggen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Response Generator
       </button>
       <button type="button" class="nav-item" data-section="ledger">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
@@ -1307,6 +1317,45 @@
         </div>
       </div>
 
+      <div id="sectionMsgGen" class="dash-section" style="display:none;">
+        <div class="grid">
+          <div class="panel">
+            <div class="panel-head"><h2>Generate a response</h2></div>
+            <div class="panel-body">
+              <div class="field">
+                <label for="mgAppType">Application type</label>
+                <input type="text" id="mgAppType" placeholder="e.g. Moderator Application">
+              </div>
+              <div class="field">
+                <label for="mgApplicantName">Applicant's name <span style="color:var(--text-3);font-weight:400;">(optional)</span></label>
+                <input type="text" id="mgApplicantName" placeholder="e.g. Alex">
+              </div>
+              <div class="field">
+                <label>Response type</label>
+                <div class="seg" id="mgStatusSeg">
+                  <button type="button" data-mg-status="accepted"><span class="dot"></span>Approved</button>
+                  <button type="button" data-mg-status="denied"><span class="dot"></span>Declined</button>
+                  <button type="button" data-mg-status="pending"><span class="dot"></span>Pending</button>
+                </div>
+              </div>
+              <div class="field">
+                <label for="mgReason">Reason / specific note <span style="color:var(--text-3);font-weight:400;">(optional)</span></label>
+                <textarea id="mgReason" placeholder="e.g. strong communication skills and prior moderation experience"></textarea>
+              </div>
+              <button class="btn primary" id="mgGenerateBtn" style="width:100%;">Generate response</button>
+              <div id="mgFormMsg" style="font-size:12.5px;margin-top:8px;"></div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><h2>Generated response</h2><button class="btn ghost small" id="mgCopyBtn" disabled>Copy</button></div>
+            <div class="panel-body">
+              <div id="mgOutput" class="empty-state">Fill in the details and choose a response type to generate a professional paragraph here.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div id="sectionLedger" class="dash-section" style="display:none;">
         <div class="panel">
       <div class="panel-head"><h2>Cases</h2><button class="btn ghost small" id="clearAllBtn">Clear all</button></div>
@@ -1832,6 +1881,7 @@
    'fbEditingId','fbTitle','fbDescription','fbAddFieldBtn','fbFieldsList','fbSaveBtn','fbFormMsg',
    'appsRefreshBtn','appsFormMsg','appsList','appsResponsesPanel','appsResponsesTitle','appsBackBtn','appsResponsesList','appsResponsesFilterBar',
    'banAppealsRefreshBtn','banAppealsMsg','banAppealsList',
+   'mgAppType','mgApplicantName','mgStatusSeg','mgReason','mgGenerateBtn','mgFormMsg','mgOutput','mgCopyBtn',
    'applyWrap','applyBody',
    'webhookNameInput','webhookUrlInput','addWebhookBtn','webhookListUI',
    'workerUrlInput','workerKeyInput','guildIdInput',
@@ -2111,7 +2161,7 @@
     els.linkInlineInput.value=''; els.linkInlineRow.classList.remove('show');
   });
 
-  var SECTION_IDS = { dashboard:'sectionDashboard', game:'sectionGame', discord:'sectionDiscord', ann:'sectionAnn', events:'sectionEvents', formbuilder:'sectionFormBuilder', applications:'sectionApplications', banappeals:'sectionBanAppeals', ledger:'sectionLedger', audit:'sectionAudit', players:'sectionPlayers', lookup:'sectionLookup', settings:'sectionSettings', diagnostics:'sectionDiagnostics' };
+  var SECTION_IDS = { dashboard:'sectionDashboard', game:'sectionGame', discord:'sectionDiscord', ann:'sectionAnn', events:'sectionEvents', formbuilder:'sectionFormBuilder', applications:'sectionApplications', banappeals:'sectionBanAppeals', msggen:'sectionMsgGen', ledger:'sectionLedger', audit:'sectionAudit', players:'sectionPlayers', lookup:'sectionLookup', settings:'sectionSettings', diagnostics:'sectionDiagnostics' };
   var CURRENT_SECTION = 'dashboard';
   function switchSection(target){
     CURRENT_SECTION = target;
@@ -5752,6 +5802,83 @@
     }
   }
   els.banAppealsRefreshBtn.addEventListener('click', loadBanAppeals);
+
+  // ==================== Response Generator ====================
+  var MG_STATUS = null;
+  var MG_LAST_TEXT = '';
+
+  els.mgStatusSeg.querySelectorAll('[data-mg-status]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      els.mgStatusSeg.querySelectorAll('[data-mg-status]').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      MG_STATUS = btn.dataset.mgStatus;
+    });
+  });
+
+  function mgBuildParagraph(){
+    var appType = (els.mgAppType.value || '').trim() || 'application';
+    var name = (els.mgApplicantName.value || '').trim();
+    var reason = (els.mgReason.value || '').trim();
+    var serverName = (STATE.settings.serverName || '').trim() || 'our team';
+    var greeting = name ? ('Dear ' + name + ',') : 'Hello,';
+
+    var lines = { accepted: '', denied: '', pending: '' };
+
+    if (MG_STATUS === 'accepted'){
+      lines.accepted =
+        greeting + '\n\n' +
+        'Thank you for taking the time to submit your ' + appType + '. After careful review, we are pleased to let you know that your application has been approved. ' +
+        (reason ? (reason.charAt(0).toUpperCase() + reason.slice(1).replace(/\.?$/, '.') + ' ') : '') +
+        'We appreciate the effort you put into your submission and are excited to have you take the next step with us.\n\n' +
+        'If you have any questions about what happens next, please don\u2019t hesitate to reach out. Congratulations, and welcome!\n\n' +
+        'Best regards,\n' + serverName;
+      return lines.accepted;
+    }
+    if (MG_STATUS === 'denied'){
+      lines.denied =
+        greeting + '\n\n' +
+        'Thank you for submitting your ' + appType + ' and for your interest in joining us. After careful consideration, we regret to inform you that we will not be moving forward with your application at this time. ' +
+        (reason ? (reason.charAt(0).toUpperCase() + reason.slice(1).replace(/\.?$/, '.') + ' ') : '') +
+        'This decision was not made lightly, and we encourage you to continue being an active part of our community.\n\n' +
+        'You are welcome to reapply in the future, and we\u2019d be glad to see another submission from you. Thank you again for your time and understanding.\n\n' +
+        'Best regards,\n' + serverName;
+      return lines.denied;
+    }
+    if (MG_STATUS === 'pending'){
+      lines.pending =
+        greeting + '\n\n' +
+        'Thank you for submitting your ' + appType + '. We wanted to reach out and let you know that your application has been received and is currently under review by our team. ' +
+        (reason ? (reason.charAt(0).toUpperCase() + reason.slice(1).replace(/\.?$/, '.') + ' ') : '') +
+        'We\u2019re taking the time to review each submission carefully, so we appreciate your patience while we finish this process.\n\n' +
+        'We\u2019ll follow up with a decision as soon as possible. If you have any questions in the meantime, feel free to reach out.\n\n' +
+        'Best regards,\n' + serverName;
+      return lines.pending;
+    }
+    return '';
+  }
+
+  els.mgGenerateBtn.addEventListener('click', function(){
+    els.mgFormMsg.textContent = '';
+    if (!MG_STATUS){
+      els.mgFormMsg.textContent = 'Choose a response type first (Approved, Declined, or Pending).';
+      els.mgFormMsg.style.color = 'var(--ban)';
+      return;
+    }
+    var text = mgBuildParagraph();
+    MG_LAST_TEXT = text;
+    els.mgOutput.className = '';
+    els.mgOutput.style.whiteSpace = 'pre-wrap';
+    els.mgOutput.style.fontSize = '13.5px';
+    els.mgOutput.style.lineHeight = '1.7';
+    els.mgOutput.textContent = text;
+    els.mgCopyBtn.disabled = false;
+  });
+
+  els.mgCopyBtn.addEventListener('click', function(){
+    if (!MG_LAST_TEXT) return;
+    if (navigator.clipboard) navigator.clipboard.writeText(MG_LAST_TEXT).then(function(){ showToast('Response copied', 'ok'); }).catch(function(){ showToast('Could not copy \u2014 select and copy manually.', 'err'); });
+    else showToast('Could not copy \u2014 select and copy manually.', 'err');
+  });
 
   // ==================== Public application-filling view ====================
   async function checkApplyView(){
