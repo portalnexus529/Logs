@@ -741,6 +741,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
         Response Generator
       </button>
+      <button type="button" class="nav-item" data-section="discordnotify">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.3 4.3a18 18 0 0 0-4.5-1.4l-.3.6a16 16 0 0 1 3.8 1.3M8.5 3.5a18 18 0 0 0-4.5 1.4M3.5 5.8C1.8 10 1.4 14.1 2.1 18.1a18 18 0 0 0 5.5 2.8l1-1.6M20.5 5.8c1.7 4.2 2.1 8.3 1.4 12.3a18 18 0 0 1-5.5 2.8l-1-1.6"/><circle cx="9" cy="13" r="1.3"/><circle cx="15" cy="13" r="1.3"/><path d="M12 16.5v2"/></svg>
+        Notify on Discord
+      </button>
       <button type="button" class="nav-item" data-section="ledger">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
         Cases
@@ -1356,6 +1360,32 @@
         </div>
       </div>
 
+      <div id="sectionDiscordNotify" class="dash-section" style="display:none;">
+        <div class="panel">
+          <div class="panel-head"><h2>Notify on Discord</h2></div>
+          <div class="panel-body">
+            <p style="font-size:11.5px;color:var(--text-3);margin:0 0 14px;line-height:1.6;background:var(--field);border:1px solid var(--border-soft);border-radius:var(--radius-sm);padding:10px 12px;">Sends a DM through your Discord bot to the user ID you enter. This uses the same bot connection configured in Settings, so the bot needs to share a server with that person for the DM to go through.</p>
+            <div class="field">
+              <label for="dnUserId">Discord user ID</label>
+              <input type="text" id="dnUserId" placeholder="e.g. 123456789012345678">
+            </div>
+            <div class="field">
+              <label for="dnTitle">Message title</label>
+              <input type="text" id="dnTitle" placeholder="e.g. Update on your Moderator Application">
+            </div>
+            <div class="field">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <label style="margin:0;" for="dnMessage">Message</label>
+                <button type="button" class="btn small ghost" id="dnUseGeneratedBtn" style="padding:4px 10px;">Use generated response</button>
+              </div>
+              <textarea id="dnMessage" placeholder="Write a message, or generate one first in Response Generator" style="min-height:160px;"></textarea>
+            </div>
+            <button class="btn primary" id="dnSendBtn" style="width:100%;">Send Discord DM</button>
+            <div id="dnMsg" style="font-size:12.5px;margin-top:8px;"></div>
+          </div>
+        </div>
+      </div>
+
       <div id="sectionLedger" class="dash-section" style="display:none;">
         <div class="panel">
       <div class="panel-head"><h2>Cases</h2><button class="btn ghost small" id="clearAllBtn">Clear all</button></div>
@@ -1882,6 +1912,7 @@
    'appsRefreshBtn','appsFormMsg','appsList','appsResponsesPanel','appsResponsesTitle','appsBackBtn','appsResponsesList','appsResponsesFilterBar',
    'banAppealsRefreshBtn','banAppealsMsg','banAppealsList',
    'mgAppType','mgApplicantName','mgStatusSeg','mgReason','mgGenerateBtn','mgFormMsg','mgOutput','mgCopyBtn',
+   'dnUserId','dnTitle','dnMessage','dnUseGeneratedBtn','dnSendBtn','dnMsg',
    'applyWrap','applyBody',
    'webhookNameInput','webhookUrlInput','addWebhookBtn','webhookListUI',
    'workerUrlInput','workerKeyInput','guildIdInput',
@@ -2161,7 +2192,7 @@
     els.linkInlineInput.value=''; els.linkInlineRow.classList.remove('show');
   });
 
-  var SECTION_IDS = { dashboard:'sectionDashboard', game:'sectionGame', discord:'sectionDiscord', ann:'sectionAnn', events:'sectionEvents', formbuilder:'sectionFormBuilder', applications:'sectionApplications', banappeals:'sectionBanAppeals', msggen:'sectionMsgGen', ledger:'sectionLedger', audit:'sectionAudit', players:'sectionPlayers', lookup:'sectionLookup', settings:'sectionSettings', diagnostics:'sectionDiagnostics' };
+  var SECTION_IDS = { dashboard:'sectionDashboard', game:'sectionGame', discord:'sectionDiscord', ann:'sectionAnn', events:'sectionEvents', formbuilder:'sectionFormBuilder', applications:'sectionApplications', banappeals:'sectionBanAppeals', msggen:'sectionMsgGen', discordnotify:'sectionDiscordNotify', ledger:'sectionLedger', audit:'sectionAudit', players:'sectionPlayers', lookup:'sectionLookup', settings:'sectionSettings', diagnostics:'sectionDiagnostics' };
   var CURRENT_SECTION = 'dashboard';
   function switchSection(target){
     CURRENT_SECTION = target;
@@ -5878,6 +5909,68 @@
     if (!MG_LAST_TEXT) return;
     if (navigator.clipboard) navigator.clipboard.writeText(MG_LAST_TEXT).then(function(){ showToast('Response copied', 'ok'); }).catch(function(){ showToast('Could not copy \u2014 select and copy manually.', 'err'); });
     else showToast('Could not copy \u2014 select and copy manually.', 'err');
+  });
+
+  // ==================== Notify on Discord ====================
+  var MG_STATUS_META = {
+    accepted: { title:'Your application has been approved', color: 0x4ade80 },
+    denied: { title:'Your application has been denied', color: 0xff5c5c },
+    pending: { title:'Your application is under review', color: 0xffd43b }
+  };
+
+  els.dnUseGeneratedBtn.addEventListener('click', function(){
+    els.dnMsg.textContent = '';
+    if (!MG_LAST_TEXT){
+      els.dnMsg.textContent = 'Nothing generated yet \u2014 go to Response Generator first and generate a response.';
+      els.dnMsg.style.color = 'var(--ban)';
+      return;
+    }
+    els.dnMessage.value = MG_LAST_TEXT;
+    var appType = (els.mgAppType.value || '').trim();
+    var meta = MG_STATUS_META[MG_STATUS] || null;
+    if (meta) els.dnTitle.value = appType ? (meta.title.replace('application', appType)) : meta.title;
+    showToast('Loaded generated response', 'ok');
+  });
+
+  els.dnSendBtn.addEventListener('click', async function(){
+    els.dnMsg.textContent = '';
+    var userId = els.dnUserId.value.trim();
+    var message = els.dnMessage.value.trim();
+    if (!STATE.settings.workerUrl || !STATE.settings.workerKey){
+      els.dnMsg.textContent = 'Configure Worker URL and admin key in Settings first.';
+      els.dnMsg.style.color = 'var(--ban)';
+      return;
+    }
+    if (!userId || !message){
+      els.dnMsg.textContent = 'Enter a Discord user ID and a message.';
+      els.dnMsg.style.color = 'var(--ban)';
+      return;
+    }
+    var meta = MG_STATUS_META[MG_STATUS] || null;
+    var embed = {
+      title: els.dnTitle.value.trim() || (meta ? meta.title : ('Message from ' + (STATE.settings.serverName || 'our team'))),
+      description: message,
+      color: meta ? meta.color : 0x5b8def,
+      footer: { text: STATE.settings.serverName || 'Community server' },
+      timestamp: new Date().toISOString()
+    };
+    els.dnSendBtn.disabled = true;
+    els.dnMsg.textContent = 'Sending...'; els.dnMsg.style.color = 'var(--text-2)';
+    try{
+      var res = await fetch(STATE.settings.workerUrl + '/dm/send', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ adminKey: STATE.settings.workerKey, userId: userId, embed: embed })
+      });
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.detail ? translateDmError(data.detail) : (data.error || 'Could not send DM.'));
+      els.dnMsg.textContent = 'DM sent.'; els.dnMsg.style.color = '#4ade80';
+      showToast('Discord DM sent', 'ok');
+      logAudit('Discord DM sent', 'Sent a manual DM to <b>'+escapeHtml(userId)+'</b>');
+    }catch(err){
+      els.dnMsg.textContent = err.message || 'Could not send DM.'; els.dnMsg.style.color = 'var(--ban)';
+    }finally{
+      els.dnSendBtn.disabled = false;
+    }
   });
 
   // ==================== Public application-filling view ====================
