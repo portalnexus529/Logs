@@ -87,23 +87,24 @@
     display:flex;justify-content:space-between;align-items:center;
     padding-bottom:20px;margin-bottom:22px;border-bottom:1px solid var(--border-soft);flex-wrap:wrap;gap:14px;
   }
-  .topbar-left h1{font-size:19px;font-weight:600;margin:0;letter-spacing:-0.01em;}
+  .topbar-left h1{font-size:20px;font-weight:700;margin:0;letter-spacing:-0.015em;}
   .topbar-left p{margin:4px 0 0;color:var(--text-2);font-size:13px;}
   .topbar-right{display:flex;gap:10px;align-items:center;}
 
   .chip{
     display:flex;flex-direction:column;align-items:center;justify-content:center;
     background:var(--panel);border:1px solid var(--border-soft);border-radius:var(--radius-sm);
-    padding:8px 16px;min-width:58px;
+    padding:8px 16px;min-width:58px;box-shadow:0 1px 2px rgba(0,0,0,0.14);transition:border-color .12s ease;
   }
-  .chip .n{font-size:18px;font-weight:600;line-height:1.1;}
-  .chip .l{font-size:10.5px;color:var(--text-3);margin-top:2px;}
+  .chip:hover{border-color:var(--border);}
+  .chip .n{font-size:18px;font-weight:700;line-height:1.1;}
+  .chip .l{font-size:10.5px;color:var(--text-3);margin-top:2px;letter-spacing:.02em;}
   .chip.ban .n{color:var(--ban);} .chip.kick .n{color:var(--kick);} .chip.warn .n{color:var(--warn);}
   .chip.dban .n{color:var(--discord);} .chip.dkick .n{color:var(--discord);}
 
   .icon-btn{
     width:36px;height:36px;border-radius:var(--radius-sm);border:1px solid var(--border-soft);background:var(--panel);
-    color:var(--text-2);cursor:pointer;display:flex;align-items:center;justify-content:center;
+    color:var(--text-2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:color .12s ease,border-color .12s ease;
   }
   .icon-btn:hover{color:var(--text);border-color:var(--border);}
   .icon-btn svg{width:16px;height:16px;}
@@ -121,7 +122,7 @@
   label{display:block;font-size:12.5px;font-weight:500;color:var(--text-2);margin-bottom:6px;}
   input[type=text], input[type=url], input[type=number], input[type=password], select, textarea{
     width:100%;background:var(--field);border:1px solid var(--border);color:var(--text);
-    padding:9px 11px;font-family:inherit;font-size:13.5px;border-radius:var(--radius-sm);
+    padding:9px 11px;font-family:inherit;font-size:13.5px;border-radius:var(--radius-sm);transition:border-color .12s ease,box-shadow .12s ease;
   }
   input:focus, select:focus, textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg);}
   textarea{resize:vertical;min-height:66px;line-height:1.5;}
@@ -130,10 +131,11 @@
   button{font-family:inherit;}
   button.btn{
     font-size:13.5px;font-weight:500;background:var(--panel-2);border:1px solid var(--border);color:var(--text);
-    padding:9px 16px;cursor:pointer;border-radius:var(--radius-sm);
+    padding:9px 16px;cursor:pointer;border-radius:var(--radius-sm);transition:border-color .12s ease,background .12s ease,opacity .12s ease;
   }
-  button.btn:hover{border-color:var(--text-3);}
+  button.btn:hover{border-color:var(--text-3);background:var(--panel);}
   button.btn.ghost{background:transparent;color:var(--text-2);}
+  button.btn.ghost:hover{background:var(--panel-2);}
   button.btn.primary{background:var(--accent);border-color:var(--accent);color:#0a0b0e;font-weight:600;}
   button.btn.primary:hover{opacity:.92;}
   button.btn:disabled{opacity:.5;cursor:default;}
@@ -143,7 +145,7 @@
   .grid{display:grid;grid-template-columns:400px 1fr;gap:20px;align-items:start;}
   @media (max-width:900px){.grid{grid-template-columns:1fr;}}
 
-  .panel{background:var(--panel);border:1px solid var(--border-soft);border-radius:var(--radius);}
+  .panel{background:var(--panel);border:1px solid var(--border-soft);border-radius:var(--radius);box-shadow:0 1px 3px rgba(0,0,0,0.16);}
   .panel-head{padding:15px 18px;border-bottom:1px solid var(--border-soft);display:flex;justify-content:space-between;align-items:center;}
   .panel-head h2{font-size:14.5px;font-weight:600;margin:0;}
   .tabs-head{gap:10px;flex-wrap:wrap;}
@@ -359,13 +361,16 @@
   }
   .side-nav-brand{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);font-weight:700;padding:4px 10px 12px;}
   .nav-divider{height:1px;background:var(--border-soft);margin:8px 4px;}
+  .nav-group-label{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);font-weight:700;padding:14px 12px 6px;}
+  .nav-group-label:first-of-type{padding-top:4px;}
   .nav-item{
-    background:none;border:none;color:var(--text-2);text-align:left;padding:11px 12px;font-size:14.5px;font-weight:500;
-    border-radius:var(--radius-sm);cursor:pointer;display:flex;align-items:center;gap:11px;
+    background:none;border:none;color:var(--text-2);text-align:left;padding:10px 12px;font-size:14px;font-weight:500;
+    border-radius:var(--radius-sm);cursor:pointer;display:flex;align-items:center;gap:11px;transition:background .12s ease,color .12s ease;
   }
-  .nav-item svg{width:17px;height:17px;flex-shrink:0;}
+  .nav-item svg{width:16px;height:16px;flex-shrink:0;opacity:.85;}
   .nav-item:hover{background:var(--panel-2);color:var(--text);}
   .nav-item.active{background:var(--accent-bg);color:var(--accent);font-weight:600;}
+  .nav-item.active svg{opacity:1;}
 
   .audit-list{display:flex;flex-direction:column;gap:2px;max-height:70vh;overflow-y:auto;}
   .audit-row{display:grid;grid-template-columns:150px 130px 1fr auto;gap:14px;padding:10px 8px;border-bottom:1px solid var(--border-soft);font-size:13px;align-items:baseline;}
@@ -708,6 +713,8 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
         Dashboard
       </button>
+
+      <div class="nav-group-label">Moderation</div>
       <button type="button" class="nav-item" data-section="game">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
         New report
@@ -716,15 +723,20 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.3 4.3a18 18 0 0 0-4.5-1.4l-.3.6a16 16 0 0 1 3.8 1.3M8.5 3.5a18 18 0 0 0-4.5 1.4M3.5 5.8C1.8 10 1.4 14.1 2.1 18.1a18 18 0 0 0 5.5 2.8l1-1.6M20.5 5.8c1.7 4.2 2.1 8.3 1.4 12.3a18 18 0 0 1-5.5 2.8l-1-1.6"/><circle cx="9" cy="13" r="1.3"/><circle cx="15" cy="13" r="1.3"/></svg>
         Discord actions
       </button>
-      <button type="button" class="nav-item" data-section="ann">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11v2a2 2 0 0 0 2 2h1l2 5h2l-1.5-5H10l8 4V5l-8 4H6a2 2 0 0 0-2 2z"/><path d="M18 9v6"/></svg>
-        Announcements
+      <button type="button" class="nav-item" data-section="ledger">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        Cases
       </button>
-      <button type="button" class="nav-item" data-section="events">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        Events
+      <button type="button" class="nav-item" data-section="banappeals">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        Ban Appeals
       </button>
-      <div class="nav-divider"></div>
+      <button type="button" class="nav-item" data-section="audit">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        Audit logs
+      </button>
+
+      <div class="nav-group-label">Applications</div>
       <button type="button" class="nav-item" data-section="formbuilder">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg>
         New form
@@ -733,37 +745,36 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
         Applications
       </button>
-      <button type="button" class="nav-item" data-section="banappeals">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-        Ban Appeals
-      </button>
       <button type="button" class="nav-item" data-section="msggen">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
         Response Generator
+      </button>
+
+      <div class="nav-group-label">Communications</div>
+      <button type="button" class="nav-item" data-section="ann">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11v2a2 2 0 0 0 2 2h1l2 5h2l-1.5-5H10l8 4V5l-8 4H6a2 2 0 0 0-2 2z"/><path d="M18 9v6"/></svg>
+        Announcements
+      </button>
+      <button type="button" class="nav-item" data-section="events">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Events
       </button>
       <button type="button" class="nav-item" data-section="discordnotify">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.3 4.3a18 18 0 0 0-4.5-1.4l-.3.6a16 16 0 0 1 3.8 1.3M8.5 3.5a18 18 0 0 0-4.5 1.4M3.5 5.8C1.8 10 1.4 14.1 2.1 18.1a18 18 0 0 0 5.5 2.8l1-1.6M20.5 5.8c1.7 4.2 2.1 8.3 1.4 12.3a18 18 0 0 1-5.5 2.8l-1-1.6"/><circle cx="9" cy="13" r="1.3"/><circle cx="15" cy="13" r="1.3"/><path d="M12 16.5v2"/></svg>
         Notify on Discord
       </button>
-      <button type="button" class="nav-item" data-section="ledger">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-        Cases
-      </button>
-      <button type="button" class="nav-item" data-section="audit">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-        Audit logs
-      </button>
-      <div class="nav-divider"></div>
+
+      <div class="nav-group-label">People</div>
       <button type="button" class="nav-item" data-section="players">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         Players
       </button>
-      <div class="nav-divider"></div>
       <button type="button" class="nav-item" data-section="lookup">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         Lookups
       </button>
-      <div class="nav-divider"></div>
+
+      <div class="nav-group-label">System</div>
       <button type="button" class="nav-item" data-section="settings">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         Settings
