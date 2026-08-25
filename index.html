@@ -376,6 +376,36 @@
   .flag-yes{color:var(--ban)!important;}
   .flag-no{color:#4ade80!important;}
 
+  /* ---------- APPLICATION RESPONSES (collapsible + filters) ---------- */
+  .apps-filter-bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:14px;}
+  .apps-filter-btn{background:var(--field);border:1px solid var(--border);color:var(--text-2);border-radius:20px;
+    padding:6px 13px;font-size:12.5px;font-weight:600;cursor:pointer;}
+  .apps-filter-btn:hover{color:var(--text);border-color:var(--text-3);}
+  .apps-filter-btn.active{background:var(--accent-bg);border-color:var(--accent);color:var(--accent);}
+  .apps-filter-count{opacity:.7;margin-left:3px;}
+  .apps-sort-select{width:auto!important;margin-left:auto;font-size:12.5px!important;padding:6px 10px!important;}
+
+  .badge.status-pending{background:var(--warn-bg);color:#fde047;}
+  .badge.status-accepted{background:rgba(74,222,128,0.12);color:#86efac;}
+  .badge.status-denied{background:var(--ban-bg);color:#fca5a5;}
+
+  .response-card{border:1px solid var(--border-soft);background:var(--panel-2);border-radius:var(--radius-sm);
+    padding:12px 14px;margin-bottom:8px;}
+  .response-card-head{display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:pointer;user-select:none;}
+  .response-card-head-left{display:flex;align-items:center;gap:10px;min-width:0;}
+  .response-chevron{flex-shrink:0;width:9px;height:9px;border-right:2px solid var(--text-3);border-bottom:2px solid var(--text-3);
+    transform:rotate(-45deg);transition:transform .15s ease;margin-left:2px;}
+  .response-card.expanded .response-chevron{transform:rotate(45deg);}
+  .response-card-name{font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .response-card-head-right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+  .response-card-body{display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border-soft);}
+  .response-card.expanded .response-card-body{display:block;}
+  .response-card-actions{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap;}
+  @media (max-width:640px){
+    .response-card-name{white-space:normal;}
+    .apps-sort-select{margin-left:0;}
+  }
+
   .player-list{display:flex;flex-direction:column;gap:8px;max-height:70vh;overflow-y:auto;}
   .player-card{border:1px solid var(--border-soft);background:var(--panel-2);border-radius:var(--radius-sm);padding:12px 14px;}
   .player-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px;}
@@ -1256,6 +1286,7 @@
         <div class="panel" id="appsResponsesPanel" style="display:none;margin-top:20px;">
           <div class="panel-head"><h2 id="appsResponsesTitle">Responses</h2><button class="btn ghost small" id="appsBackBtn">Back to list</button></div>
           <div class="panel-body">
+            <div id="appsResponsesFilterBar"></div>
             <div id="appsResponsesList">
               <div class="empty-state">Loading responses...</div>
             </div>
@@ -1799,7 +1830,7 @@
    'evAddInfoBtn','evInfoFields','evColor','evImageDropzone','evImageFile','evImageList',
    'evPingType','evRoleField','evRoleId','evPublishBtn','evFormMsg',
    'fbEditingId','fbTitle','fbDescription','fbAddFieldBtn','fbFieldsList','fbSaveBtn','fbFormMsg',
-   'appsRefreshBtn','appsFormMsg','appsList','appsResponsesPanel','appsResponsesTitle','appsBackBtn','appsResponsesList',
+   'appsRefreshBtn','appsFormMsg','appsList','appsResponsesPanel','appsResponsesTitle','appsBackBtn','appsResponsesList','appsResponsesFilterBar',
    'banAppealsRefreshBtn','banAppealsMsg','banAppealsList',
    'applyWrap','applyBody',
    'webhookNameInput','webhookUrlInput','addWebhookBtn','webhookListUI',
@@ -5253,11 +5284,29 @@
   }
 
   var RESPONSE_STATUS_LABEL = { pending:'\ud83d\udfe1 Pending', accepted:'\u2705 Accepted', denied:'\u274c Denied' };
+  var RESPONSE_FILTER_LABEL = { all:'All', pending:'Pending', accepted:'Accepted', denied:'Denied' };
+
+  var CURRENT_RESPONSES_FORM = null;
+  var CURRENT_RESPONSES_DATA = [];
+  var CURRENT_RESPONSES_FILTER = 'all';
+  var CURRENT_RESPONSES_SORT = 'newest';
+  var EXPANDED_RESPONSE_IDS = {};
+
+  function responseSubmitterLabel(r){
+    var bits = [];
+    if (r.submitterName) bits.push(r.submitterName);
+    if (r.submitterDiscordId) bits.push('Discord '+r.submitterDiscordId);
+    if (r.submitterSteamId) bits.push('Steam '+r.submitterSteamId);
+    return bits.join(' \u00b7 ') || 'Anonymous';
+  }
 
   async function viewApplicationResponses(formId){
     var form = APPS_CACHE.find(function(f){ return f.id===formId; });
+    CURRENT_RESPONSES_FORM = formId;
+    EXPANDED_RESPONSE_IDS = {};
     els.appsResponsesTitle.textContent = 'Responses \u2014 ' + (form ? form.title : '');
     els.appsResponsesPanel.style.display = 'block';
+    els.appsResponsesFilterBar.innerHTML = '';
     els.appsResponsesList.innerHTML = '<div class="empty-state">Loading responses...</div>';
     els.appsResponsesPanel.scrollIntoView({ behavior:'smooth' });
     try{
@@ -5267,119 +5316,295 @@
       });
       var data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Could not load responses.');
-      var responses = data.responses || [];
-      if (responses.length===0){ els.appsResponsesList.innerHTML = '<div class="empty-state">No responses yet.</div>'; return; }
-      var fieldMap = {};
-      (form ? form.fields : []).forEach(function(f){ fieldMap[f.id] = f.label; });
-      els.appsResponsesList.innerHTML = responses.map(function(r){
-        var d = new Date(r.submittedAt);
-        var answersHtml = Object.keys(r.answers||{}).map(function(fid){
-          return '<div class="public-field-row"><label>'+escapeHtml(fieldMap[fid]||fid)+'</label><span style="text-align:right;max-width:60%;">'+escapeHtml(String(r.answers[fid]))+'</span></div>';
-        }).join('');
-        var submitterBits = [];
-        if (r.submitterName) submitterBits.push(r.submitterName);
-        if (r.submitterDiscordId) submitterBits.push('Discord '+r.submitterDiscordId);
-        if (r.submitterSteamId) submitterBits.push('Steam '+r.submitterSteamId);
-        var status = r.status || 'pending';
-        var statusOptions = Object.keys(RESPONSE_STATUS_LABEL).map(function(s){
-          return '<option value="'+s+'"'+(s===status?' selected':'')+'>'+RESPONSE_STATUS_LABEL[s]+'</option>';
-        }).join('');
-        return '<div class="player-card" style="margin-bottom:10px;" data-response-card="'+r.id+'">' +
-          '<div class="player-top"><div class="player-name">'+escapeHtml(submitterBits.join(' \u00b7 ') || 'Anonymous')+'</div><span class="entry-time">'+d.toLocaleString()+'</span></div>' +
+      CURRENT_RESPONSES_DATA = data.responses || [];
+      if (CURRENT_RESPONSES_DATA.length===0){
+        els.appsResponsesList.innerHTML = '<div class="empty-state">No responses yet.</div>';
+        return;
+      }
+      // Default to showing new (pending) responses first, so incoming apps don't get buried.
+      var hasPending = CURRENT_RESPONSES_DATA.some(function(r){ return (r.status||'pending')==='pending'; });
+      CURRENT_RESPONSES_FILTER = hasPending ? 'pending' : 'all';
+      CURRENT_RESPONSES_SORT = 'newest';
+      renderResponsesFilterBar();
+      renderResponsesList();
+    }catch(err){
+      els.appsResponsesList.innerHTML = '<div class="empty-state">'+escapeHtml(err.message || 'Could not load responses.')+'</div>';
+    }
+  }
+
+  function renderResponsesFilterBar(){
+    var counts = { all: CURRENT_RESPONSES_DATA.length, pending:0, accepted:0, denied:0 };
+    CURRENT_RESPONSES_DATA.forEach(function(r){
+      var s = r.status || 'pending';
+      if (counts[s]===undefined) counts[s]=0;
+      counts[s]++;
+    });
+    var filterBtns = ['all','pending','accepted','denied'].map(function(key){
+      return '<button type="button" class="apps-filter-btn'+(CURRENT_RESPONSES_FILTER===key?' active':'')+'" data-apps-filter="'+key+'">' +
+        RESPONSE_FILTER_LABEL[key] + '<span class="apps-filter-count">'+(counts[key]||0)+'</span></button>';
+    }).join('');
+    els.appsResponsesFilterBar.innerHTML =
+      '<div class="apps-filter-bar">' + filterBtns +
+        '<select class="apps-sort-select" id="appsResponsesSortSelect">' +
+          '<option value="newest"'+(CURRENT_RESPONSES_SORT==='newest'?' selected':'')+'>Newest first</option>' +
+          '<option value="oldest"'+(CURRENT_RESPONSES_SORT==='oldest'?' selected':'')+'>Oldest first</option>' +
+        '</select>' +
+      '</div>';
+    els.appsResponsesFilterBar.querySelectorAll('[data-apps-filter]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        CURRENT_RESPONSES_FILTER = btn.dataset.appsFilter;
+        renderResponsesFilterBar();
+        renderResponsesList();
+      });
+    });
+    document.getElementById('appsResponsesSortSelect').addEventListener('change', function(){
+      CURRENT_RESPONSES_SORT = this.value;
+      renderResponsesList();
+    });
+  }
+
+  function renderResponsesList(){
+    var formId = CURRENT_RESPONSES_FORM;
+    var form = APPS_CACHE.find(function(f){ return f.id===formId; });
+    var fieldMap = {};
+    (form ? form.fields : []).forEach(function(f){ fieldMap[f.id] = f.label; });
+
+    var filtered = CURRENT_RESPONSES_DATA.filter(function(r){
+      if (CURRENT_RESPONSES_FILTER==='all') return true;
+      return (r.status||'pending') === CURRENT_RESPONSES_FILTER;
+    });
+    filtered.sort(function(a,b){
+      var diff = (a.submittedAt||0) - (b.submittedAt||0);
+      return CURRENT_RESPONSES_SORT==='oldest' ? diff : -diff;
+    });
+
+    if (filtered.length===0){
+      var tip = CURRENT_RESPONSES_FILTER!=='all' ? ' Try the "All" filter to see other responses.' : '';
+      els.appsResponsesList.innerHTML = '<div class="empty-state">No '+(CURRENT_RESPONSES_FILTER==='all'?'':RESPONSE_FILTER_LABEL[CURRENT_RESPONSES_FILTER].toLowerCase()+' ')+'responses.'+tip+'</div>';
+      return;
+    }
+
+    els.appsResponsesList.innerHTML = filtered.map(function(r){
+      var d = new Date(r.submittedAt);
+      var status = r.status || 'pending';
+      var expanded = !!EXPANDED_RESPONSE_IDS[r.id];
+      var answersHtml = Object.keys(r.answers||{}).map(function(fid){
+        return '<div class="public-field-row"><label>'+escapeHtml(fieldMap[fid]||fid)+'</label><span style="text-align:right;max-width:60%;">'+escapeHtml(String(r.answers[fid]))+'</span></div>';
+      }).join('');
+      var statusOptions = Object.keys(RESPONSE_STATUS_LABEL).map(function(s){
+        return '<option value="'+s+'"'+(s===status?' selected':'')+'>'+RESPONSE_STATUS_LABEL[s]+'</option>';
+      }).join('');
+      return '<div class="response-card'+(expanded?' expanded':'')+'" data-response-card="'+r.id+'">' +
+        '<div class="response-card-head" data-response-toggle="'+r.id+'">' +
+          '<div class="response-card-head-left">' +
+            '<span class="response-chevron"></span>' +
+            '<span class="response-card-name">'+escapeHtml(responseSubmitterLabel(r))+'</span>' +
+          '</div>' +
+          '<div class="response-card-head-right">' +
+            '<span class="badge status-'+status+'">'+RESPONSE_STATUS_LABEL[status]+'</span>' +
+            '<span class="entry-time">'+d.toLocaleDateString()+'</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="response-card-body">' +
           answersHtml +
-          '<div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap;">' +
+          '<div class="response-card-actions">' +
             '<select class="status-select" data-response-status="'+r.id+'" style="width:auto;">'+statusOptions+'</select>' +
             (r.submitterDiscordId ?
               '<input type="text" placeholder="Optional note for the DM" data-response-note="'+r.id+'" style="flex:1;min-width:160px;">' +
               '<button type="button" class="btn small primary" data-response-notify="'+r.id+'">Send update DM</button>'
               : '<span style="font-size:11.5px;color:var(--text-3);">No Discord ID on file \u2014 can\'t DM this person</span>') +
+            '<button type="button" class="btn small ghost" data-response-pdf="'+r.id+'">Download PDF</button>' +
             '<button type="button" class="btn small ghost" data-response-copylink="'+r.id+'">Copy status link</button>' +
             '<button type="button" class="btn small ghost" data-response-delete="'+r.id+'" style="color:var(--ban);">Delete</button>' +
           '</div>' +
           '<div style="font-size:11.5px;margin-top:6px;" data-response-msg="'+r.id+'"></div>' +
-        '</div>';
-      }).join('');
+        '</div>' +
+      '</div>';
+    }).join('');
 
-      els.appsResponsesList.querySelectorAll('[data-response-copylink]').forEach(function(btn){
-        btn.addEventListener('click', function(){
-          var link = window.location.origin + window.location.pathname + '?checkappeal=' + encodeURIComponent(formId) + ':' + encodeURIComponent(btn.dataset.responseCopylink);
-          if (navigator.clipboard) navigator.clipboard.writeText(link).then(function(){ showToast('Status link copied', 'ok'); }).catch(function(){ showToast(link, 'ok'); });
-          else showToast(link, 'ok');
-        });
+    els.appsResponsesList.querySelectorAll('[data-response-toggle]').forEach(function(head){
+      head.addEventListener('click', function(){
+        var id = head.dataset.responseToggle;
+        var card = els.appsResponsesList.querySelector('[data-response-card="'+id+'"]');
+        if (EXPANDED_RESPONSE_IDS[id]){ delete EXPANDED_RESPONSE_IDS[id]; card.classList.remove('expanded'); }
+        else { EXPANDED_RESPONSE_IDS[id] = true; card.classList.add('expanded'); }
       });
+    });
 
-      els.appsResponsesList.querySelectorAll('[data-response-delete]').forEach(function(btn){
-        btn.addEventListener('click', function(){
-          var responseId = btn.dataset.responseDelete;
-          askConfirm('Delete this response permanently? This cannot be undone.', async function(){
-            try{
-              var r4 = await fetch(STATE.settings.workerUrl + '/forms/responses/delete', {
-                method:'POST', headers:{'Content-Type':'application/json'},
-                body: JSON.stringify({ adminKey: STATE.settings.workerKey, formId: formId, responseId: responseId })
-              });
-              if (!r4.ok) throw new Error('Could not delete response.');
-              var card = els.appsResponsesList.querySelector('[data-response-card="'+responseId+'"]');
-              if (card) card.remove();
-              showToast('Response deleted', 'ok');
-              logAudit('Response deleted', 'Deleted a response for '+(form?form.title:'a form'));
-            }catch(err){
-              showToast(err.message || 'Could not delete response.', 'err');
-            }
-          }, 'Delete');
-        });
+    els.appsResponsesList.querySelectorAll('[data-response-pdf]').forEach(function(btn){
+      btn.addEventListener('click', function(e){
+        e.stopPropagation();
+        var responseObj = CURRENT_RESPONSES_DATA.find(function(x){ return x.id===btn.dataset.responsePdf; });
+        if (responseObj) downloadResponsePdf(form, responseObj, fieldMap);
       });
+    });
 
-      els.appsResponsesList.querySelectorAll('[data-response-status]').forEach(function(sel){
-        sel.addEventListener('change', async function(){
-          var responseId = sel.dataset.responseStatus;
+    els.appsResponsesList.querySelectorAll('[data-response-copylink]').forEach(function(btn){
+      btn.addEventListener('click', function(e){
+        e.stopPropagation();
+        var link = window.location.origin + window.location.pathname + '?checkappeal=' + encodeURIComponent(formId) + ':' + encodeURIComponent(btn.dataset.responseCopylink);
+        if (navigator.clipboard) navigator.clipboard.writeText(link).then(function(){ showToast('Status link copied', 'ok'); }).catch(function(){ showToast(link, 'ok'); });
+        else showToast(link, 'ok');
+      });
+    });
+
+    els.appsResponsesList.querySelectorAll('[data-response-delete]').forEach(function(btn){
+      btn.addEventListener('click', function(e){
+        e.stopPropagation();
+        var responseId = btn.dataset.responseDelete;
+        askConfirm('Delete this response permanently? This cannot be undone.', async function(){
           try{
-            var r2 = await fetch(STATE.settings.workerUrl + '/forms/responses/status', {
+            var r4 = await fetch(STATE.settings.workerUrl + '/forms/responses/delete', {
               method:'POST', headers:{'Content-Type':'application/json'},
-              body: JSON.stringify({ adminKey: STATE.settings.workerKey, formId: formId, responseId: responseId, status: sel.value })
+              body: JSON.stringify({ adminKey: STATE.settings.workerKey, formId: formId, responseId: responseId })
             });
-            if (!r2.ok) throw new Error('Could not update status.');
-            showToast('Status updated', 'ok');
-            logAudit('Appeal status', 'Set response status to <b>'+sel.value+'</b> on '+(form?form.title:'a form'));
+            if (!r4.ok) throw new Error('Could not delete response.');
+            CURRENT_RESPONSES_DATA = CURRENT_RESPONSES_DATA.filter(function(x){ return x.id!==responseId; });
+            delete EXPANDED_RESPONSE_IDS[responseId];
+            showToast('Response deleted', 'ok');
+            logAudit('Response deleted', 'Deleted a response for '+(form?form.title:'a form'));
+            renderResponsesFilterBar();
+            renderResponsesList();
           }catch(err){
-            showToast(err.message || 'Could not update status.', 'err');
+            showToast(err.message || 'Could not delete response.', 'err');
           }
-        });
+        }, 'Delete');
+      });
+    });
+
+    els.appsResponsesList.querySelectorAll('[data-response-status]').forEach(function(sel){
+      sel.addEventListener('click', function(e){ e.stopPropagation(); });
+      sel.addEventListener('change', async function(){
+        var responseId = sel.dataset.responseStatus;
+        try{
+          var r2 = await fetch(STATE.settings.workerUrl + '/forms/responses/status', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ adminKey: STATE.settings.workerKey, formId: formId, responseId: responseId, status: sel.value })
+          });
+          if (!r2.ok) throw new Error('Could not update status.');
+          var respObj = CURRENT_RESPONSES_DATA.find(function(x){ return x.id===responseId; });
+          if (respObj) respObj.status = sel.value;
+          showToast('Status updated', 'ok');
+          logAudit('Appeal status', 'Set response status to <b>'+sel.value+'</b> on '+(form?form.title:'a form'));
+          renderResponsesFilterBar();
+          renderResponsesList();
+        }catch(err){
+          showToast(err.message || 'Could not update status.', 'err');
+        }
+      });
+    });
+
+    els.appsResponsesList.querySelectorAll('[data-response-notify]').forEach(function(btn){
+      btn.addEventListener('click', async function(e){
+        e.stopPropagation();
+        var responseId = btn.dataset.responseNotify;
+        var responseObj = CURRENT_RESPONSES_DATA.find(function(x){ return x.id===responseId; });
+        var statusSel = els.appsResponsesList.querySelector('[data-response-status="'+responseId+'"]');
+        var noteInput = els.appsResponsesList.querySelector('[data-response-note="'+responseId+'"]');
+        var msgEl = els.appsResponsesList.querySelector('[data-response-msg="'+responseId+'"]');
+        if (!responseObj || !responseObj.submitterDiscordId) return;
+        btn.disabled = true; msgEl.textContent = 'Sending...'; msgEl.style.color = 'var(--text-2)';
+        try{
+          var noteVal = noteInput ? noteInput.value : '';
+          fetch(STATE.settings.workerUrl + '/forms/responses/status', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ adminKey: STATE.settings.workerKey, formId: formId, responseId: responseId, status: statusSel.value, note: noteVal })
+          }).catch(function(){ /* best-effort; DM below is the primary action */ });
+          var embed = buildAppealStatusEmbed(form ? form.title : 'submission', statusSel.value, noteVal);
+          var r3 = await fetch(STATE.settings.workerUrl + '/dm/send', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ adminKey: STATE.settings.workerKey, userId: responseObj.submitterDiscordId, embed: embed })
+          });
+          var d3 = await r3.json();
+          if (!r3.ok) throw new Error(d3.detail ? translateDmError(d3.detail) : (d3.error || 'Could not send DM.'));
+          msgEl.textContent = 'DM sent.'; msgEl.style.color = '#4ade80';
+          showToast('Update DM sent', 'ok');
+          logAudit('Appeal notified', 'Sent status update DM ('+statusSel.value+') for '+(form?form.title:'a form'));
+        }catch(err){
+          msgEl.textContent = (err.message || 'Could not send DM.') + ' Their status page has still been updated.'; msgEl.style.color = 'var(--ban)';
+        }finally{
+          btn.disabled = false;
+        }
+      });
+    });
+  }
+
+  function downloadResponsePdf(form, r, fieldMap){
+    try{
+      var jsPDFLib = window.jspdf && window.jspdf.jsPDF;
+      if (!jsPDFLib){ showToast('PDF library did not load; try again in a moment.', 'err'); return; }
+      var doc = new jsPDFLib({ unit:'pt', format:'a4' });
+      var pageW = doc.internal.pageSize.getWidth();
+      var margin = 44;
+      var y = margin;
+      var lineH = 14;
+
+      function ensureRoom(extra){
+        if (y + extra > 780){ doc.addPage(); y = margin; }
+      }
+
+      var status = r.status || 'pending';
+      var statusText = { pending:'Pending', accepted:'Accepted', denied:'Denied' }[status] || status;
+
+      doc.setFont('helvetica','bold'); doc.setFontSize(17);
+      doc.text(form ? form.title : 'Application', margin, y);
+      y += 22;
+      doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(110,110,110);
+      doc.text('Submitted ' + (r.submittedAt ? new Date(r.submittedAt).toLocaleString() : 'unknown date'), margin, y);
+      y += 16;
+      doc.text('Downloaded ' + new Date().toLocaleString(), margin, y);
+      y += 22;
+
+      doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(20,20,20);
+      doc.text('Applicant', margin, y);
+      y += 16;
+      doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(60,60,60);
+      var applicantLines = [];
+      if (r.submitterName) applicantLines.push('Name: ' + r.submitterName);
+      if (r.submitterDiscordId) applicantLines.push('Discord ID: ' + r.submitterDiscordId);
+      if (r.submitterSteamId) applicantLines.push('SteamID64: ' + r.submitterSteamId);
+      if (applicantLines.length===0) applicantLines.push('Anonymous submission');
+      applicantLines.forEach(function(line){
+        ensureRoom(lineH);
+        doc.text(line, margin, y);
+        y += lineH;
+      });
+      y += 6;
+
+      doc.setFont('helvetica','bold'); doc.setFontSize(11);
+      var statusColor = status==='accepted' ? [34,150,90] : status==='denied' ? [210,60,60] : [190,140,20];
+      doc.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
+      doc.text('Status: ' + statusText, margin, y);
+      doc.setTextColor(20,20,20);
+      y += 22;
+
+      doc.setDrawColor(210,210,210); doc.line(margin, y, pageW-margin, y);
+      y += 20;
+
+      doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(20,20,20);
+      doc.text('Responses', margin, y);
+      y += 18;
+
+      var answers = r.answers || {};
+      Object.keys(answers).forEach(function(fid){
+        ensureRoom(30);
+        var label = (fieldMap && fieldMap[fid]) || fid;
+        doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(40,40,40);
+        var qLines = doc.splitTextToSize(label, pageW - margin*2);
+        qLines.forEach(function(line){ ensureRoom(lineH); doc.text(line, margin, y); y += lineH; });
+
+        doc.setFont('helvetica','normal'); doc.setFontSize(10.5); doc.setTextColor(80,80,80);
+        var aLines = doc.splitTextToSize(String(answers[fid]==null?'':answers[fid]), pageW - margin*2 - 10);
+        aLines.forEach(function(line){ ensureRoom(lineH); doc.text(line, margin + 10, y); y += lineH; });
+        y += 8;
       });
 
-      els.appsResponsesList.querySelectorAll('[data-response-notify]').forEach(function(btn){
-        btn.addEventListener('click', async function(){
-          var responseId = btn.dataset.responseNotify;
-          var responseObj = responses.find(function(x){ return x.id===responseId; });
-          var statusSel = els.appsResponsesList.querySelector('[data-response-status="'+responseId+'"]');
-          var noteInput = els.appsResponsesList.querySelector('[data-response-note="'+responseId+'"]');
-          var msgEl = els.appsResponsesList.querySelector('[data-response-msg="'+responseId+'"]');
-          if (!responseObj || !responseObj.submitterDiscordId) return;
-          btn.disabled = true; msgEl.textContent = 'Sending...'; msgEl.style.color = 'var(--text-2)';
-          try{
-            var noteVal = noteInput ? noteInput.value : '';
-            fetch(STATE.settings.workerUrl + '/forms/responses/status', {
-              method:'POST', headers:{'Content-Type':'application/json'},
-              body: JSON.stringify({ adminKey: STATE.settings.workerKey, formId: formId, responseId: responseId, status: statusSel.value, note: noteVal })
-            }).catch(function(){ /* best-effort; DM below is the primary action */ });
-            var embed = buildAppealStatusEmbed(form ? form.title : 'submission', statusSel.value, noteVal);
-            var r3 = await fetch(STATE.settings.workerUrl + '/dm/send', {
-              method:'POST', headers:{'Content-Type':'application/json'},
-              body: JSON.stringify({ adminKey: STATE.settings.workerKey, userId: responseObj.submitterDiscordId, embed: embed })
-            });
-            var d3 = await r3.json();
-            if (!r3.ok) throw new Error(d3.detail ? translateDmError(d3.detail) : (d3.error || 'Could not send DM.'));
-            msgEl.textContent = 'DM sent.'; msgEl.style.color = '#4ade80';
-            showToast('Update DM sent', 'ok');
-            logAudit('Appeal notified', 'Sent status update DM ('+statusSel.value+') for '+(form?form.title:'a form'));
-          }catch(err){
-            msgEl.textContent = (err.message || 'Could not send DM.') + ' Their status page has still been updated.'; msgEl.style.color = 'var(--ban)';
-          }finally{
-            btn.disabled = false;
-          }
-        });
-      });
+      var namePart = (r.submitterName || r.submitterDiscordId || r.submitterSteamId || 'applicant').replace(/[^a-z0-9]+/gi,'-').toLowerCase();
+      var fname = 'application-' + namePart + '-' + new Date(r.submittedAt||Date.now()).toISOString().slice(0,10) + '.pdf';
+      doc.save(fname);
+      showToast('PDF downloaded', 'ok');
     }catch(err){
-      els.appsResponsesList.innerHTML = '<div class="empty-state">'+escapeHtml(err.message || 'Could not load responses.')+'</div>';
+      showToast('Could not generate PDF: ' + (err.message||'unknown error'), 'err');
     }
   }
 
