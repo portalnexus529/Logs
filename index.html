@@ -798,6 +798,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
         Audit logs
       </button>
+      <button type="button" class="nav-item" data-section="staffstats">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+        Staff Stats
+      </button>
 
       <div class="nav-group-label">Applications</div>
       <button type="button" class="nav-item" data-section="formbuilder">
@@ -1650,6 +1654,16 @@
         </div>
       </div>
 
+      <div id="sectionStaffStats" class="dash-section" style="display:none;">
+        <div class="panel">
+          <div class="panel-head"><h2>Staff Stats</h2><button class="btn ghost small" id="statsRefreshBtn">Refresh</button></div>
+          <div class="panel-body">
+            <p style="font-size:12.5px;color:var(--text-3);margin:0 0 14px;line-height:1.6;">A running tally of every ban, kick, warning, and Discord action each staff member has filed through this site, counted automatically every time a case is published.</p>
+            <div id="statsList"><div class="empty-state">Loading...</div></div>
+          </div>
+        </div>
+      </div>
+
       <div id="sectionPlayers" class="dash-section" style="display:none;">
         <div class="dash-body-inner" style="display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start;">
 
@@ -2147,6 +2161,7 @@
    'diagRunBtn','diagProgressTrack','diagProgressFill','diagResultsList','downloadBackupBtn',
    'refreshBlockedDevicesBtn','blockedDevicesList',
    'loginAttemptsRefreshBtn','loginAttemptsWarning','loginAttemptsList',
+   'statsRefreshBtn','statsList',
    'statusWrap','statusBody',
    'checkAppealWrap','checkAppealBody',
    'loginUsername','loginPassword','loginMsg','loginBtn',
@@ -2465,7 +2480,7 @@
     els.linkInlineInput.value=''; els.linkInlineRow.classList.remove('show');
   });
 
-  var SECTION_IDS = { dashboard:'sectionDashboard', game:'sectionGame', discord:'sectionDiscord', ann:'sectionAnn', events:'sectionEvents', formbuilder:'sectionFormBuilder', applications:'sectionApplications', banappeals:'sectionBanAppeals', msggen:'sectionMsgGen', discordnotify:'sectionDiscordNotify', siteupdates:'sectionSiteUpdates', staff:'sectionStaff', tickets:'sectionTickets', ledger:'sectionLedger', audit:'sectionAudit', players:'sectionPlayers', accounts:'sectionAccounts', lookup:'sectionLookup', settings:'sectionSettings', diagnostics:'sectionDiagnostics' };
+  var SECTION_IDS = { dashboard:'sectionDashboard', game:'sectionGame', discord:'sectionDiscord', ann:'sectionAnn', events:'sectionEvents', formbuilder:'sectionFormBuilder', applications:'sectionApplications', banappeals:'sectionBanAppeals', msggen:'sectionMsgGen', discordnotify:'sectionDiscordNotify', siteupdates:'sectionSiteUpdates', staff:'sectionStaff', tickets:'sectionTickets', ledger:'sectionLedger', audit:'sectionAudit', staffstats:'sectionStaffStats', players:'sectionPlayers', accounts:'sectionAccounts', lookup:'sectionLookup', settings:'sectionSettings', diagnostics:'sectionDiagnostics' };
   var CURRENT_SECTION = 'dashboard';
   function switchSection(target){
     CURRENT_SECTION = target;
@@ -2476,6 +2491,7 @@
     });
     if (target==='applications' && typeof loadApplications==='function') loadApplications();
     if (target==='audit' && typeof loadServerAuditLog==='function'){ loadServerAuditLog(); loadLoginAttempts(); }
+    if (target==='staffstats' && typeof loadStaffStats==='function') loadStaffStats();
     if (target==='banappeals' && typeof loadBanAppeals==='function') loadBanAppeals();
     if (target==='siteupdates' && typeof loadSiteUpdates==='function') loadSiteUpdates();
     if (target==='staff' && typeof loadStaffRoster==='function') loadStaffRoster();
@@ -3867,6 +3883,50 @@
   }
   els.loginAttemptsRefreshBtn.addEventListener('click', loadLoginAttempts);
 
+  // ==================== Staff Stats ====================
+  var STAT_ACTION_LABEL = { ban:'Bans', kick:'Kicks', warn:'Warnings', dban:'Discord bans', dkick:'Discord kicks', dtimeout:'Discord timeouts' };
+  var STAT_ACTION_ORDER = ['ban','kick','warn','dban','dkick','dtimeout'];
+
+  async function loadStaffStats(){
+    if (!STATE.settings.workerUrl || !STATE.settings.workerKey){
+      els.statsList.innerHTML = '<div class="empty-state">Configure Worker URL and admin key in Settings first.</div>';
+      return;
+    }
+    els.statsList.innerHTML = '<div class="empty-state">Loading...</div>';
+    try{
+      var res = await fetch(STATE.settings.workerUrl + '/stats/list', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ adminKey: STATE.settings.workerKey })
+      });
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not load staff stats.');
+      var stats = data.stats || [];
+      if (stats.length===0){
+        els.statsList.innerHTML = '<div class="empty-state">No actions filed yet. Stats appear here automatically once staff start publishing cases.</div>';
+        return;
+      }
+      els.statsList.innerHTML = stats.map(function(s){
+        var counts = s.counts || {};
+        var total = STAT_ACTION_ORDER.reduce(function(sum, k){ return sum + (counts[k]||0); }, 0);
+        var lastActive = s.lastActionAt ? new Date(s.lastActionAt).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}) : 'Unknown';
+        var chips = STAT_ACTION_ORDER.filter(function(k){ return counts[k]; }).map(function(k){
+          return '<div style="display:flex;flex-direction:column;align-items:center;background:var(--field);border:1px solid var(--border-soft);border-radius:var(--radius-sm);padding:8px 12px;min-width:76px;">' +
+            '<span style="font-size:17px;font-weight:700;">'+counts[k]+'</span>' +
+            '<span style="font-size:10px;color:var(--text-3);margin-top:2px;">'+STAT_ACTION_LABEL[k]+'</span>' +
+          '</div>';
+        }).join('');
+        return '<div class="player-card" style="margin-bottom:10px;">' +
+          '<div class="player-top"><div class="player-name">'+escapeHtml(s.name)+'</div><span class="entry-time">Last active '+lastActive+'</span></div>' +
+          '<div style="font-size:12px;color:var(--text-2);margin:4px 0 10px;">Total actions: <b style="color:var(--text);">'+total+'</b></div>' +
+          '<div style="display:flex;gap:8px;flex-wrap:wrap;">'+(chips || '<span style="font-size:11.5px;color:var(--text-3);">No breakdown available</span>')+'</div>' +
+        '</div>';
+      }).join('');
+    }catch(err){
+      els.statsList.innerHTML = '<div class="empty-state">'+escapeHtml(err.message || 'Could not load staff stats.')+'</div>';
+    }
+  }
+  els.statsRefreshBtn.addEventListener('click', loadStaffStats);
+
   function renderAuditLog(){
     if (!els.auditList) return;
     var q = (els.auditSearch && els.auditSearch.value || '').trim().toLowerCase();
@@ -4680,6 +4740,14 @@
     }).catch(function(){ /* best-effort; local ledger and Discord remain the source of truth */ });
   }
 
+  function logStaffStat(admin, action){
+    if (!STATE.settings.workerUrl || !STATE.settings.workerKey || !admin) return;
+    fetch(STATE.settings.workerUrl + '/stats/log', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ adminKey: STATE.settings.workerKey, admin: admin, action: action })
+    }).catch(function(){ /* best-effort; stats are a convenience view, not the source of truth */ });
+  }
+
   async function publishEntry(entry, btnEl, msgSetter, onSuccess){
     btnEl.disabled = true;
     msgSetter('Publishing...', '');
@@ -4696,6 +4764,7 @@
       logAudit('Case filed', '<b>'+escapeHtml(entry.admin)+'</b> filed '+LABEL[entry.action]+' case #'+entry.caseNo+' for <b>'+escapeHtml(entry.player)+'</b>');
       syncCaseToPlayerProfile(entry, true);
       syncCaseToWorker(entry);
+      logStaffStat(entry.admin, entry.action);
       onSuccess();
     }catch(err){
       STATE.caseSeq -= 1; try{ localStorage.setItem('modlog:caseSeq', String(STATE.caseSeq)); }catch(e){} updateCaseTag();
@@ -7450,7 +7519,7 @@
     players: ['players','lookup'],
     audit: ['audit']
   };
-  var OWNER_ONLY_SECTIONS = ['settings','diagnostics','accounts'];
+  var OWNER_ONLY_SECTIONS = ['settings','diagnostics','accounts','staffstats'];
 
   function applyStaffPermissionGating(session){
     var perms = session.permissions || {};
