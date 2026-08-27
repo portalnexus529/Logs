@@ -660,6 +660,13 @@
     </div>
   </div>
 
+  <div class="panel" style="margin-bottom:20px;">
+    <div class="panel-head"><h2>What's new</h2></div>
+    <div class="panel-body">
+      <div id="playerUpdatesList"><div class="empty-state">Loading...</div></div>
+    </div>
+  </div>
+
   <div class="panel">
     <div class="panel-head"><h2>Your case history</h2></div>
     <div class="panel-body">
@@ -6239,9 +6246,9 @@
   }
   els.acRefreshBtn.addEventListener('click', loadAccounts);
 
-  // ---- Public: render the "What's new" feed on the login screen for any visitor ----
-  async function loadPublicUpdatesFeed(){
-    var el = document.getElementById('publicUpdatesList');
+  // ---- Public: render the "What's new" feed on the login screen (or player dashboard) ----
+  async function loadPublicUpdatesFeed(targetId){
+    var el = document.getElementById(targetId || 'publicUpdatesList');
     if (!el) return;
     try{
       var res = await fetch(AUTH_WORKER_URL + '/updates');
@@ -6612,6 +6619,7 @@
       els.playerWrap.style.display = 'block';
       els.playerWelcome.textContent = 'Logged in as ' + session.username;
       loadPlayerCases(session);
+      loadPublicUpdatesFeed('playerUpdatesList');
     }
   }
 
