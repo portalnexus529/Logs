@@ -438,6 +438,11 @@
   .auth-tab{flex:1;background:none;border:none;color:var(--text-2);font-size:14px;font-weight:600;padding:10px 4px;border-radius:6px;cursor:pointer;}
   .auth-tab.active{background:var(--accent);color:#0a0b0e;}
   .auth-tab:not(.active):hover{color:var(--text);}
+
+  .player-tabs{display:flex;gap:18px;margin-bottom:18px;border-bottom:1px solid var(--border-soft);}
+  .player-tab{background:none;border:none;color:var(--text-2);font-size:13.5px;font-weight:600;padding:10px 2px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .12s ease,border-color .12s ease;}
+  .player-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+  .player-tab:not(.active):hover{color:var(--text);}
   @media (max-width:700px){.audit-row{grid-template-columns:1fr;gap:2px;}}
 
   .dash-section{display:block;}
@@ -660,19 +665,24 @@
     </div>
   </div>
 
-  <div class="panel" style="margin-bottom:20px;">
-    <div class="panel-head"><h2>What's new</h2></div>
-    <div class="panel-body">
-      <div id="playerUpdatesList"><div class="empty-state">Loading...</div></div>
-    </div>
+  <div class="player-tabs" id="playerTabs">
+    <button type="button" class="player-tab active" data-ptab="cases">Case History</button>
+    <button type="button" class="player-tab" data-ptab="updates">Updates</button>
   </div>
 
-  <div class="panel">
+  <div class="panel" id="playerCasesPanel">
     <div class="panel-head"><h2>Your case history</h2></div>
     <div class="panel-body">
       <div class="recent-feed" id="playerCasesFeed">
         <div class="empty-state">Loading...</div>
       </div>
+    </div>
+  </div>
+
+  <div class="panel" id="playerUpdatesPanel" style="display:none;">
+    <div class="panel-head"><h2>Update log</h2></div>
+    <div class="panel-body">
+      <div id="playerUpdatesList"><div class="empty-state">Loading...</div></div>
     </div>
   </div>
 </div>
@@ -1443,6 +1453,10 @@
                 <label for="suDescription">What changed</label>
                 <textarea id="suDescription" placeholder="Describe the update for visitors" style="min-height:130px;"></textarea>
               </div>
+              <div class="field">
+                <label for="suChannelId">Discord channel ID <span style="color:var(--text-3);font-weight:400;">(optional \u2014 also posts a professional embed there)</span></label>
+                <input type="text" id="suChannelId" placeholder="e.g. 123456789012345678">
+              </div>
               <div style="display:flex;gap:8px;">
                 <button class="btn primary" id="suSaveBtn" style="flex:1;">Post update</button>
                 <button class="btn ghost" id="suCancelEditBtn" style="display:none;">Cancel edit</button>
@@ -1972,6 +1986,7 @@
    'loginUsername','loginPassword','loginMsg','loginBtn',
    'signupUsername','signupPassword','signupDiscordId','signupSteamId','signupMsg','signupBtn',
    'playerWrap','playerWelcome','playerLogoutBtn','playerCasesFeed','ownerLogoutBtn',
+   'playerTabs','playerCasesPanel','playerUpdatesPanel',
    'sideNavBrand','themeToggleBtn','themeIcon','mobileMenuBtn','sideNavCloseBtn','sideNavEl',
    'settingsStatus','serverNameOut','adminNameInput','addAdminBtn','adminList','actionToggle','durationBlock','durationToggle','durationRow','durationValue','durationUnit',
    'playerName','steamId','steamIdLabel','acctCreatedLabel','steamStatsRow','gameDiscordId','gameDiscordLookupLink','categorySelect','historyBox','joinTime','acctCreated','vacBans','gameBans','daysSinceBan','bgNotes',
@@ -1998,7 +2013,7 @@
    'banAppealsRefreshBtn','banAppealsMsg','banAppealsList',
    'mgAppType','mgApplicantName','mgStatusSeg','mgReason','mgGenerateBtn','mgFormMsg','mgOutput','mgCopyBtn',
    'dnUserId','dnTitle','dnMessage','dnUseGeneratedBtn','dnSendBtn','dnMsg',
-   'suEditId','suTitle','suTag','suPinnedToggle','suDescription','suSaveBtn','suCancelEditBtn','suFormMsg','suList','suRefreshBtn','suFormTitle',
+   'suEditId','suTitle','suTag','suPinnedToggle','suDescription','suChannelId','suSaveBtn','suCancelEditBtn','suFormMsg','suList','suRefreshBtn','suFormTitle',
    'acRefreshBtn','acList',
    'applyWrap','applyBody',
    'webhookNameInput','webhookUrlInput','addWebhookBtn','webhookListUI',
@@ -6080,6 +6095,7 @@
     els.suEditId.value = '';
     els.suTitle.value = '';
     els.suDescription.value = '';
+    els.suChannelId.value = '';
     els.suTag.value = 'Website';
     els.suPinnedToggle.querySelectorAll('button').forEach(function(x){ x.classList.toggle('active', x.dataset.v==='no'); });
     els.suFormTitle.textContent = 'Post an update';
@@ -6112,13 +6128,19 @@
         body: JSON.stringify({
           adminKey: STATE.settings.workerKey,
           id: els.suEditId.value || undefined,
-          title: title, description: description, tag: els.suTag.value, pinned: pinned
+          title: title, description: description, tag: els.suTag.value, pinned: pinned,
+          channelId: els.suChannelId.value.trim() || undefined,
+          serverName: STATE.settings.serverName || undefined
         })
       });
       var data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Could not post the update.');
       showToast(els.suEditId.value ? 'Update saved' : 'Update posted', 'ok');
       logAudit('Site update posted', 'Posted a site update: <b>'+escapeHtml(title)+'</b>');
+      if (els.suChannelId.value.trim()){
+        if (data.discordPosted) showToast('Also posted to Discord', 'ok');
+        else if (data.discordError) showToast('Saved, but Discord post failed: ' + data.discordError, 'err');
+      }
       resetSiteUpdateForm();
       loadSiteUpdates();
     }catch(err){
@@ -6692,8 +6714,15 @@
     }
   });
 
-  async function loadPlayerCases(session){
-    els.playerCasesFeed.innerHTML = '<div class="empty-state">Loading...</div>';
+  els.playerTabs.addEventListener('click', function(e){
+    var btn = e.target.closest('[data-ptab]');
+    if (!btn) return;
+    els.playerTabs.querySelectorAll('[data-ptab]').forEach(function(b){ b.classList.toggle('active', b===btn); });
+    els.playerCasesPanel.style.display = btn.dataset.ptab==='cases' ? 'block' : 'none';
+    els.playerUpdatesPanel.style.display = btn.dataset.ptab==='updates' ? 'block' : 'none';
+  });
+
+  async function loadPlayerCases(session){    els.playerCasesFeed.innerHTML = '<div class="empty-state">Loading...</div>';
     try{
       var params = new URLSearchParams();
       if (session.discordId) params.set('discordId', session.discordId);
