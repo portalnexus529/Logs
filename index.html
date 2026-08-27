@@ -1728,14 +1728,15 @@
       <div id="sectionAccounts" class="dash-section" style="display:none;">
         <div class="grid">
           <div class="panel">
-            <div class="panel-head"><h2>Create an account</h2></div>
+            <div class="panel-head"><h2 id="acFormTitle">Create an account</h2></div>
             <div class="panel-body">
+              <input type="hidden" id="acEditUsername" value="">
               <p style="font-size:11.5px;color:var(--text-3);margin:0 0 14px;line-height:1.6;">Create a player account directly, without them needing to sign up themselves. Give them these details so they can log in.</p>
               <div class="field">
                 <label for="acNewUsername">Username</label>
                 <input type="text" id="acNewUsername" placeholder="Choose a username">
               </div>
-              <div class="field">
+              <div class="field" id="acPasswordField">
                 <label for="acNewPassword">Password</label>
                 <input type="text" id="acNewPassword" placeholder="Choose a password">
               </div>
@@ -1749,7 +1750,36 @@
                   <input type="text" id="acNewSteamId" placeholder="7656119...">
                 </div>
               </div>
-              <button class="btn primary" id="acCreateBtn" style="width:100%;">Create account</button>
+              <div class="field">
+                <label for="acRole">Role</label>
+                <select id="acRole">
+                  <option value="player">Player (no dashboard access)</option>
+                  <option value="moderator">Moderator</option>
+                  <option value="admin">Admin</option>
+                  <option value="staffowner">Owner</option>
+                </select>
+              </div>
+              <div class="field" id="acPermissionsField" style="display:none;">
+                <label>Permissions <span style="color:var(--text-3);font-weight:400;">(what this role can see and do)</span></label>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;background:var(--field);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;">
+                  <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" data-perm="ban" style="width:auto;"> Ban members</label>
+                  <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" data-perm="kick" style="width:auto;"> Kick members</label>
+                  <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" data-perm="timeout" style="width:auto;"> Timeout members</label>
+                  <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" data-perm="applications" style="width:auto;"> Applications</label>
+                  <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" data-perm="banappeals" style="width:auto;"> Ban Appeals</label>
+                  <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" data-perm="tickets" style="width:auto;"> Support Tickets</label>
+                  <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" data-perm="siteupdates" style="width:auto;"> Site Updates</label>
+                  <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" data-perm="staff" style="width:auto;"> Staff List</label>
+                  <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" data-perm="announcements" style="width:auto;"> Announcements &amp; Events</label>
+                  <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" data-perm="players" style="width:auto;"> Players &amp; Lookups</label>
+                  <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" data-perm="audit" style="width:auto;"> Audit Log</label>
+                </div>
+                <p style="font-size:11px;color:var(--text-3);margin:8px 0 0;line-height:1.5;">Settings, Diagnostics, and Accounts always stay owner-only, no matter what's checked here.</p>
+              </div>
+              <div style="display:flex;gap:8px;">
+                <button class="btn primary" id="acCreateBtn" style="flex:1;">Create account</button>
+                <button class="btn ghost" id="acCancelEditBtn" style="display:none;">Cancel edit</button>
+              </div>
               <div id="acCreateMsg" style="font-size:12.5px;margin-top:8px;"></div>
             </div>
           </div>
@@ -2147,6 +2177,7 @@
    'stEditIndex','stName','stRole','stSaveBtn','stCancelEditBtn','stFormMsg','stChannelId','stPostBtn','stPostMsg','stList','stRefreshBtn','stFormTitle',
    'acRefreshBtn','acList',
    'acNewUsername','acNewPassword','acNewDiscordId','acNewSteamId','acCreateBtn','acCreateMsg',
+   'acEditUsername','acFormTitle','acPasswordField','acRole','acPermissionsField','acCancelEditBtn',
    'ticketsFilterBar','ticketsList','ticketsRefreshBtn',
    'applyWrap','applyBody',
    'webhookNameInput','webhookUrlInput','addWebhookBtn','webhookListUI',
@@ -2596,6 +2627,12 @@
       els.settingsStatus.textContent = 'Saved.';
     }catch(e){
       els.settingsStatus.textContent = 'Could not save. Storage may be full or blocked.';
+    }
+    if (STATE.settings.workerUrl && STATE.settings.workerKey && STATE.settings.guildId){
+      fetch(STATE.settings.workerUrl + '/guild-id', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ adminKey: STATE.settings.workerKey, guildId: STATE.settings.guildId })
+      }).catch(function(){ /* best-effort; staff timeout permission depends on this but a failed sync here shouldn't block saving local settings */ });
     }
     setTimeout(function(){ els.settingsStatus.textContent=''; }, 2500);
   }
@@ -4872,6 +4909,35 @@
   }
 
   async function callBotAction(action, userId, reason, dmEmbed, durationMsVal){
+    var session = getSession();
+    var isStaffOnly = session && ['moderator','admin','staffowner'].indexOf(session.role) !== -1;
+
+    if (isStaffOnly){
+      if (action !== 'dtimeout'){
+        throw new Error('Your account does not have permission to do that. Only Timeout is available to your role.');
+      }
+      var guildRes = await fetch(AUTH_WORKER_URL + '/guild-id');
+      var guildData = await guildRes.json();
+      if (!guildData.guildId){
+        throw new Error('No Discord server ID has been configured yet. Ask the owner to save it once in Settings.');
+      }
+      var res2 = await fetch(AUTH_WORKER_URL + '/staff/timeout', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json' },
+        body: JSON.stringify({
+          username: session.username, passwordHash: session.passwordHash,
+          guildId: guildData.guildId, userId: userId, durationMs: durationMsVal,
+          reason: reason, dmEmbed: dmEmbed || undefined
+        })
+      });
+      var data2;
+      try{ data2 = await res2.json(); }catch(e){ data2 = {}; }
+      if (!res2.ok){
+        throw new Error(data2.error ? (data2.error + (data2.detail ? ': '+data2.detail : '')) : ('Bot action failed (status '+res2.status+')'));
+      }
+      return data2;
+    }
+
     var workerUrl = STATE.settings.workerUrl;
     var workerKey = STATE.settings.workerKey;
     var guildId = STATE.settings.guildId;
@@ -6354,6 +6420,49 @@
   els.suRefreshBtn.addEventListener('click', loadSiteUpdates);
 
   // ==================== Signed-up accounts ====================
+  var ROLE_LABEL = { player:'Player', moderator:'Moderator', admin:'Admin', staffowner:'Owner' };
+  var ROLE_DEFAULT_PERMS = {
+    player: {},
+    moderator: { timeout:true, banappeals:true, tickets:true, players:true },
+    admin: { ban:true, kick:true, timeout:true, applications:true, banappeals:true, tickets:true, siteupdates:true, announcements:true, players:true, audit:true },
+    staffowner: { ban:true, kick:true, timeout:true, applications:true, banappeals:true, tickets:true, siteupdates:true, staff:true, announcements:true, players:true, audit:true }
+  };
+
+  function applyPermCheckboxes(perms){
+    document.querySelectorAll('#acPermissionsField [data-perm]').forEach(function(cb){
+      cb.checked = !!(perms && perms[cb.dataset.perm]);
+    });
+  }
+  function readPermCheckboxes(){
+    var perms = {};
+    document.querySelectorAll('#acPermissionsField [data-perm]').forEach(function(cb){
+      if (cb.checked) perms[cb.dataset.perm] = true;
+    });
+    return perms;
+  }
+
+  els.acRole.addEventListener('change', function(){
+    var role = els.acRole.value;
+    els.acPermissionsField.style.display = role==='player' ? 'none' : 'block';
+    applyPermCheckboxes(ROLE_DEFAULT_PERMS[role]);
+  });
+
+  function resetAccountForm(){
+    els.acEditUsername.value = '';
+    els.acNewUsername.value = ''; els.acNewUsername.disabled = false;
+    els.acNewPassword.value = ''; els.acNewPassword.placeholder = 'Choose a password';
+    els.acPasswordField.style.display = 'block';
+    els.acNewDiscordId.value = ''; els.acNewSteamId.value = '';
+    els.acRole.value = 'player';
+    els.acPermissionsField.style.display = 'none';
+    applyPermCheckboxes({});
+    els.acFormTitle.textContent = 'Create an account';
+    els.acCreateBtn.textContent = 'Create account';
+    els.acCancelEditBtn.style.display = 'none';
+    els.acCreateMsg.textContent = '';
+  }
+  els.acCancelEditBtn.addEventListener('click', resetAccountForm);
+
   async function loadAccounts(){
     if (!STATE.settings.workerUrl || !STATE.settings.workerKey){
       els.acList.innerHTML = '<div class="empty-state">Configure Worker URL and admin key in Settings first.</div>';
@@ -6371,13 +6480,36 @@
       if (users.length===0){ els.acList.innerHTML = '<div class="empty-state">No accounts have signed up yet.</div>'; return; }
       els.acList.innerHTML = users.map(function(u){
         var joined = u.createdAt ? new Date(u.createdAt).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}) : 'Unknown date';
+        var role = u.role || 'player';
         return '<div class="player-card" style="margin-bottom:8px;">' +
           '<div class="player-top"><div class="player-name">'+escapeHtml(u.username)+'</div><span class="entry-time">Joined '+joined+'</span></div>' +
+          '<div class="public-field-row"><label>Role</label><span class="badge status-'+(role==='player'?'accepted':'in_progress')+'">'+ROLE_LABEL[role]+'</span></div>' +
           '<div class="public-field-row"><label>Discord ID</label><span>'+escapeHtml(u.discordId || '\u2014')+'</span></div>' +
           '<div class="public-field-row"><label>SteamID64</label><span>'+escapeHtml(u.steamId || '\u2014')+'</span></div>' +
-          '<div style="margin-top:10px;"><button type="button" class="btn small ghost" data-account-delete="'+escapeHtml(u.username)+'" style="color:var(--ban);">Delete account</button></div>' +
+          '<div style="display:flex;gap:8px;margin-top:10px;">' +
+            '<button type="button" class="btn small ghost" data-account-edit="'+escapeHtml(u.username)+'">Edit role &amp; permissions</button>' +
+            '<button type="button" class="btn small ghost" data-account-delete="'+escapeHtml(u.username)+'" style="color:var(--ban);">Delete account</button>' +
+          '</div>' +
         '</div>';
       }).join('');
+      els.acList.querySelectorAll('[data-account-edit]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          var u = users.find(function(x){ return x.username===btn.dataset.accountEdit; });
+          if (!u) return;
+          els.acEditUsername.value = u.username;
+          els.acNewUsername.value = u.username; els.acNewUsername.disabled = true;
+          els.acPasswordField.style.display = 'none';
+          els.acNewDiscordId.value = u.discordId || '';
+          els.acNewSteamId.value = u.steamId || '';
+          els.acRole.value = u.role || 'player';
+          els.acPermissionsField.style.display = (u.role && u.role!=='player') ? 'block' : 'none';
+          applyPermCheckboxes(u.permissions || {});
+          els.acFormTitle.textContent = 'Edit ' + u.username;
+          els.acCreateBtn.textContent = 'Save changes';
+          els.acCancelEditBtn.style.display = 'inline-block';
+          window.scrollTo({ top:0, behavior:'smooth' });
+        });
+      });
       els.acList.querySelectorAll('[data-account-delete]').forEach(function(btn){
         btn.addEventListener('click', function(){
           var username = btn.dataset.accountDelete;
@@ -6405,12 +6537,15 @@
 
   els.acCreateBtn.addEventListener('click', async function(){
     els.acCreateMsg.textContent = '';
+    var editing = !!els.acEditUsername.value;
     var username = els.acNewUsername.value.trim();
     var password = els.acNewPassword.value.trim();
     var discordId = els.acNewDiscordId.value.trim();
     var steamId = els.acNewSteamId.value.trim();
-    if (!username || !password || !discordId || !steamId){
-      els.acCreateMsg.textContent = 'All four fields are required.';
+    var role = els.acRole.value;
+    var permissions = role==='player' ? {} : readPermCheckboxes();
+    if (!username || (!editing && !password) || !discordId || !steamId){
+      els.acCreateMsg.textContent = editing ? 'Username, Discord ID, and SteamID64 are required.' : 'All fields are required.';
       els.acCreateMsg.style.color = 'var(--ban)';
       return;
     }
@@ -6420,18 +6555,28 @@
       return;
     }
     els.acCreateBtn.disabled = true;
-    els.acCreateMsg.textContent = 'Creating...'; els.acCreateMsg.style.color = 'var(--text-2)';
+    els.acCreateMsg.textContent = editing ? 'Saving...' : 'Creating...'; els.acCreateMsg.style.color = 'var(--text-2)';
     try{
-      var res = await fetch(STATE.settings.workerUrl + '/signup', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ username: username, password: password, discordId: discordId, steamId: steamId })
-      });
-      var data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Could not create the account.');
-      els.acCreateMsg.textContent = 'Account created.'; els.acCreateMsg.style.color = '#4ade80';
-      showToast('Account created', 'ok');
-      logAudit('Account created', 'Created player account <b>'+escapeHtml(username)+'</b>');
-      els.acNewUsername.value = ''; els.acNewPassword.value = ''; els.acNewDiscordId.value = ''; els.acNewSteamId.value = '';
+      if (editing){
+        var res = await fetch(STATE.settings.workerUrl + '/accounts/set-permissions', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ adminKey: STATE.settings.workerKey, username: username, role: role, permissions: permissions })
+        });
+        var data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Could not save changes.');
+        showToast('Account updated', 'ok');
+        logAudit('Account updated', 'Updated role/permissions for <b>'+escapeHtml(username)+'</b>');
+      } else {
+        var res2 = await fetch(STATE.settings.workerUrl + '/accounts/create-staff', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ adminKey: STATE.settings.workerKey, username: username, password: password, discordId: discordId, steamId: steamId, role: role, permissions: permissions })
+        });
+        var data2 = await res2.json();
+        if (!res2.ok) throw new Error(data2.error || 'Could not create the account.');
+        showToast('Account created', 'ok');
+        logAudit('Account created', 'Created ' + ROLE_LABEL[role].toLowerCase() + ' account <b>'+escapeHtml(username)+'</b>');
+      }
+      resetAccountForm();
       loadAccounts();
     }catch(err){
       els.acCreateMsg.textContent = err.message || 'Could not create the account.'; els.acCreateMsg.style.color = 'var(--ban)';
@@ -7228,11 +7373,72 @@
     els.authTabLogin.click();
   });
 
+  var STAFF_ROLES = ['owner','moderator','admin','staffowner'];
+  var PERMISSION_SECTION_MAP = {
+    applications: ['applications','formbuilder','msggen','discordnotify'],
+    banappeals: ['banappeals'],
+    tickets: ['tickets'],
+    siteupdates: ['siteupdates'],
+    staff: ['staff'],
+    announcements: ['ann','events'],
+    players: ['players','lookup'],
+    audit: ['audit']
+  };
+  var OWNER_ONLY_SECTIONS = ['settings','diagnostics','accounts'];
+
+  function applyStaffPermissionGating(session){
+    var perms = session.permissions || {};
+    var allowedSections = { dashboard:true, discord:true, ledger:true };
+    Object.keys(PERMISSION_SECTION_MAP).forEach(function(permKey){
+      if (perms[permKey]){
+        PERMISSION_SECTION_MAP[permKey].forEach(function(sec){ allowedSections[sec] = true; });
+      }
+    });
+    document.querySelectorAll('.nav-item[data-section]').forEach(function(btn){
+      var sec = btn.dataset.section;
+      var visible = OWNER_ONLY_SECTIONS.indexOf(sec) === -1 && !!allowedSections[sec];
+      btn.style.display = visible ? '' : 'none';
+    });
+    document.querySelectorAll('.nav-group-label').forEach(function(label){
+      var next = label.nextElementSibling;
+      var anyVisible = false;
+      while (next && next.classList && next.classList.contains('nav-item')){
+        if (next.style.display !== 'none') anyVisible = true;
+        next = next.nextElementSibling;
+      }
+      label.style.display = anyVisible ? '' : 'none';
+    });
+    if (els.discActionToggle){
+      els.discActionToggle.querySelectorAll('[data-da]').forEach(function(btn){
+        var da = btn.dataset.da;
+        var permKey = da==='dban' ? 'ban' : da==='dkick' ? 'kick' : 'timeout';
+        var visible = !!perms[permKey];
+        btn.style.display = visible ? '' : 'none';
+      });
+      var activeBtn = els.discActionToggle.querySelector('[data-da].active');
+      if (activeBtn && activeBtn.style.display==='none'){
+        var visibleBtns = Array.prototype.filter.call(els.discActionToggle.querySelectorAll('[data-da]'), function(b){ return b.style.display !== 'none'; });
+        if (visibleBtns.length) visibleBtns[0].click();
+      }
+    }
+    if (!allowedSections[CURRENT_SECTION] || OWNER_ONLY_SECTIONS.indexOf(CURRENT_SECTION) !== -1){
+      switchSection('dashboard');
+    }
+  }
+
+  function resetPermissionGating(){
+    document.querySelectorAll('.nav-item[data-section]').forEach(function(btn){ btn.style.display = ''; });
+    document.querySelectorAll('.nav-group-label').forEach(function(label){ label.style.display = ''; });
+    if (els.discActionToggle){
+      els.discActionToggle.querySelectorAll('[data-da]').forEach(function(btn){ btn.style.display = ''; });
+    }
+  }
+
   function routeByAuth(){
     var session = getSession();
     var adminWrapEl = document.getElementById('adminWrap');
 
-    if (MAINTENANCE_STATE.enabled && (!session || session.role !== 'owner')){
+    if (MAINTENANCE_STATE.enabled && (!session || STAFF_ROLES.indexOf(session.role) === -1)){
       showMaintenanceScreen();
       return;
     }
@@ -7251,11 +7457,16 @@
     if (session.role === 'owner'){
       els.playerWrap.style.display = 'none';
       adminWrapEl.style.display = 'block';
+      resetPermissionGating();
       checkLock();
       loadMaintenanceIntoSettings();
       loadAppealFormOptions();
       loadServerStatusIntoSettings();
       loadBlockedDevices();
+    } else if (['moderator','admin','staffowner'].indexOf(session.role) !== -1){
+      els.playerWrap.style.display = 'none';
+      adminWrapEl.style.display = 'block';
+      applyStaffPermissionGating(session);
     } else {
       adminWrapEl.style.display = 'none';
       els.playerWrap.style.display = 'block';
@@ -7299,7 +7510,11 @@
           try{ localStorage.setItem('modlog:deviceLabel', (chosen && chosen.trim()) || 'Unnamed device'); }catch(e){}
         }
       }
-      setSession({ role: data.role, username: data.username, discordId: data.discordId||'', steamId: data.steamId||'' });
+      var sessionObj = { role: data.role, username: data.username, discordId: data.discordId||'', steamId: data.steamId||'', permissions: data.permissions||{} };
+      if (['moderator','admin','staffowner'].includes(data.role)){
+        sessionObj.passwordHash = await sha256Hex(password);
+      }
+      setSession(sessionObj);
       els.loginMsg.textContent = '';
       els.loginPassword.value = '';
       routeByAuth();
