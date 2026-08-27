@@ -1726,11 +1726,40 @@
       </div>
 
       <div id="sectionAccounts" class="dash-section" style="display:none;">
-        <div class="panel">
-          <div class="panel-head"><h2>Signed-up accounts</h2><button class="btn ghost small" id="acRefreshBtn">Refresh</button></div>
-          <div class="panel-body">
-            <p style="font-size:11.5px;color:var(--text-3);margin:0 0 14px;line-height:1.6;">Everyone who has created a player account on your site through the sign-up form. Passwords are never shown or stored in plain text.</p>
-            <div id="acList"><div class="empty-state">Loading...</div></div>
+        <div class="grid">
+          <div class="panel">
+            <div class="panel-head"><h2>Create an account</h2></div>
+            <div class="panel-body">
+              <p style="font-size:11.5px;color:var(--text-3);margin:0 0 14px;line-height:1.6;">Create a player account directly, without them needing to sign up themselves. Give them these details so they can log in.</p>
+              <div class="field">
+                <label for="acNewUsername">Username</label>
+                <input type="text" id="acNewUsername" placeholder="Choose a username">
+              </div>
+              <div class="field">
+                <label for="acNewPassword">Password</label>
+                <input type="text" id="acNewPassword" placeholder="Choose a password">
+              </div>
+              <div class="two-col">
+                <div class="field">
+                  <label for="acNewDiscordId">Discord user ID</label>
+                  <input type="text" id="acNewDiscordId" placeholder="e.g. 123456789012345678">
+                </div>
+                <div class="field">
+                  <label for="acNewSteamId">SteamID64</label>
+                  <input type="text" id="acNewSteamId" placeholder="7656119...">
+                </div>
+              </div>
+              <button class="btn primary" id="acCreateBtn" style="width:100%;">Create account</button>
+              <div id="acCreateMsg" style="font-size:12.5px;margin-top:8px;"></div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><h2>Signed-up accounts</h2><button class="btn ghost small" id="acRefreshBtn">Refresh</button></div>
+            <div class="panel-body">
+              <p style="font-size:11.5px;color:var(--text-3);margin:0 0 14px;line-height:1.6;">Everyone with a player account on your site, whether they signed up themselves or you created it for them. Passwords are never shown or stored in plain text.</p>
+              <div id="acList"><div class="empty-state">Loading...</div></div>
+            </div>
           </div>
         </div>
       </div>
@@ -2117,6 +2146,7 @@
    'suEditId','suTitle','suTag','suPinnedToggle','suDescription','suChannelId','suSaveBtn','suCancelEditBtn','suFormMsg','suList','suRefreshBtn','suFormTitle',
    'stEditIndex','stName','stRole','stSaveBtn','stCancelEditBtn','stFormMsg','stChannelId','stPostBtn','stPostMsg','stList','stRefreshBtn','stFormTitle',
    'acRefreshBtn','acList',
+   'acNewUsername','acNewPassword','acNewDiscordId','acNewSteamId','acCreateBtn','acCreateMsg',
    'ticketsFilterBar','ticketsList','ticketsRefreshBtn',
    'applyWrap','applyBody',
    'webhookNameInput','webhookUrlInput','addWebhookBtn','webhookListUI',
@@ -6372,6 +6402,43 @@
     }
   }
   els.acRefreshBtn.addEventListener('click', loadAccounts);
+
+  els.acCreateBtn.addEventListener('click', async function(){
+    els.acCreateMsg.textContent = '';
+    var username = els.acNewUsername.value.trim();
+    var password = els.acNewPassword.value.trim();
+    var discordId = els.acNewDiscordId.value.trim();
+    var steamId = els.acNewSteamId.value.trim();
+    if (!username || !password || !discordId || !steamId){
+      els.acCreateMsg.textContent = 'All four fields are required.';
+      els.acCreateMsg.style.color = 'var(--ban)';
+      return;
+    }
+    if (!STATE.settings.workerUrl){
+      els.acCreateMsg.textContent = 'Configure Worker URL in Settings first.';
+      els.acCreateMsg.style.color = 'var(--ban)';
+      return;
+    }
+    els.acCreateBtn.disabled = true;
+    els.acCreateMsg.textContent = 'Creating...'; els.acCreateMsg.style.color = 'var(--text-2)';
+    try{
+      var res = await fetch(STATE.settings.workerUrl + '/signup', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ username: username, password: password, discordId: discordId, steamId: steamId })
+      });
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not create the account.');
+      els.acCreateMsg.textContent = 'Account created.'; els.acCreateMsg.style.color = '#4ade80';
+      showToast('Account created', 'ok');
+      logAudit('Account created', 'Created player account <b>'+escapeHtml(username)+'</b>');
+      els.acNewUsername.value = ''; els.acNewPassword.value = ''; els.acNewDiscordId.value = ''; els.acNewSteamId.value = '';
+      loadAccounts();
+    }catch(err){
+      els.acCreateMsg.textContent = err.message || 'Could not create the account.'; els.acCreateMsg.style.color = 'var(--ban)';
+    }finally{
+      els.acCreateBtn.disabled = false;
+    }
+  });
 
   // ==================== Staff List ====================
   var STAFF_LIST_DATA = [];
