@@ -395,6 +395,13 @@
   .response-card-body{display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border-soft);}
   .response-card.expanded .response-card-body{display:block;}
   .response-card-actions{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap;}
+  .ticket-thread{max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin:12px 0;padding-right:2px;}
+  .ticket-msg{max-width:82%;padding:9px 12px;border-radius:12px;font-size:12.5px;line-height:1.5;}
+  .ticket-msg-user{background:var(--field);border:1px solid var(--border-soft);align-self:flex-start;border-bottom-left-radius:3px;}
+  .ticket-msg-staff{background:var(--accent-bg);border:1px solid var(--accent);align-self:flex-end;border-bottom-right-radius:3px;}
+  .ticket-msg-system{align-self:center;background:none;color:var(--text-3);font-size:11px;font-style:italic;padding:2px;}
+  .ticket-msg-author{font-size:10.5px;font-weight:700;opacity:.75;margin-bottom:3px;}
+  .ticket-claim-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-2);margin-bottom:10px;}
   @media (max-width:640px){
     .response-card-name{white-space:normal;}
     .apps-sort-select{margin-left:0;}
@@ -6378,6 +6385,16 @@
     });
   }
 
+  function renderTicketMessages(t){
+    var msgs = t.messages || [];
+    if (msgs.length===0) return '<div class="empty-state" style="padding:8px 0;">No messages yet.</div>';
+    return msgs.map(function(m){
+      if (m.from==='system') return '<div class="ticket-msg ticket-msg-system">'+escapeHtml(m.text)+'</div>';
+      var cls = m.from==='staff' ? 'ticket-msg-staff' : 'ticket-msg-user';
+      return '<div class="ticket-msg '+cls+'"><div class="ticket-msg-author">'+escapeHtml(m.authorLabel||(m.from==='staff'?'Staff':'User'))+'</div>'+escapeHtml(m.text)+'</div>';
+    }).join('');
+  }
+
   function renderTicketsList(){
     var filtered = CURRENT_TICKETS_DATA.filter(function(t){
       return CURRENT_TICKETS_FILTER==='all' || (t.status||'open')===CURRENT_TICKETS_FILTER;
@@ -6393,6 +6410,7 @@
       var d = new Date(t.createdAt);
       var status = t.status || 'open';
       var expanded = !!EXPANDED_TICKET_IDS[t.id];
+      var claimed = !!t.claimedByName;
       var statusOptions = Object.keys(TICKET_STATUS_LABEL).map(function(s){
         return '<option value="'+s+'"'+(s===status?' selected':'')+'>'+TICKET_STATUS_LABEL[s]+'</option>';
       }).join('');
@@ -6403,6 +6421,7 @@
             '<span class="response-card-name">'+escapeHtml(t.subject)+'</span>' +
           '</div>' +
           '<div class="response-card-head-right">' +
+            (claimed ? '<span class="badge status-in_progress">Claimed: '+escapeHtml(t.claimedByName)+'</span>' : '') +
             '<span class="badge status-'+status+'">'+TICKET_STATUS_LABEL[status]+'</span>' +
             '<span class="entry-time">'+d.toLocaleDateString()+'</span>' +
           '</div>' +
@@ -6410,11 +6429,18 @@
         '<div class="response-card-body">' +
           '<div class="public-field-row"><label>Category</label><span>'+escapeHtml(t.category)+'</span></div>' +
           '<div class="public-field-row"><label>Submitted by</label><span>'+escapeHtml(ticketSubmitterLabel(t))+'</span></div>' +
-          '<div style="margin-top:10px;padding:10px 12px;background:var(--field);border-radius:var(--radius-sm);font-size:13px;line-height:1.6;white-space:pre-wrap;">'+escapeHtml(t.message)+'</div>' +
+          '<div class="ticket-claim-row">' +
+            (claimed ? 'Claimed by <b style="color:var(--text);">'+escapeHtml(t.claimedByName)+'</b>' : 'Unclaimed') +
+            '<button type="button" class="btn small ghost" data-ticket-claim="'+t.id+'" data-claim-action="'+(claimed?'unclaim':'claim')+'">'+(claimed?'Unclaim':'Claim ticket')+'</button>' +
+          '</div>' +
+          '<div class="ticket-thread" data-ticket-thread="'+t.id+'">'+renderTicketMessages(t)+'</div>' +
+          '<div class="response-card-actions" style="margin-top:4px;">' +
+            '<input type="text" placeholder="Reply to this ticket" data-ticket-reply="'+t.id+'" style="flex:1;min-width:160px;">' +
+            '<button type="button" class="btn small primary" data-ticket-send="'+t.id+'">Send</button>' +
+          '</div>' +
           '<div class="response-card-actions">' +
             '<select class="status-select" data-ticket-status="'+t.id+'" style="width:auto;">'+statusOptions+'</select>' +
-            '<input type="text" placeholder="Optional staff note" data-ticket-note="'+t.id+'" value="'+escapeHtml(t.staffNote||'')+'" style="flex:1;min-width:160px;">' +
-            '<button type="button" class="btn small primary" data-ticket-save="'+t.id+'">Save</button>' +
+            '<button type="button" class="btn small ghost" data-ticket-save="'+t.id+'">Save status</button>' +
           '</div>' +
           '<div style="font-size:11.5px;margin-top:6px;" data-ticket-msg="'+t.id+'"></div>' +
         '</div>' +
@@ -6426,12 +6452,68 @@
         var id = head.dataset.ticketToggle;
         var card = els.ticketsList.querySelector('[data-ticket-card="'+id+'"]');
         if (EXPANDED_TICKET_IDS[id]){ delete EXPANDED_TICKET_IDS[id]; card.classList.remove('expanded'); }
-        else { EXPANDED_TICKET_IDS[id] = true; card.classList.add('expanded'); }
+        else {
+          EXPANDED_TICKET_IDS[id] = true; card.classList.add('expanded');
+          var thread = els.ticketsList.querySelector('[data-ticket-thread="'+id+'"]');
+          if (thread) thread.scrollTop = thread.scrollHeight;
+        }
       });
     });
 
-    els.ticketsList.querySelectorAll('[data-ticket-status], [data-ticket-note]').forEach(function(el){
+    els.ticketsList.querySelectorAll('[data-ticket-status], [data-ticket-note], [data-ticket-reply]').forEach(function(el){
       el.addEventListener('click', function(e){ e.stopPropagation(); });
+    });
+
+    els.ticketsList.querySelectorAll('[data-ticket-claim]').forEach(function(btn){
+      btn.addEventListener('click', async function(e){
+        e.stopPropagation();
+        var id = btn.dataset.ticketClaim;
+        var doClaim = btn.dataset.claimAction === 'claim';
+        btn.disabled = true;
+        try{
+          var res = await fetch(STATE.settings.workerUrl + '/support/claim', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ adminKey: STATE.settings.workerKey, id: id, claim: doClaim, staffName: getDeviceLabel() })
+          });
+          if (!res.ok) throw new Error('Could not update claim.');
+          showToast(doClaim ? 'Ticket claimed' : 'Ticket unclaimed', 'ok');
+          logAudit('Support ticket claim', doClaim ? 'Claimed a support ticket' : 'Unclaimed a support ticket');
+          loadSupportTicketsAdmin();
+        }catch(err){
+          showToast(err.message || 'Could not update claim.', 'err');
+        }finally{
+          btn.disabled = false;
+        }
+      });
+    });
+
+    els.ticketsList.querySelectorAll('[data-ticket-send]').forEach(function(btn){
+      btn.addEventListener('click', async function(e){
+        e.stopPropagation();
+        var id = btn.dataset.ticketSend;
+        var input = els.ticketsList.querySelector('[data-ticket-reply="'+id+'"]');
+        var text = input.value.trim();
+        if (!text) return;
+        btn.disabled = true;
+        try{
+          var res = await fetch(STATE.settings.workerUrl + '/support/staff-reply', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ adminKey: STATE.settings.workerKey, id: id, text: text, staffName: getDeviceLabel() })
+          });
+          if (!res.ok) throw new Error('Could not send message.');
+          input.value = '';
+          loadSupportTicketsAdmin();
+        }catch(err){
+          showToast(err.message || 'Could not send message.', 'err');
+        }finally{
+          btn.disabled = false;
+        }
+      });
+    });
+    els.ticketsList.querySelectorAll('[data-ticket-reply]').forEach(function(input){
+      input.addEventListener('keydown', function(e){
+        if (e.key==='Enter'){ e.preventDefault(); els.ticketsList.querySelector('[data-ticket-send="'+input.dataset.ticketReply+'"]').click(); }
+      });
     });
 
     els.ticketsList.querySelectorAll('[data-ticket-save]').forEach(function(btn){
@@ -6439,17 +6521,16 @@
         e.stopPropagation();
         var id = btn.dataset.ticketSave;
         var statusSel = els.ticketsList.querySelector('[data-ticket-status="'+id+'"]');
-        var noteInput = els.ticketsList.querySelector('[data-ticket-note="'+id+'"]');
         var msgEl = els.ticketsList.querySelector('[data-ticket-msg="'+id+'"]');
         btn.disabled = true; msgEl.textContent = 'Saving...'; msgEl.style.color = 'var(--text-2)';
         try{
           var res = await fetch(STATE.settings.workerUrl + '/support/status', {
             method:'POST', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({ adminKey: STATE.settings.workerKey, id: id, status: statusSel.value, staffNote: noteInput.value.trim() })
+            body: JSON.stringify({ adminKey: STATE.settings.workerKey, id: id, status: statusSel.value })
           });
           if (!res.ok) throw new Error('Could not update ticket.');
           var t = CURRENT_TICKETS_DATA.find(function(x){ return x.id===id; });
-          if (t){ t.status = statusSel.value; t.staffNote = noteInput.value.trim(); }
+          if (t){ t.status = statusSel.value; }
           msgEl.textContent = 'Saved.'; msgEl.style.color = '#4ade80';
           showToast('Ticket updated', 'ok');
           logAudit('Support ticket updated', 'Set ticket status to <b>'+statusSel.value+'</b>');
@@ -6994,6 +7075,9 @@
     }
   });
 
+  var EXPANDED_PLAYER_TICKET_IDS = {};
+  var CURRENT_PLAYER_TICKETS_DATA = [];
+
   async function loadPlayerTickets(session){
     if (!session) return;
     try{
@@ -7004,6 +7088,7 @@
       var res = await fetch(AUTH_WORKER_URL + '/support/player-tickets?' + params.toString());
       var data = await res.json();
       var tickets = data.tickets || [];
+      CURRENT_PLAYER_TICKETS_DATA = tickets;
       if (tickets.length===0){
         els.ptTicketsList.innerHTML = '<div class="empty-state">You haven\u2019t submitted any tickets yet.</div>';
         return;
@@ -7012,13 +7097,80 @@
       els.ptTicketsList.innerHTML = tickets.map(function(t){
         var d = t.createdAt ? new Date(t.createdAt).toLocaleDateString() : '';
         var status = t.status || 'open';
-        return '<div class="player-card" style="margin-bottom:8px;">' +
-          '<div class="player-top"><div class="player-name">'+escapeHtml(t.subject)+'</div><span class="entry-time">'+d+'</span></div>' +
-          '<div class="public-field-row"><label>Category</label><span>'+escapeHtml(t.category)+'</span></div>' +
-          '<div class="public-field-row"><label>Status</label><span class="badge status-'+status+'">'+TICKET_STATUS_LABEL_PLAYER[status]+'</span></div>' +
-          (t.staffNote ? '<div class="public-field-row"><label>Staff note</label><span style="text-align:right;max-width:60%;">'+escapeHtml(t.staffNote)+'</span></div>' : '') +
+        var expanded = !!EXPANDED_PLAYER_TICKET_IDS[t.id];
+        var claimed = !!t.claimedByName;
+        return '<div class="response-card'+(expanded?' expanded':'')+'" data-pt-card="'+t.id+'" style="margin-bottom:8px;">' +
+          '<div class="response-card-head" data-pt-toggle="'+t.id+'">' +
+            '<div class="response-card-head-left">' +
+              '<span class="response-chevron"></span>' +
+              '<span class="response-card-name">'+escapeHtml(t.subject)+'</span>' +
+            '</div>' +
+            '<div class="response-card-head-right">' +
+              '<span class="badge status-'+status+'">'+TICKET_STATUS_LABEL_PLAYER[status]+'</span>' +
+              '<span class="entry-time">'+d+'</span>' +
+            '</div>' +
+          '</div>' +
+          '<div class="response-card-body">' +
+            '<div class="public-field-row"><label>Category</label><span>'+escapeHtml(t.category)+'</span></div>' +
+            '<div class="ticket-claim-row">'+(claimed ? 'You\u2019re speaking with <b style="color:var(--text);">'+escapeHtml(t.claimedByName)+'</b>' : 'Waiting for a staff member to pick this up')+'</div>' +
+            '<div class="ticket-thread" data-pt-thread="'+t.id+'">'+renderTicketMessages(t)+'</div>' +
+            (status==='closed' ?
+              '<div class="empty-state" style="padding:8px 0;">This ticket is closed. Submit a new ticket if you need further help.</div>' :
+              '<div class="response-card-actions">' +
+                '<input type="text" placeholder="Reply..." data-pt-reply="'+t.id+'" style="flex:1;min-width:160px;">' +
+                '<button type="button" class="btn small primary" data-pt-send="'+t.id+'">Send</button>' +
+              '</div>'
+            ) +
+          '</div>' +
         '</div>';
       }).join('');
+
+      els.ptTicketsList.querySelectorAll('[data-pt-toggle]').forEach(function(head){
+        head.addEventListener('click', function(){
+          var id = head.dataset.ptToggle;
+          var card = els.ptTicketsList.querySelector('[data-pt-card="'+id+'"]');
+          if (EXPANDED_PLAYER_TICKET_IDS[id]){ delete EXPANDED_PLAYER_TICKET_IDS[id]; card.classList.remove('expanded'); }
+          else {
+            EXPANDED_PLAYER_TICKET_IDS[id] = true; card.classList.add('expanded');
+            var thread = els.ptTicketsList.querySelector('[data-pt-thread="'+id+'"]');
+            if (thread) thread.scrollTop = thread.scrollHeight;
+          }
+        });
+      });
+      els.ptTicketsList.querySelectorAll('[data-pt-reply]').forEach(function(input){
+        input.addEventListener('click', function(e){ e.stopPropagation(); });
+        input.addEventListener('keydown', function(e){
+          if (e.key==='Enter'){ e.preventDefault(); els.ptTicketsList.querySelector('[data-pt-send="'+input.dataset.ptReply+'"]').click(); }
+        });
+      });
+      els.ptTicketsList.querySelectorAll('[data-pt-send]').forEach(function(btn){
+        btn.addEventListener('click', async function(e){
+          e.stopPropagation();
+          var id = btn.dataset.ptSend;
+          var input = els.ptTicketsList.querySelector('[data-pt-reply="'+id+'"]');
+          var text = input.value.trim();
+          if (!text || !CURRENT_PLAYER_SESSION) return;
+          btn.disabled = true;
+          try{
+            var res2 = await fetch(AUTH_WORKER_URL + '/support/reply', {
+              method:'POST', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({
+                id: id, text: text,
+                submitterUsername: CURRENT_PLAYER_SESSION.username || '',
+                submitterDiscordId: CURRENT_PLAYER_SESSION.discordId || '',
+                submitterSteamId: CURRENT_PLAYER_SESSION.steamId || ''
+              })
+            });
+            if (!res2.ok) throw new Error('Could not send message.');
+            EXPANDED_PLAYER_TICKET_IDS[id] = true;
+            loadPlayerTickets(CURRENT_PLAYER_SESSION);
+          }catch(err){
+            showToast(err.message || 'Could not send message.', 'err');
+          }finally{
+            btn.disabled = false;
+          }
+        });
+      });
     }catch(err){
       els.ptTicketsList.innerHTML = '<div class="empty-state">Could not load your tickets.</div>';
     }
