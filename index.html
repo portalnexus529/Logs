@@ -771,6 +771,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         Players
       </button>
+      <button type="button" class="nav-item" data-section="accounts">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><circle cx="8" cy="14" r="1.5"/><path d="M12.5 14h5"/></svg>
+        Accounts
+      </button>
       <button type="button" class="nav-item" data-section="lookup">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         Lookups
@@ -1600,6 +1604,16 @@
         </div>
       </div>
 
+      <div id="sectionAccounts" class="dash-section" style="display:none;">
+        <div class="panel">
+          <div class="panel-head"><h2>Signed-up accounts</h2><button class="btn ghost small" id="acRefreshBtn">Refresh</button></div>
+          <div class="panel-body">
+            <p style="font-size:11.5px;color:var(--text-3);margin:0 0 14px;line-height:1.6;">Everyone who has created a player account on your site through the sign-up form. Passwords are never shown or stored in plain text.</p>
+            <div id="acList"><div class="empty-state">Loading...</div></div>
+          </div>
+        </div>
+      </div>
+
       <div id="sectionLookup" class="dash-section" style="display:none;">
         <div style="max-width:420px;">
 
@@ -1978,6 +1992,7 @@
    'mgAppType','mgApplicantName','mgStatusSeg','mgReason','mgGenerateBtn','mgFormMsg','mgOutput','mgCopyBtn',
    'dnUserId','dnTitle','dnMessage','dnUseGeneratedBtn','dnSendBtn','dnMsg',
    'suEditId','suTitle','suTag','suPinnedToggle','suDescription','suSaveBtn','suCancelEditBtn','suFormMsg','suList','suRefreshBtn','suFormTitle',
+   'acRefreshBtn','acList',
    'applyWrap','applyBody',
    'webhookNameInput','webhookUrlInput','addWebhookBtn','webhookListUI',
    'workerUrlInput','workerKeyInput','guildIdInput',
@@ -2257,7 +2272,7 @@
     els.linkInlineInput.value=''; els.linkInlineRow.classList.remove('show');
   });
 
-  var SECTION_IDS = { dashboard:'sectionDashboard', game:'sectionGame', discord:'sectionDiscord', ann:'sectionAnn', events:'sectionEvents', formbuilder:'sectionFormBuilder', applications:'sectionApplications', banappeals:'sectionBanAppeals', msggen:'sectionMsgGen', discordnotify:'sectionDiscordNotify', siteupdates:'sectionSiteUpdates', ledger:'sectionLedger', audit:'sectionAudit', players:'sectionPlayers', lookup:'sectionLookup', settings:'sectionSettings', diagnostics:'sectionDiagnostics' };
+  var SECTION_IDS = { dashboard:'sectionDashboard', game:'sectionGame', discord:'sectionDiscord', ann:'sectionAnn', events:'sectionEvents', formbuilder:'sectionFormBuilder', applications:'sectionApplications', banappeals:'sectionBanAppeals', msggen:'sectionMsgGen', discordnotify:'sectionDiscordNotify', siteupdates:'sectionSiteUpdates', ledger:'sectionLedger', audit:'sectionAudit', players:'sectionPlayers', accounts:'sectionAccounts', lookup:'sectionLookup', settings:'sectionSettings', diagnostics:'sectionDiagnostics' };
   var CURRENT_SECTION = 'dashboard';
   function switchSection(target){
     CURRENT_SECTION = target;
@@ -2270,6 +2285,7 @@
     if (target==='audit' && typeof loadServerAuditLog==='function'){ loadServerAuditLog(); loadLoginAttempts(); }
     if (target==='banappeals' && typeof loadBanAppeals==='function') loadBanAppeals();
     if (target==='siteupdates' && typeof loadSiteUpdates==='function') loadSiteUpdates();
+    if (target==='accounts' && typeof loadAccounts==='function') loadAccounts();
     els.sideNavEl.classList.remove('open');
   }
   document.querySelectorAll('.nav-item').forEach(function(btn){
@@ -6172,6 +6188,56 @@
     }
   }
   els.suRefreshBtn.addEventListener('click', loadSiteUpdates);
+
+  // ==================== Signed-up accounts ====================
+  async function loadAccounts(){
+    if (!STATE.settings.workerUrl || !STATE.settings.workerKey){
+      els.acList.innerHTML = '<div class="empty-state">Configure Worker URL and admin key in Settings first.</div>';
+      return;
+    }
+    els.acList.innerHTML = '<div class="empty-state">Loading...</div>';
+    try{
+      var res = await fetch(STATE.settings.workerUrl + '/users/list', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ adminKey: STATE.settings.workerKey })
+      });
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not load accounts.');
+      var users = data.users || [];
+      if (users.length===0){ els.acList.innerHTML = '<div class="empty-state">No accounts have signed up yet.</div>'; return; }
+      els.acList.innerHTML = users.map(function(u){
+        var joined = u.createdAt ? new Date(u.createdAt).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}) : 'Unknown date';
+        return '<div class="player-card" style="margin-bottom:8px;">' +
+          '<div class="player-top"><div class="player-name">'+escapeHtml(u.username)+'</div><span class="entry-time">Joined '+joined+'</span></div>' +
+          '<div class="public-field-row"><label>Discord ID</label><span>'+escapeHtml(u.discordId || '\u2014')+'</span></div>' +
+          '<div class="public-field-row"><label>SteamID64</label><span>'+escapeHtml(u.steamId || '\u2014')+'</span></div>' +
+          '<div style="margin-top:10px;"><button type="button" class="btn small ghost" data-account-delete="'+escapeHtml(u.username)+'" style="color:var(--ban);">Delete account</button></div>' +
+        '</div>';
+      }).join('');
+      els.acList.querySelectorAll('[data-account-delete]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          var username = btn.dataset.accountDelete;
+          askConfirm('Delete the account "'+username+'" permanently? They will need to sign up again to log in.', async function(){
+            try{
+              var r2 = await fetch(STATE.settings.workerUrl + '/users/delete', {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ adminKey: STATE.settings.workerKey, username: username })
+              });
+              if (!r2.ok) throw new Error('Could not delete account.');
+              showToast('Account deleted', 'ok');
+              logAudit('Account deleted', 'Deleted player account <b>'+escapeHtml(username)+'</b>');
+              loadAccounts();
+            }catch(err){
+              showToast(err.message || 'Could not delete account.', 'err');
+            }
+          }, 'Delete');
+        });
+      });
+    }catch(err){
+      els.acList.innerHTML = '<div class="empty-state">'+escapeHtml(err.message || 'Could not load accounts.')+'</div>';
+    }
+  }
+  els.acRefreshBtn.addEventListener('click', loadAccounts);
 
   // ---- Public: render the "What's new" feed on the login screen for any visitor ----
   async function loadPublicUpdatesFeed(){
