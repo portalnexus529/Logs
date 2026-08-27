@@ -430,8 +430,6 @@
 
   .auth-shell{display:flex;gap:22px;align-items:flex-start;justify-content:center;flex-wrap:wrap;max-width:800px;width:100%;}
   .auth-box{background:var(--panel);border:1px solid var(--border-soft);border-radius:14px;padding:36px 34px 30px;max-width:400px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.5);}
-  .auth-updates-box{padding:26px 26px 22px;max-width:340px;text-align:left;}
-  .auth-updates-box .empty-state{text-align:left;font-size:12.5px;}
   .update-item{padding:12px 0;border-bottom:1px solid var(--border-soft);}
   .update-item:last-child{border-bottom:none;padding-bottom:0;}
   .update-item:first-child{padding-top:0;}
@@ -645,11 +643,6 @@
       <button type="button" class="btn primary" id="signupBtn" style="width:100%;">Create account</button>
     </div>
     </div>
-  </div>
-
-  <div class="auth-box auth-updates-box" id="publicUpdatesBox">
-    <h3 style="margin:0 0 14px;font-size:14.5px;font-weight:700;">What's new</h3>
-    <div id="publicUpdatesList"><div class="empty-state" style="padding:10px 0;">Loading...</div></div>
   </div>
   </div>
 </div>
@@ -7887,7 +7880,6 @@
     var isStatusView = await checkStatusView();
     if (isStatusView) return;
     await fetchMaintenanceState();
-    loadPublicUpdatesFeed();
     routeByAuth();
   })();
 })();
