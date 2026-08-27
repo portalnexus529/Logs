@@ -378,6 +378,10 @@
   .badge.status-pending{background:var(--warn-bg);color:#fde047;}
   .badge.status-accepted{background:rgba(74,222,128,0.12);color:#86efac;}
   .badge.status-denied{background:var(--ban-bg);color:#fca5a5;}
+  .badge.status-open{background:var(--warn-bg);color:#fde047;}
+  .badge.status-in_progress{background:var(--accent-bg);color:var(--accent);}
+  .badge.status-resolved{background:rgba(74,222,128,0.12);color:#86efac;}
+  .badge.status-closed{background:var(--field);color:var(--text-3);}
 
   .response-card{border:1px solid var(--border-soft);background:var(--panel-2);border-radius:var(--radius-sm);
     padding:12px 14px;margin-bottom:8px;}
@@ -668,6 +672,7 @@
   <div class="player-tabs" id="playerTabs">
     <button type="button" class="player-tab active" data-ptab="cases">Case History</button>
     <button type="button" class="player-tab" data-ptab="updates">Updates</button>
+    <button type="button" class="player-tab" data-ptab="support">Support</button>
   </div>
 
   <div class="panel" id="playerCasesPanel">
@@ -683,6 +688,36 @@
     <div class="panel-head"><h2>Update log</h2></div>
     <div class="panel-body">
       <div id="playerUpdatesList"><div class="empty-state">Loading...</div></div>
+    </div>
+  </div>
+
+  <div class="panel" id="playerSupportPanel" style="display:none;">
+    <div class="panel-head"><h2>Support</h2></div>
+    <div class="panel-body">
+      <div class="two-col" style="margin-bottom:20px;">
+        <div class="field">
+          <label for="ptCategory">What do you need help with?</label>
+          <select id="ptCategory">
+            <option value="General Support">General Support</option>
+            <option value="Technical Issue">Technical Issue</option>
+            <option value="Report a Player">Report a Player</option>
+            <option value="Billing / Store">Billing / Store</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="ptSubject">Subject</label>
+          <input type="text" id="ptSubject" placeholder="Short summary of your issue">
+        </div>
+      </div>
+      <div class="field">
+        <label for="ptMessage">Message</label>
+        <textarea id="ptMessage" placeholder="Describe your issue in detail" style="min-height:110px;"></textarea>
+      </div>
+      <button class="btn primary" id="ptSubmitBtn">Submit ticket</button>
+      <div id="ptFormMsg" style="font-size:12.5px;margin-top:8px;"></div>
+      <h3 style="font-size:13.5px;font-weight:700;margin:24px 0 12px;padding-top:16px;border-top:1px solid var(--border-soft);">Your tickets <span style="display:inline-flex;align-items:center;gap:5px;font-size:10px;color:var(--text-3);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-left:6px;"><span style="width:6px;height:6px;border-radius:50%;background:#4ade80;display:inline-block;animation:livePulse 1.6s ease-in-out infinite;"></span>Live</span></h3>
+      <div id="ptTicketsList"><div class="empty-state">Loading...</div></div>
     </div>
   </div>
 </div>
@@ -781,6 +816,10 @@
       <button type="button" class="nav-item" data-section="siteupdates">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
         Site Updates
+      </button>
+      <button type="button" class="nav-item" data-section="tickets">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v5a2 2 0 0 1 0 4v1a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-1a2 2 0 0 1 0-4z"/><path d="M9 9h6M9 13h6"/></svg>
+        Support Tickets
       </button>
 
       <div class="nav-group-label">People</div>
@@ -1475,6 +1514,16 @@
         </div>
       </div>
 
+      <div id="sectionTickets" class="dash-section" style="display:none;">
+        <div class="panel">
+          <div class="panel-head"><h2>Support Tickets <span style="display:inline-flex;align-items:center;gap:5px;font-size:10.5px;color:var(--text-3);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-left:8px;"><span style="width:6px;height:6px;border-radius:50%;background:#4ade80;display:inline-block;animation:livePulse 1.6s ease-in-out infinite;"></span>Live</span></h2><button class="btn ghost small" id="ticketsRefreshBtn">Refresh</button></div>
+          <div class="panel-body">
+            <div id="ticketsFilterBar"></div>
+            <div id="ticketsList"><div class="empty-state">Loading...</div></div>
+          </div>
+        </div>
+      </div>
+
       <div id="sectionLedger" class="dash-section" style="display:none;">
         <div class="panel">
       <div class="panel-head"><h2>Cases</h2><button class="btn ghost small" id="clearAllBtn">Clear all</button></div>
@@ -1986,7 +2035,8 @@
    'loginUsername','loginPassword','loginMsg','loginBtn',
    'signupUsername','signupPassword','signupDiscordId','signupSteamId','signupMsg','signupBtn',
    'playerWrap','playerWelcome','playerLogoutBtn','playerCasesFeed','ownerLogoutBtn',
-   'playerTabs','playerCasesPanel','playerUpdatesPanel',
+   'playerTabs','playerCasesPanel','playerUpdatesPanel','playerSupportPanel',
+   'ptCategory','ptSubject','ptMessage','ptSubmitBtn','ptFormMsg','ptTicketsList',
    'sideNavBrand','themeToggleBtn','themeIcon','mobileMenuBtn','sideNavCloseBtn','sideNavEl',
    'settingsStatus','serverNameOut','adminNameInput','addAdminBtn','adminList','actionToggle','durationBlock','durationToggle','durationRow','durationValue','durationUnit',
    'playerName','steamId','steamIdLabel','acctCreatedLabel','steamStatsRow','gameDiscordId','gameDiscordLookupLink','categorySelect','historyBox','joinTime','acctCreated','vacBans','gameBans','daysSinceBan','bgNotes',
@@ -2015,6 +2065,7 @@
    'dnUserId','dnTitle','dnMessage','dnUseGeneratedBtn','dnSendBtn','dnMsg',
    'suEditId','suTitle','suTag','suPinnedToggle','suDescription','suChannelId','suSaveBtn','suCancelEditBtn','suFormMsg','suList','suRefreshBtn','suFormTitle',
    'acRefreshBtn','acList',
+   'ticketsFilterBar','ticketsList','ticketsRefreshBtn',
    'applyWrap','applyBody',
    'webhookNameInput','webhookUrlInput','addWebhookBtn','webhookListUI',
    'workerUrlInput','workerKeyInput','guildIdInput',
@@ -2294,7 +2345,7 @@
     els.linkInlineInput.value=''; els.linkInlineRow.classList.remove('show');
   });
 
-  var SECTION_IDS = { dashboard:'sectionDashboard', game:'sectionGame', discord:'sectionDiscord', ann:'sectionAnn', events:'sectionEvents', formbuilder:'sectionFormBuilder', applications:'sectionApplications', banappeals:'sectionBanAppeals', msggen:'sectionMsgGen', discordnotify:'sectionDiscordNotify', siteupdates:'sectionSiteUpdates', ledger:'sectionLedger', audit:'sectionAudit', players:'sectionPlayers', accounts:'sectionAccounts', lookup:'sectionLookup', settings:'sectionSettings', diagnostics:'sectionDiagnostics' };
+  var SECTION_IDS = { dashboard:'sectionDashboard', game:'sectionGame', discord:'sectionDiscord', ann:'sectionAnn', events:'sectionEvents', formbuilder:'sectionFormBuilder', applications:'sectionApplications', banappeals:'sectionBanAppeals', msggen:'sectionMsgGen', discordnotify:'sectionDiscordNotify', siteupdates:'sectionSiteUpdates', tickets:'sectionTickets', ledger:'sectionLedger', audit:'sectionAudit', players:'sectionPlayers', accounts:'sectionAccounts', lookup:'sectionLookup', settings:'sectionSettings', diagnostics:'sectionDiagnostics' };
   var CURRENT_SECTION = 'dashboard';
   function switchSection(target){
     CURRENT_SECTION = target;
@@ -2308,6 +2359,7 @@
     if (target==='banappeals' && typeof loadBanAppeals==='function') loadBanAppeals();
     if (target==='siteupdates' && typeof loadSiteUpdates==='function') loadSiteUpdates();
     if (target==='accounts' && typeof loadAccounts==='function') loadAccounts();
+    if (target==='tickets' && typeof loadSupportTicketsAdmin==='function') loadSupportTicketsAdmin();
     els.sideNavEl.classList.remove('open');
   }
   document.querySelectorAll('.nav-item').forEach(function(btn){
@@ -6268,6 +6320,150 @@
   }
   els.acRefreshBtn.addEventListener('click', loadAccounts);
 
+  // ==================== Support Tickets (admin) ====================
+  var TICKET_STATUS_LABEL = { open:'\ud83d\udfe1 Open', in_progress:'\ud83d\udd35 In Progress', resolved:'\u2705 Resolved', closed:'\u26aa Closed' };
+  var TICKET_FILTER_LABEL = { all:'All', open:'Open', in_progress:'In Progress', resolved:'Resolved', closed:'Closed' };
+  var CURRENT_TICKETS_DATA = [];
+  var CURRENT_TICKETS_FILTER = 'open';
+  var EXPANDED_TICKET_IDS = {};
+
+  function ticketSubmitterLabel(t){
+    var bits = [];
+    if (t.submitterUsername) bits.push(t.submitterUsername);
+    if (t.submitterDiscordId) bits.push('Discord '+t.submitterDiscordId);
+    if (t.submitterSteamId) bits.push('Steam '+t.submitterSteamId);
+    return bits.join(' \u00b7 ') || 'Unknown';
+  }
+
+  async function loadSupportTicketsAdmin(){
+    if (!STATE.settings.workerUrl || !STATE.settings.workerKey){
+      els.ticketsFilterBar.innerHTML = '';
+      els.ticketsList.innerHTML = '<div class="empty-state">Configure Worker URL and admin key in Settings first.</div>';
+      return;
+    }
+    try{
+      var res = await fetch(STATE.settings.workerUrl + '/support/list', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ adminKey: STATE.settings.workerKey })
+      });
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not load tickets.');
+      CURRENT_TICKETS_DATA = data.tickets || [];
+      renderTicketsFilterBar();
+      renderTicketsList();
+    }catch(err){
+      els.ticketsList.innerHTML = '<div class="empty-state">'+escapeHtml(err.message || 'Could not load tickets.')+'</div>';
+    }
+  }
+
+  function renderTicketsFilterBar(){
+    var counts = { all: CURRENT_TICKETS_DATA.length, open:0, in_progress:0, resolved:0, closed:0 };
+    CURRENT_TICKETS_DATA.forEach(function(t){
+      var s = t.status || 'open';
+      if (counts[s]===undefined) counts[s]=0;
+      counts[s]++;
+    });
+    els.ticketsFilterBar.innerHTML = '<div class="apps-filter-bar">' +
+      ['all','open','in_progress','resolved','closed'].map(function(key){
+        return '<button type="button" class="apps-filter-btn'+(CURRENT_TICKETS_FILTER===key?' active':'')+'" data-tickets-filter="'+key+'">' +
+          TICKET_FILTER_LABEL[key] + '<span class="apps-filter-count">'+(counts[key]||0)+'</span></button>';
+      }).join('') +
+    '</div>';
+    els.ticketsFilterBar.querySelectorAll('[data-tickets-filter]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        CURRENT_TICKETS_FILTER = btn.dataset.ticketsFilter;
+        renderTicketsFilterBar();
+        renderTicketsList();
+      });
+    });
+  }
+
+  function renderTicketsList(){
+    var filtered = CURRENT_TICKETS_DATA.filter(function(t){
+      return CURRENT_TICKETS_FILTER==='all' || (t.status||'open')===CURRENT_TICKETS_FILTER;
+    });
+    filtered.sort(function(a,b){ return (b.createdAt||0)-(a.createdAt||0); });
+
+    if (filtered.length===0){
+      els.ticketsList.innerHTML = '<div class="empty-state">No '+(CURRENT_TICKETS_FILTER==='all'?'':TICKET_FILTER_LABEL[CURRENT_TICKETS_FILTER].toLowerCase()+' ')+'tickets.</div>';
+      return;
+    }
+
+    els.ticketsList.innerHTML = filtered.map(function(t){
+      var d = new Date(t.createdAt);
+      var status = t.status || 'open';
+      var expanded = !!EXPANDED_TICKET_IDS[t.id];
+      var statusOptions = Object.keys(TICKET_STATUS_LABEL).map(function(s){
+        return '<option value="'+s+'"'+(s===status?' selected':'')+'>'+TICKET_STATUS_LABEL[s]+'</option>';
+      }).join('');
+      return '<div class="response-card'+(expanded?' expanded':'')+'" data-ticket-card="'+t.id+'">' +
+        '<div class="response-card-head" data-ticket-toggle="'+t.id+'">' +
+          '<div class="response-card-head-left">' +
+            '<span class="response-chevron"></span>' +
+            '<span class="response-card-name">'+escapeHtml(t.subject)+'</span>' +
+          '</div>' +
+          '<div class="response-card-head-right">' +
+            '<span class="badge status-'+status+'">'+TICKET_STATUS_LABEL[status]+'</span>' +
+            '<span class="entry-time">'+d.toLocaleDateString()+'</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="response-card-body">' +
+          '<div class="public-field-row"><label>Category</label><span>'+escapeHtml(t.category)+'</span></div>' +
+          '<div class="public-field-row"><label>Submitted by</label><span>'+escapeHtml(ticketSubmitterLabel(t))+'</span></div>' +
+          '<div style="margin-top:10px;padding:10px 12px;background:var(--field);border-radius:var(--radius-sm);font-size:13px;line-height:1.6;white-space:pre-wrap;">'+escapeHtml(t.message)+'</div>' +
+          '<div class="response-card-actions">' +
+            '<select class="status-select" data-ticket-status="'+t.id+'" style="width:auto;">'+statusOptions+'</select>' +
+            '<input type="text" placeholder="Optional staff note" data-ticket-note="'+t.id+'" value="'+escapeHtml(t.staffNote||'')+'" style="flex:1;min-width:160px;">' +
+            '<button type="button" class="btn small primary" data-ticket-save="'+t.id+'">Save</button>' +
+          '</div>' +
+          '<div style="font-size:11.5px;margin-top:6px;" data-ticket-msg="'+t.id+'"></div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    els.ticketsList.querySelectorAll('[data-ticket-toggle]').forEach(function(head){
+      head.addEventListener('click', function(){
+        var id = head.dataset.ticketToggle;
+        var card = els.ticketsList.querySelector('[data-ticket-card="'+id+'"]');
+        if (EXPANDED_TICKET_IDS[id]){ delete EXPANDED_TICKET_IDS[id]; card.classList.remove('expanded'); }
+        else { EXPANDED_TICKET_IDS[id] = true; card.classList.add('expanded'); }
+      });
+    });
+
+    els.ticketsList.querySelectorAll('[data-ticket-status], [data-ticket-note]').forEach(function(el){
+      el.addEventListener('click', function(e){ e.stopPropagation(); });
+    });
+
+    els.ticketsList.querySelectorAll('[data-ticket-save]').forEach(function(btn){
+      btn.addEventListener('click', async function(e){
+        e.stopPropagation();
+        var id = btn.dataset.ticketSave;
+        var statusSel = els.ticketsList.querySelector('[data-ticket-status="'+id+'"]');
+        var noteInput = els.ticketsList.querySelector('[data-ticket-note="'+id+'"]');
+        var msgEl = els.ticketsList.querySelector('[data-ticket-msg="'+id+'"]');
+        btn.disabled = true; msgEl.textContent = 'Saving...'; msgEl.style.color = 'var(--text-2)';
+        try{
+          var res = await fetch(STATE.settings.workerUrl + '/support/status', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ adminKey: STATE.settings.workerKey, id: id, status: statusSel.value, staffNote: noteInput.value.trim() })
+          });
+          if (!res.ok) throw new Error('Could not update ticket.');
+          var t = CURRENT_TICKETS_DATA.find(function(x){ return x.id===id; });
+          if (t){ t.status = statusSel.value; t.staffNote = noteInput.value.trim(); }
+          msgEl.textContent = 'Saved.'; msgEl.style.color = '#4ade80';
+          showToast('Ticket updated', 'ok');
+          logAudit('Support ticket updated', 'Set ticket status to <b>'+statusSel.value+'</b>');
+          renderTicketsFilterBar();
+        }catch(err){
+          msgEl.textContent = err.message || 'Could not update ticket.'; msgEl.style.color = 'var(--ban)';
+        }finally{
+          btn.disabled = false;
+        }
+      });
+    });
+  }
+  els.ticketsRefreshBtn.addEventListener('click', loadSupportTicketsAdmin);
+
   // ---- Public: render the "What's new" feed on the login screen (or player dashboard) ----
   async function loadPublicUpdatesFeed(targetId){
     var el = document.getElementById(targetId || 'publicUpdatesList');
@@ -6642,6 +6838,8 @@
       els.playerWelcome.textContent = 'Logged in as ' + session.username;
       loadPlayerCases(session);
       loadPublicUpdatesFeed('playerUpdatesList');
+      CURRENT_PLAYER_SESSION = session;
+      loadPlayerTickets(session);
     }
   }
 
@@ -6714,15 +6912,20 @@
     }
   });
 
+  var CURRENT_PLAYER_TAB = 'cases';
+  var CURRENT_PLAYER_SESSION = null;
   els.playerTabs.addEventListener('click', function(e){
     var btn = e.target.closest('[data-ptab]');
     if (!btn) return;
+    CURRENT_PLAYER_TAB = btn.dataset.ptab;
     els.playerTabs.querySelectorAll('[data-ptab]').forEach(function(b){ b.classList.toggle('active', b===btn); });
-    els.playerCasesPanel.style.display = btn.dataset.ptab==='cases' ? 'block' : 'none';
-    els.playerUpdatesPanel.style.display = btn.dataset.ptab==='updates' ? 'block' : 'none';
+    els.playerCasesPanel.style.display = CURRENT_PLAYER_TAB==='cases' ? 'block' : 'none';
+    els.playerUpdatesPanel.style.display = CURRENT_PLAYER_TAB==='updates' ? 'block' : 'none';
+    els.playerSupportPanel.style.display = CURRENT_PLAYER_TAB==='support' ? 'block' : 'none';
   });
 
-  async function loadPlayerCases(session){    els.playerCasesFeed.innerHTML = '<div class="empty-state">Loading...</div>';
+  async function loadPlayerCases(session){
+    els.playerCasesFeed.innerHTML = '<div class="empty-state">Loading...</div>';
     try{
       var params = new URLSearchParams();
       if (session.discordId) params.set('discordId', session.discordId);
@@ -6748,6 +6951,79 @@
     }
   }
 
+  // ==================== Support Tickets (player side) ====================
+  var TICKET_STATUS_LABEL_PLAYER = { open:'\ud83d\udfe1 Open', in_progress:'\ud83d\udd35 In Progress', resolved:'\u2705 Resolved', closed:'\u26aa Closed' };
+
+  els.ptSubmitBtn.addEventListener('click', async function(){
+    els.ptFormMsg.textContent = '';
+    var subject = els.ptSubject.value.trim();
+    var message = els.ptMessage.value.trim();
+    if (!subject || !message){
+      els.ptFormMsg.textContent = 'Enter a subject and a message.';
+      els.ptFormMsg.style.color = 'var(--ban)';
+      return;
+    }
+    if (!CURRENT_PLAYER_SESSION){
+      els.ptFormMsg.textContent = 'You need to be logged in to submit a ticket.';
+      els.ptFormMsg.style.color = 'var(--ban)';
+      return;
+    }
+    els.ptSubmitBtn.disabled = true;
+    els.ptFormMsg.textContent = 'Submitting...'; els.ptFormMsg.style.color = 'var(--text-2)';
+    try{
+      var res = await fetch(AUTH_WORKER_URL + '/support/submit', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          category: els.ptCategory.value,
+          subject: subject,
+          message: message,
+          submitterUsername: CURRENT_PLAYER_SESSION.username || '',
+          submitterDiscordId: CURRENT_PLAYER_SESSION.discordId || '',
+          submitterSteamId: CURRENT_PLAYER_SESSION.steamId || ''
+        })
+      });
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not submit ticket.');
+      els.ptFormMsg.textContent = 'Ticket submitted.'; els.ptFormMsg.style.color = '#4ade80';
+      els.ptSubject.value = ''; els.ptMessage.value = '';
+      loadPlayerTickets(CURRENT_PLAYER_SESSION);
+    }catch(err){
+      els.ptFormMsg.textContent = err.message || 'Could not submit ticket.'; els.ptFormMsg.style.color = 'var(--ban)';
+    }finally{
+      els.ptSubmitBtn.disabled = false;
+    }
+  });
+
+  async function loadPlayerTickets(session){
+    if (!session) return;
+    try{
+      var params = new URLSearchParams();
+      if (session.discordId) params.set('discordId', session.discordId);
+      if (session.steamId) params.set('steamId', session.steamId);
+      if (session.username) params.set('username', session.username);
+      var res = await fetch(AUTH_WORKER_URL + '/support/player-tickets?' + params.toString());
+      var data = await res.json();
+      var tickets = data.tickets || [];
+      if (tickets.length===0){
+        els.ptTicketsList.innerHTML = '<div class="empty-state">You haven\u2019t submitted any tickets yet.</div>';
+        return;
+      }
+      tickets.sort(function(a,b){ return (b.createdAt||0)-(a.createdAt||0); });
+      els.ptTicketsList.innerHTML = tickets.map(function(t){
+        var d = t.createdAt ? new Date(t.createdAt).toLocaleDateString() : '';
+        var status = t.status || 'open';
+        return '<div class="player-card" style="margin-bottom:8px;">' +
+          '<div class="player-top"><div class="player-name">'+escapeHtml(t.subject)+'</div><span class="entry-time">'+d+'</span></div>' +
+          '<div class="public-field-row"><label>Category</label><span>'+escapeHtml(t.category)+'</span></div>' +
+          '<div class="public-field-row"><label>Status</label><span class="badge status-'+status+'">'+TICKET_STATUS_LABEL_PLAYER[status]+'</span></div>' +
+          (t.staffNote ? '<div class="public-field-row"><label>Staff note</label><span style="text-align:right;max-width:60%;">'+escapeHtml(t.staffNote)+'</span></div>' : '') +
+        '</div>';
+      }).join('');
+    }catch(err){
+      els.ptTicketsList.innerHTML = '<div class="empty-state">Could not load your tickets.</div>';
+    }
+  }
+
   els.playerLogoutBtn.addEventListener('click', function(){ clearSession(); routeByAuth(); });
 
   els.ownerLogoutBtn.addEventListener('click', function(){
@@ -6757,11 +7033,16 @@
   var AUTO_REFRESH_MS = 20000;
   setInterval(function(){
     var session = getSession();
-    if (!session || session.role !== 'owner') return;
+    if (!session) return;
     if (document.hidden) return;
-    if (CURRENT_SECTION==='applications' && typeof loadApplications==='function') loadApplications();
-    else if (CURRENT_SECTION==='banappeals' && typeof loadBanAppeals==='function') loadBanAppeals();
-    else if (CURRENT_SECTION==='audit' && typeof loadServerAuditLog==='function'){ loadServerAuditLog(); loadLoginAttempts(); }
+    if (session.role === 'owner'){
+      if (CURRENT_SECTION==='applications' && typeof loadApplications==='function') loadApplications();
+      else if (CURRENT_SECTION==='banappeals' && typeof loadBanAppeals==='function') loadBanAppeals();
+      else if (CURRENT_SECTION==='tickets' && typeof loadSupportTicketsAdmin==='function') loadSupportTicketsAdmin();
+      else if (CURRENT_SECTION==='audit' && typeof loadServerAuditLog==='function'){ loadServerAuditLog(); loadLoginAttempts(); }
+    } else if (session.role === 'player'){
+      if (CURRENT_PLAYER_TAB==='support' && typeof loadPlayerTickets==='function') loadPlayerTickets(session);
+    }
   }, AUTO_REFRESH_MS);
 
   (async function initApp(){
