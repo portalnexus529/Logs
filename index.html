@@ -8171,11 +8171,40 @@
     askConfirm('Log out?', function(){ clearSession(); routeByAuth(); }, 'Log out');
   });
 
+  async function refreshMySession(){
+    var session = getSession();
+    if (!session || session.role === 'owner' || !session.username) return;
+    try{
+      var res = await fetch(AUTH_WORKER_URL + '/session/refresh?username=' + encodeURIComponent(session.username));
+      if (res.status === 404){
+        clearSession();
+        routeByAuth();
+        showToast('Your account no longer exists.', 'err');
+        return;
+      }
+      if (!res.ok) return;
+      var data = await res.json();
+      if (data.banned){
+        clearSession();
+        showBannedScreen(data.reason, data.bannedAt);
+        return;
+      }
+      var changed = (data.role !== session.role) || (JSON.stringify(data.permissions||{}) !== JSON.stringify(session.permissions||{}));
+      if (changed){
+        var updated = Object.assign({}, session, { role: data.role, permissions: data.permissions || {} });
+        setSession(updated);
+        routeByAuth();
+        showToast('Your account was updated', 'ok');
+      }
+    }catch(e){ /* best-effort; a missed check just waits for the next cycle */ }
+  }
+
   var AUTO_REFRESH_MS = 20000;
   setInterval(function(){
     var session = getSession();
     if (!session) return;
     if (document.hidden) return;
+    refreshMySession();
     if (session.role === 'owner'){
       if (CURRENT_SECTION==='applications' && typeof loadApplications==='function') loadApplications();
       else if (CURRENT_SECTION==='banappeals' && typeof loadBanAppeals==='function') loadBanAppeals();
