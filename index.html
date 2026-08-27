@@ -1807,6 +1807,7 @@
                   <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" data-perm="announcements" style="width:auto;"> Announcements &amp; Events</label>
                   <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" data-perm="players" style="width:auto;"> Players &amp; Lookups</label>
                   <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" data-perm="audit" style="width:auto;"> Audit Log</label>
+                  <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" data-perm="cases" style="width:auto;"> Cases (full ledger)</label>
                 </div>
                 <p style="font-size:11px;color:var(--text-3);margin:8px 0 0;line-height:1.5;">Settings, Diagnostics, and Accounts always stay owner-only, no matter what's checked here.</p>
               </div>
@@ -4429,7 +4430,7 @@
       if (e.category) badges += '<span class="badge scope">'+escapeHtml(e.category)+'</span>';
       if (e.action==='ban' && e.banScope) badges += '<span class="badge scope">'+({game:'Game ban',discord:'Discord ban',both:'Game + Discord'})[e.banScope]+'</span>';
       if (isBanType(e.action) && e.appeal) badges += '<span class="badge '+(e.appeal==='yes'?'appeal-yes':'appeal-no')+'">'+(e.appeal==='yes'?'Appealable':'Not appealable')+'</span>';
-      var showUnbanBtn = (e.action==='dban' && !e.unbannedAt);
+      var showUnbanBtn = (e.action==='dban' && !e.unbannedAt && currentUserCan('ban'));
       if (hasDuration(e.action) && e.expiresAt){
         var msLeft = e.expiresAt - Date.now();
         if (msLeft <= 0){
@@ -4644,6 +4645,10 @@
       btn.addEventListener('click', function(){
         var entry = STATE.entries.find(function(x){ return x.id===btn.dataset.unban; });
         if (!entry) return;
+        if (!currentUserCan('ban')){
+          showToast('Your account does not have permission to unban members.', 'err');
+          return;
+        }
         askConfirm('Lift the Discord ban on '+entry.player+' now?', async function(){
           if (!STATE.settings.workerUrl || !STATE.settings.workerKey || !STATE.settings.guildId){
             showToast('Bot action settings are not configured. Open Settings first.', 'err');
@@ -6693,8 +6698,8 @@
   var ROLE_DEFAULT_PERMS = {
     player: {},
     moderator: { timeout:true, banappeals:true, tickets:true, players:true },
-    admin: { ban:true, kick:true, timeout:true, applications:true, banappeals:true, tickets:true, siteupdates:true, announcements:true, players:true, audit:true },
-    staffowner: { ban:true, kick:true, timeout:true, applications:true, banappeals:true, tickets:true, siteupdates:true, staff:true, announcements:true, players:true, audit:true }
+    admin: { ban:true, kick:true, timeout:true, applications:true, banappeals:true, tickets:true, siteupdates:true, announcements:true, players:true, audit:true, cases:true },
+    staffowner: { ban:true, kick:true, timeout:true, applications:true, banappeals:true, tickets:true, siteupdates:true, staff:true, announcements:true, players:true, audit:true, cases:true }
   };
 
   function applyPermCheckboxes(perms){
@@ -7673,6 +7678,14 @@
     try{ localStorage.removeItem('modlog:auth'); }catch(e){}
   }
 
+  function currentUserCan(permKey){
+    var session = getSession();
+    if (!session) return false;
+    if (session.role === 'owner') return true;
+    if (['moderator','admin','staffowner'].indexOf(session.role) === -1) return false;
+    return !!(session.permissions && session.permissions[permKey]);
+  }
+
   var MAINTENANCE_STATE = { enabled: false, title:'', message:'', returnEta:'' };
 
   async function fetchMaintenanceState(){
@@ -7729,13 +7742,14 @@
     staff: ['staff'],
     announcements: ['ann','events'],
     players: ['players','lookup'],
-    audit: ['audit']
+    audit: ['audit'],
+    cases: ['ledger']
   };
   var OWNER_ONLY_SECTIONS = ['settings','diagnostics','accounts','staffstats'];
 
   function applyStaffPermissionGating(session){
     var perms = session.permissions || {};
-    var allowedSections = { dashboard:true, myactivity:true, discord:true, ledger:true };
+    var allowedSections = { dashboard:true, myactivity:true, discord:true };
     Object.keys(PERMISSION_SECTION_MAP).forEach(function(permKey){
       if (perms[permKey]){
         PERMISSION_SECTION_MAP[permKey].forEach(function(sec){ allowedSections[sec] = true; });
