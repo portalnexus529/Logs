@@ -7919,7 +7919,8 @@
   function getStaffDisplayName(){
     var session = getSession();
     if (session && session.role !== 'owner' && session.username) return session.username;
-    return getDeviceLabel();
+    var label = getDeviceLabel();
+    return (label === 'Unnamed device') ? 'Owner' : label;
   }
   var DEVICE_ID = getDeviceId();
 
