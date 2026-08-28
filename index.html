@@ -169,6 +169,8 @@
   .seg button[data-a="kick"].active .dot{background:var(--kick);}
   .seg button[data-a="warn"].active{background:var(--warn-bg);border-color:var(--warn);color:#fde047;}
   .seg button[data-a="warn"].active .dot{background:var(--warn);}
+  .seg button[data-da="dwarn"].active{background:var(--warn-bg);border-color:var(--warn);color:#fde047;}
+  .seg button[data-da="dwarn"].active .dot{background:var(--warn);}
   .seg button[data-a="dban"].active{background:var(--discord-bg);border-color:var(--discord);color:#c7ccfb;}
   .seg button[data-a="dban"].active .dot{background:var(--discord);}
   .seg button[data-a="dkick"].active{background:var(--discord-bg);border-color:var(--discord);color:#c7ccfb;}
@@ -1072,6 +1074,7 @@
           <button type="button" data-da="dban" class="active"><span class="dot"></span>Discord ban</button>
           <button type="button" data-da="dkick"><span class="dot"></span>Discord kick</button>
           <button type="button" data-da="dtimeout"><span class="dot"></span>Discord timeout</button>
+          <button type="button" data-da="dwarn"><span class="dot"></span>Discord warning</button>
         </div>
 
         <div class="two-col">
@@ -1805,6 +1808,7 @@
                   <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" data-perm="ban" style="width:auto;"> Ban members</label>
                   <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" data-perm="kick" style="width:auto;"> Kick members</label>
                   <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" data-perm="timeout" style="width:auto;"> Timeout members</label>
+                  <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" data-perm="warn" style="width:auto;"> Discord warning</label>
                   <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" data-perm="applications" style="width:auto;"> Applications</label>
                   <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" data-perm="banappeals" style="width:auto;"> Ban Appeals</label>
                   <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" data-perm="tickets" style="width:auto;"> Support Tickets</label>
@@ -2237,10 +2241,10 @@
    'editOverlay','editCaseLabel','editDiscordField','editDiscordId','editCategory','editReason','editDurationField','editDuration','editResolutionField','editBanScope','editAppealToggle','editInternalNotes','editMsg','editCancel','editSave'
   ].forEach(function(id){ els[id] = document.getElementById(id); });
 
-  var LABEL = { ban:'Ban', kick:'Kick', warn:'Warning', dban:'Discord ban', dkick:'Discord kick', dtimeout:'Discord timeout' };
-  var COLOR_HEX = { ban:0xFF5C5C, kick:0xFFA94D, warn:0xFFD43B, dban:0x5865F2, dkick:0x5865F2, dtimeout:0x5865F2 };
+  var LABEL = { ban:'Ban', kick:'Kick', warn:'Warning', dban:'Discord ban', dkick:'Discord kick', dtimeout:'Discord timeout', dwarn:'Discord warning' };
+  var COLOR_HEX = { ban:0xFF5C5C, kick:0xFFA94D, warn:0xFFD43B, dban:0x5865F2, dkick:0x5865F2, dtimeout:0x5865F2, dwarn:0xFFD43B };
   function isBanType(a){ return a==='ban' || a==='dban'; }
-  function isDiscordType(a){ return a==='dban' || a==='dkick' || a==='dtimeout'; }
+  function isDiscordType(a){ return a==='dban' || a==='dkick' || a==='dtimeout' || a==='dwarn'; }
   function hasDuration(a){ return isBanType(a) || a==='dtimeout'; }
 
   function escapeHtml(s){
@@ -5230,15 +5234,14 @@
   }
 
   function buildDmEmbed(action, reason, durText, extraNote, discordUserId){
-    var verb = action==='dban' ? 'banned from' : (action==='dtimeout' ? 'timed out in' : 'kicked from');
     var server = STATE.settings.serverName || 'the server';
-    var embed = {
-      title: 'You have been ' + verb + ' ' + server,
-      color: COLOR_HEX[action],
-      fields: [],
-      footer: { text: server },
-      timestamp: new Date().toISOString()
-    };
+    var embed;
+    if (action==='dwarn'){
+      embed = { title: '\u26a0\ufe0f You have received a warning in ' + server, color: COLOR_HEX[action], fields: [], footer: { text: server }, timestamp: new Date().toISOString() };
+    } else {
+      var verb = action==='dban' ? 'banned from' : (action==='dtimeout' ? 'timed out in' : 'kicked from');
+      embed = { title: 'You have been ' + verb + ' ' + server, color: COLOR_HEX[action], fields: [], footer: { text: server }, timestamp: new Date().toISOString() };
+    }
     if (extraNote && extraNote.trim()) embed.description = extraNote.trim();
     embed.fields.push({ name:'Reason', value: reason || 'No reason given' });
     if (hasDuration(action) && durText) embed.fields.push({ name:'Duration', value: durText });
@@ -5257,9 +5260,34 @@
     var session = getSession();
     var isStaffOnly = session && ['moderator','admin','staffowner'].indexOf(session.role) !== -1;
 
+    if (action === 'dwarn'){
+      if (!dmEmbed) return { success:true, dmSent:false, dmError:null };
+      if (isStaffOnly){
+        var wRes = await fetch(AUTH_WORKER_URL + '/staff/warn', {
+          method:'POST', headers:{ 'Content-Type':'application/json' },
+          body: JSON.stringify({ username: session.username, passwordHash: session.passwordHash, userId: userId, dmEmbed: dmEmbed })
+        });
+        var wData;
+        try{ wData = await wRes.json(); }catch(e){ wData = {}; }
+        if (!wRes.ok) throw new Error(wData.error || 'Could not send warning DM.');
+        return wData;
+      }
+      if (!STATE.settings.workerUrl || !STATE.settings.workerKey){
+        throw new Error('Bot action settings are not configured. Open Settings and fill in Worker URL and admin key.');
+      }
+      var dmRes = await fetch(STATE.settings.workerUrl + '/dm/send', {
+        method:'POST', headers:{ 'Content-Type':'application/json' },
+        body: JSON.stringify({ adminKey: STATE.settings.workerKey, userId: userId, embed: dmEmbed })
+      });
+      var dmData;
+      try{ dmData = await dmRes.json(); }catch(e){ dmData = {}; }
+      if (!dmRes.ok) return { success:true, dmSent:false, dmError: dmData.error || ('DM failed (status '+dmRes.status+')') };
+      return { success:true, dmSent:true, dmError:null };
+    }
+
     if (isStaffOnly){
       if (action !== 'dtimeout'){
-        throw new Error('Your account does not have permission to do that. Only Timeout is available to your role.');
+        throw new Error('Your account does not have permission to do that. Only the actions granted to your role are available.');
       }
       var guildRes = await fetch(AUTH_WORKER_URL + '/guild-id');
       var guildData = await guildRes.json();
@@ -5351,7 +5379,8 @@
 
     async function proceed(){
       els.discPublishBtn.disabled = true;
-      setDiscFormMsg((action==='dban'?'Banning':'Kicking')+' on Discord...', '');
+      var actionVerb = action==='dban' ? 'Banning' : action==='dkick' ? 'Kicking' : action==='dwarn' ? 'Warning' : 'Timing out';
+      setDiscFormMsg(actionVerb+' on Discord...', '');
       var sendingDm = DISC_SEND_DM==='yes';
       var dmEmbed = sendingDm ? buildDmEmbed(action, reason, durText, els.discDmMessage.value, userId) : null;
 
@@ -5371,10 +5400,11 @@
         els.discInternalNotes.value=''; els.discDurationValue.value=''; els.discDmMessage.value='';
         DISC_STATE.proofs = []; renderDiscProofList();
 
+        var actionPast = action==='dban' ? 'banned' : action==='dkick' ? 'kicked' : action==='dwarn' ? 'warned' : 'timed out';
         var dmNote = '';
         if (sendingDm){ dmNote = botResult.dmSent ? ' DM delivered.' : (' DM could not be sent' + (botResult.dmError ? (' ('+botResult.dmError+')') : '') + '.'); }
-        setDiscFormMsg('User '+(action==='dban'?'banned':'kicked')+' on Discord and logged as case #'+entry.caseNo+'.'+dmNote, 'ok');
-        showToast((action==='dban'?'Banned':'Kicked')+' on Discord'+(sendingDm && !botResult.dmSent ? ' (DM failed)' : ''), 'ok');
+        setDiscFormMsg('User '+actionPast+' on Discord and logged as case #'+entry.caseNo+'.'+dmNote, 'ok');
+        showToast((actionPast.charAt(0).toUpperCase()+actionPast.slice(1))+' on Discord'+(sendingDm && !botResult.dmSent ? ' (DM failed)' : ''), 'ok');
       });
     }
 
@@ -6770,8 +6800,8 @@
   var ROLE_DEFAULT_PERMS = {
     player: {},
     moderator: { timeout:true, banappeals:true, tickets:true, players:true },
-    admin: { ban:true, kick:true, timeout:true, applications:true, banappeals:true, tickets:true, siteupdates:true, announcements:true, players:true, audit:true, cases:true },
-    staffowner: { ban:true, kick:true, timeout:true, applications:true, banappeals:true, tickets:true, siteupdates:true, staff:true, announcements:true, players:true, audit:true, cases:true }
+    admin: { ban:true, kick:true, timeout:true, warn:true, applications:true, banappeals:true, tickets:true, siteupdates:true, announcements:true, players:true, audit:true, cases:true },
+    staffowner: { ban:true, kick:true, timeout:true, warn:true, applications:true, banappeals:true, tickets:true, siteupdates:true, staff:true, announcements:true, players:true, audit:true, cases:true }
   };
 
   function applyPermCheckboxes(perms){
@@ -7821,7 +7851,8 @@
 
   function applyStaffPermissionGating(session){
     var perms = session.permissions || {};
-    var allowedSections = { dashboard:true, myactivity:true, discord:true };
+    var allowedSections = { dashboard:true, myactivity:true };
+    if (perms.ban || perms.kick || perms.timeout || perms.warn) allowedSections.discord = true;
     Object.keys(PERMISSION_SECTION_MAP).forEach(function(permKey){
       if (perms[permKey]){
         PERMISSION_SECTION_MAP[permKey].forEach(function(sec){ allowedSections[sec] = true; });
@@ -7844,7 +7875,7 @@
     if (els.discActionToggle){
       els.discActionToggle.querySelectorAll('[data-da]').forEach(function(btn){
         var da = btn.dataset.da;
-        var permKey = da==='dban' ? 'ban' : da==='dkick' ? 'kick' : 'timeout';
+        var permKey = da==='dban' ? 'ban' : da==='dkick' ? 'kick' : da==='dwarn' ? 'warn' : 'timeout';
         var visible = !!perms[permKey];
         btn.style.display = visible ? '' : 'none';
       });
