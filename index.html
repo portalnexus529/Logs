@@ -7260,16 +7260,12 @@
   }
   async function pollTicketNavBadge(){
     var session = getSession();
-    if (!session || session.role !== 'owner') return;
-    if (!STATE.settings.workerUrl || !STATE.settings.workerKey) return;
+    if (!session || ['owner','moderator','admin','staffowner'].indexOf(session.role) === -1) return;
     try{
-      var res = await fetch(STATE.settings.workerUrl + '/support/list', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ adminKey: STATE.settings.workerKey })
-      });
+      var res = await fetch(AUTH_WORKER_URL + '/support/count');
       if (!res.ok) return;
       var data = await res.json();
-      updateTicketNavBadge((data.tickets || []).length);
+      updateTicketNavBadge(data.count || 0);
     }catch(e){ /* best-effort; badge just waits for the next cycle */ }
   }
 
@@ -8043,6 +8039,7 @@
       adminWrapEl.style.display = 'block';
       applyStaffPermissionGating(session);
       prefillAdminNameFields(session);
+      pollTicketNavBadge();
     } else {
       adminWrapEl.style.display = 'none';
       els.playerWrap.style.display = 'block';
@@ -8408,6 +8405,8 @@
       else pollTicketNavBadge();
     } else if (session.role === 'player'){
       if (CURRENT_PLAYER_TAB==='support' && typeof loadPlayerTickets==='function') loadPlayerTickets(session);
+    } else if (['moderator','admin','staffowner'].indexOf(session.role) !== -1){
+      pollTicketNavBadge();
     }
   }, AUTO_REFRESH_MS);
 
