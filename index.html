@@ -2269,6 +2269,32 @@
     return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; });
   }
 
+  // ---------- shared "read more" truncation for any long free-text field ----------
+  function renderTruncatable(text, maxLen, extraClass){
+    text = text || '';
+    maxLen = maxLen || 220;
+    var cls = 'truncatable' + (extraClass ? ' ' + extraClass : '');
+    if (text.length <= maxLen) return '<div class="'+cls+'">'+escapeHtml(text)+'</div>';
+    var shortText = escapeHtml(text.slice(0, maxLen).trim()) + '\u2026';
+    return '<div class="'+cls+'">' +
+      '<span class="truncatable-short">'+shortText+'</span>' +
+      '<span class="truncatable-full" style="display:none;">'+escapeHtml(text)+'</span> ' +
+      '<button type="button" class="link-msg-btn" data-trunc-toggle>Read more</button>' +
+    '</div>';
+  }
+  document.addEventListener('click', function(e){
+    var btn = e.target.closest('[data-trunc-toggle]');
+    if (!btn) return;
+    var wrap = btn.closest('.truncatable');
+    if (!wrap) return;
+    var shortEl = wrap.querySelector('.truncatable-short');
+    var fullEl = wrap.querySelector('.truncatable-full');
+    var expanded = fullEl.style.display !== 'none';
+    shortEl.style.display = expanded ? '' : 'none';
+    fullEl.style.display = expanded ? 'none' : '';
+    btn.textContent = expanded ? 'Read more' : 'Show less';
+  });
+
   // ---------- theme toggle ----------
   var MOON_ICON = '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>';
   var SUN_ICON = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
@@ -4530,9 +4556,9 @@
       if (e.gameBans) bgParts.push(e.gameBans+' game ban(s)');
       if (e.daysSinceBan) bgParts.push(e.daysSinceBan+' days since last ban');
       var bgLine = bgParts.length ? '<div class="entry-bg">'+escapeHtml(bgParts.join(' &middot; '))+'</div>' : '';
-      var bgNotesLine = e.bgNotes ? '<div class="entry-bg">'+escapeHtml(e.bgNotes)+'</div>' : '';
+      var bgNotesLine = e.bgNotes ? renderTruncatable(e.bgNotes, 200, 'entry-bg') : '';
 
-      var internalLine = e.internalNotes ? '<div class="entry-internal"><b>Internal note</b>'+escapeHtml(e.internalNotes)+'</div>' : '';
+      var internalLine = e.internalNotes ? '<div class="entry-internal"><b>Internal note</b>'+renderTruncatable(e.internalNotes, 180)+'</div>' : '';
 
       var proofChips = proofs.map(function(p){
         return p.type==='image'
@@ -4584,7 +4610,7 @@
             '<div class="entry-player">'+escapeHtml(e.player)+'</div>' +
             '<div class="entry-meta">Issued by '+escapeHtml(e.admin)+(durText ? ' &middot; '+durText : '')+'</div>' +
             bgLine + bgNotesLine +
-            '<div class="entry-reason">'+escapeHtml(e.reason)+'</div>' +
+            renderTruncatable(e.reason, 240, 'entry-reason') +
             internalLine +
             proofBlock +
             linkMsgHtml +
@@ -6714,7 +6740,7 @@
             '<span class="update-tag'+(u.pinned?' pinned':'')+'">'+escapeHtml(UPDATE_TAG_LABELS[u.tag]||u.tag||'Update')+(u.pinned?' \u2022 Pinned':'')+'</span>' +
           '</div>' +
           '<div class="update-item-date">'+formatUpdateDate(u.createdAt)+'</div>' +
-          '<div class="update-item-desc">'+escapeHtml(u.description)+'</div>' +
+          renderTruncatable(u.description, 220, 'update-item-desc') +
           '<div style="display:flex;gap:8px;margin-top:8px;">' +
             '<button type="button" class="btn small ghost" data-update-edit="'+u.id+'">Edit</button>' +
             '<button type="button" class="btn small ghost" data-update-delete="'+u.id+'" style="color:var(--ban);">Delete</button>' +
@@ -7515,7 +7541,7 @@
             '<span class="update-tag'+(u.pinned?' pinned':'')+'">'+escapeHtml(UPDATE_TAG_LABELS[u.tag]||u.tag||'Update')+'</span>' +
           '</div>' +
           '<div class="update-item-date">'+formatUpdateDate(u.createdAt)+'</div>' +
-          '<div class="update-item-desc">'+escapeHtml(u.description)+'</div>' +
+          renderTruncatable(u.description, 220, 'update-item-desc') +
         '</div>';
       }).join('');
     }catch(err){
