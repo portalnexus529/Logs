@@ -7272,7 +7272,30 @@
     }catch(e){ /* best-effort; badge just waits for the next cycle */ }
   }
 
+  function isStaffTicketSession(){
+    var session = getSession();
+    return session && ['moderator','admin','staffowner'].indexOf(session.role) !== -1;
+  }
+
   async function loadSupportTicketsAdmin(){
+    var session = getSession();
+    if (isStaffTicketSession()){
+      try{
+        var sres = await fetch(AUTH_WORKER_URL + '/staff/tickets/list', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ username: session.username, passwordHash: session.passwordHash })
+        });
+        var sdata = await sres.json();
+        if (!sres.ok) throw new Error(sdata.error || 'Could not load tickets.');
+        CURRENT_TICKETS_DATA = sdata.tickets || [];
+        updateTicketNavBadge(CURRENT_TICKETS_DATA.length);
+        renderTicketsFilterBar();
+        renderTicketsList();
+      }catch(err){
+        els.ticketsList.innerHTML = '<div class="empty-state">'+escapeHtml(err.message || 'Could not load tickets.')+'</div>';
+      }
+      return;
+    }
     if (!STATE.settings.workerUrl || !STATE.settings.workerKey){
       els.ticketsFilterBar.innerHTML = '';
       els.ticketsList.innerHTML = '<div class="empty-state">Configure Worker URL and admin key in Settings first.</div>';
@@ -7445,18 +7468,28 @@
         e.stopPropagation();
         var id = btn.dataset.ticketClaim;
         var doClaim = btn.dataset.claimAction === 'claim';
-        if (!STATE.settings.workerUrl || !STATE.settings.workerKey){
-          showToast('Configure Worker URL and admin key in Settings first.', 'err');
-          return;
-        }
+        var session = getSession();
         btn.disabled = true;
         try{
-          var res = await fetch(STATE.settings.workerUrl + '/support/claim', {
-            method:'POST', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({ adminKey: STATE.settings.workerKey, id: id, claim: doClaim, staffName: getStaffDisplayName() })
-          });
+          var res, errData;
+          if (isStaffTicketSession()){
+            res = await fetch(AUTH_WORKER_URL + '/staff/tickets/claim', {
+              method:'POST', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ username: session.username, passwordHash: session.passwordHash, id: id, claim: doClaim })
+            });
+          } else {
+            if (!STATE.settings.workerUrl || !STATE.settings.workerKey){
+              showToast('Configure Worker URL and admin key in Settings first.', 'err');
+              btn.disabled = false;
+              return;
+            }
+            res = await fetch(STATE.settings.workerUrl + '/support/claim', {
+              method:'POST', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ adminKey: STATE.settings.workerKey, id: id, claim: doClaim, staffName: getStaffDisplayName() })
+            });
+          }
           if (!res.ok){
-            var errData; try{ errData = await res.json(); }catch(e2){ errData = {}; }
+            try{ errData = await res.json(); }catch(e2){ errData = {}; }
             throw new Error(errData.error || ('Could not update claim (status '+res.status+').'));
           }
           showToast(doClaim ? 'Ticket claimed' : 'Ticket unclaimed', 'ok');
@@ -7477,13 +7510,25 @@
         var input = els.ticketsList.querySelector('[data-ticket-reply="'+id+'"]');
         var text = input.value.trim();
         if (!text) return;
+        var session = getSession();
         btn.disabled = true;
         try{
-          var res = await fetch(STATE.settings.workerUrl + '/support/staff-reply', {
-            method:'POST', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({ adminKey: STATE.settings.workerKey, id: id, text: text, staffName: getStaffDisplayName() })
-          });
-          if (!res.ok) throw new Error('Could not send message.');
+          var res, errData;
+          if (isStaffTicketSession()){
+            res = await fetch(AUTH_WORKER_URL + '/staff/tickets/reply', {
+              method:'POST', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ username: session.username, passwordHash: session.passwordHash, id: id, text: text })
+            });
+          } else {
+            res = await fetch(STATE.settings.workerUrl + '/support/staff-reply', {
+              method:'POST', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ adminKey: STATE.settings.workerKey, id: id, text: text, staffName: getStaffDisplayName() })
+            });
+          }
+          if (!res.ok){
+            try{ errData = await res.json(); }catch(e2){ errData = {}; }
+            throw new Error(errData.error || 'Could not send message.');
+          }
           input.value = '';
           loadSupportTicketsAdmin();
         }catch(err){
@@ -7499,6 +7544,29 @@
       });
     });
 
+    async function updateTicketStatus(id, status){
+      var session = getSession();
+      if (isStaffTicketSession()){
+        var sres = await fetch(AUTH_WORKER_URL + '/staff/tickets/status', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ username: session.username, passwordHash: session.passwordHash, id: id, status: status })
+        });
+        if (!sres.ok){
+          var sErr; try{ sErr = await sres.json(); }catch(e2){ sErr = {}; }
+          throw new Error(sErr.error || ('Could not update ticket (status '+sres.status+').'));
+        }
+        return;
+      }
+      var res = await fetch(STATE.settings.workerUrl + '/support/status', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ adminKey: STATE.settings.workerKey, id: id, status: status, staffName: getStaffDisplayName() })
+      });
+      if (!res.ok){
+        var errData; try{ errData = await res.json(); }catch(e2){ errData = {}; }
+        throw new Error(errData.error || ('Could not update ticket (status '+res.status+').'));
+      }
+    }
+
     els.ticketsList.querySelectorAll('[data-ticket-save]').forEach(function(btn){
       btn.addEventListener('click', async function(e){
         e.stopPropagation();
@@ -7508,14 +7576,7 @@
         var t = CURRENT_TICKETS_DATA.find(function(x){ return x.id===id; });
         btn.disabled = true; msgEl.textContent = 'Saving...'; msgEl.style.color = 'var(--text-2)';
         try{
-          var res = await fetch(STATE.settings.workerUrl + '/support/status', {
-            method:'POST', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({ adminKey: STATE.settings.workerKey, id: id, status: statusSel.value, staffName: getStaffDisplayName() })
-          });
-          if (!res.ok){
-            var errData; try{ errData = await res.json(); }catch(e2){ errData = {}; }
-            throw new Error(errData.error || ('Could not update ticket (status '+res.status+').'));
-          }
+          await updateTicketStatus(id, statusSel.value);
           if (statusSel.value==='closed' && t) downloadTicketTranscript(Object.assign({}, t, { status:'closed' }));
           showToast('Ticket updated', 'ok');
           logAudit('Support ticket updated', 'Set ticket status to <b>'+statusSel.value+'</b>');
@@ -7535,11 +7596,7 @@
         askConfirm('Close this ticket? Replying will no longer be possible for either side. You\u2019ll get a transcript download.', async function(){
           btn.disabled = true;
           try{
-            var res = await fetch(STATE.settings.workerUrl + '/support/status', {
-              method:'POST', headers:{'Content-Type':'application/json'},
-              body: JSON.stringify({ adminKey: STATE.settings.workerKey, id: id, status: 'closed', staffName: getStaffDisplayName() })
-            });
-            if (!res.ok) throw new Error('Could not close ticket.');
+            await updateTicketStatus(id, 'closed');
             if (t) downloadTicketTranscript(Object.assign({}, t, { status: 'closed' }));
             showToast('Ticket closed', 'ok');
             logAudit('Support ticket closed', 'Closed a support ticket');
