@@ -846,10 +846,6 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M18 8l1.5 1.5L22 7"/></svg>
         Staff List
       </button>
-      <button type="button" class="nav-item" data-section="presence">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/></svg>
-        Who's Online
-      </button>
       <button type="button" class="nav-item" data-section="tickets">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v5a2 2 0 0 1 0 4v1a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-1a2 2 0 0 1 0-4z"/><path d="M9 9h6M9 13h6"/></svg>
         Support Tickets
@@ -1573,10 +1569,6 @@
                   <input type="text" id="stRole" placeholder="e.g. Head Admin">
                 </div>
               </div>
-              <div class="field">
-                <label for="stDiscordId">Discord user ID <span style="color:var(--text-3);font-weight:400;">(optional \u2014 enables live online status)</span></label>
-                <input type="text" id="stDiscordId" placeholder="e.g. 123456789012345678">
-              </div>
               <div style="display:flex;gap:8px;">
                 <button class="btn primary" id="stSaveBtn" style="flex:1;">Add to roster</button>
                 <button class="btn ghost" id="stCancelEditBtn" style="display:none;">Cancel edit</button>
@@ -1596,19 +1588,6 @@
             <div class="panel-head"><h2>Current roster</h2><button class="btn ghost small" id="stRefreshBtn">Refresh</button></div>
             <div class="panel-body">
               <div id="stList"><div class="empty-state">Loading...</div></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div id="sectionPresence" class="dash-section" style="display:none;">
-        <div class="panel">
-          <div class="panel-head"><h2>Who's Online <span style="display:inline-flex;align-items:center;gap:5px;font-size:10.5px;color:var(--text-3);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-left:8px;"><span style="width:6px;height:6px;border-radius:50%;background:#4ade80;display:inline-block;animation:livePulse 1.6s ease-in-out infinite;"></span>Live</span></h2><button class="btn ghost small" id="presenceRefreshBtn">Refresh</button></div>
-          <div class="panel-body">
-            <p style="font-size:11.5px;color:var(--text-3);margin:0 0 14px;line-height:1.6;">Live Discord presence for staff members who have a Discord ID saved in the Staff List page. Requires a small setup in BotGhost \u2014 see the note below.</p>
-            <div id="presenceList"><div class="empty-state">Loading...</div></div>
-            <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border-soft);font-size:11.5px;color:var(--text-3);line-height:1.7;">
-              <b style="color:var(--text-2);">One-time setup in BotGhost:</b> create a Timed Event (Interval, e.g. every 2 minutes). For each staff member, add a step that reads their {Member.presence} and sends an API Request (POST) to your Worker at <code style="background:var(--field);padding:2px 5px;border-radius:4px;">/presence/update</code> with body <code style="background:var(--field);padding:2px 5px;border-radius:4px;">{"adminKey":"...","discordId":"...","status":"..."}</code>. Enable the Presence Intent in BotGhost's Settings first.
             </div>
           </div>
         </div>
@@ -2240,8 +2219,7 @@
    'mgAppType','mgApplicantName','mgStatusSeg','mgReason','mgGenerateBtn','mgFormMsg','mgOutput','mgCopyBtn',
    'dnUserId','dnTitle','dnMessage','dnUseGeneratedBtn','dnSendBtn','dnMsg',
    'suEditId','suTitle','suTag','suPinnedToggle','suDescription','suChannelId','suSaveBtn','suCancelEditBtn','suFormMsg','suList','suRefreshBtn','suFormTitle',
-   'stEditIndex','stName','stRole','stDiscordId','stSaveBtn','stCancelEditBtn','stFormMsg','stChannelId','stPostBtn','stPostMsg','stList','stRefreshBtn','stFormTitle',
-   'presenceRefreshBtn','presenceList',
+   'stEditIndex','stName','stRole','stSaveBtn','stCancelEditBtn','stFormMsg','stChannelId','stPostBtn','stPostMsg','stList','stRefreshBtn','stFormTitle',
    'acRefreshBtn','acList','acSearch',
    'myActivityRefreshBtn','myActivityContent',
    'acNewUsername','acNewPassword','acNewDiscordId','acNewSteamId','acCreateBtn','acCreateMsg',
@@ -2552,7 +2530,7 @@
     els.linkInlineInput.value=''; els.linkInlineRow.classList.remove('show');
   });
 
-  var SECTION_IDS = { dashboard:'sectionDashboard', myactivity:'sectionMyActivity', game:'sectionGame', discord:'sectionDiscord', ann:'sectionAnn', events:'sectionEvents', formbuilder:'sectionFormBuilder', applications:'sectionApplications', banappeals:'sectionBanAppeals', msggen:'sectionMsgGen', discordnotify:'sectionDiscordNotify', siteupdates:'sectionSiteUpdates', staff:'sectionStaff', presence:'sectionPresence', tickets:'sectionTickets', ledger:'sectionLedger', audit:'sectionAudit', loginsecurity:'sectionLoginSecurity', staffstats:'sectionStaffStats', players:'sectionPlayers', accounts:'sectionAccounts', lookup:'sectionLookup', settings:'sectionSettings', diagnostics:'sectionDiagnostics' };
+  var SECTION_IDS = { dashboard:'sectionDashboard', myactivity:'sectionMyActivity', game:'sectionGame', discord:'sectionDiscord', ann:'sectionAnn', events:'sectionEvents', formbuilder:'sectionFormBuilder', applications:'sectionApplications', banappeals:'sectionBanAppeals', msggen:'sectionMsgGen', discordnotify:'sectionDiscordNotify', siteupdates:'sectionSiteUpdates', staff:'sectionStaff', tickets:'sectionTickets', ledger:'sectionLedger', audit:'sectionAudit', loginsecurity:'sectionLoginSecurity', staffstats:'sectionStaffStats', players:'sectionPlayers', accounts:'sectionAccounts', lookup:'sectionLookup', settings:'sectionSettings', diagnostics:'sectionDiagnostics' };
   var CURRENT_SECTION = 'dashboard';
   function switchSection(target){
     CURRENT_SECTION = target;
@@ -2569,7 +2547,6 @@
     if (target==='banappeals' && typeof loadBanAppeals==='function') loadBanAppeals();
     if (target==='siteupdates' && typeof loadSiteUpdates==='function') loadSiteUpdates();
     if (target==='staff' && typeof loadStaffRoster==='function') loadStaffRoster();
-    if (target==='presence' && typeof loadPresence==='function') loadPresence();
     if (target==='accounts' && typeof loadAccounts==='function') loadAccounts();
     if (target==='tickets' && typeof loadSupportTicketsAdmin==='function') loadSupportTicketsAdmin();
     els.sideNavEl.classList.remove('open');
@@ -7022,7 +6999,6 @@
     els.stEditIndex.value = '';
     els.stName.value = '';
     els.stRole.value = '';
-    els.stDiscordId.value = '';
     els.stFormTitle.textContent = 'Add a staff member';
     els.stSaveBtn.textContent = 'Add to roster';
     els.stCancelEditBtn.style.display = 'none';
@@ -7044,7 +7020,6 @@
     els.stFormMsg.textContent = '';
     var name = els.stName.value.trim();
     var role = els.stRole.value.trim();
-    var discordId = els.stDiscordId.value.trim();
     if (!STATE.settings.workerUrl || !STATE.settings.workerKey){
       els.stFormMsg.textContent = 'Configure Worker URL and admin key in Settings first.';
       els.stFormMsg.style.color = 'var(--ban)';
@@ -7059,9 +7034,9 @@
     try{
       var editIndex = els.stEditIndex.value;
       if (editIndex !== ''){
-        STAFF_LIST_DATA[Number(editIndex)] = { id: STAFF_LIST_DATA[Number(editIndex)].id, name: name, role: role, discordId: discordId };
+        STAFF_LIST_DATA[Number(editIndex)] = { id: STAFF_LIST_DATA[Number(editIndex)].id, name: name, role: role };
       } else {
-        STAFF_LIST_DATA.push({ name: name, role: role, discordId: discordId });
+        STAFF_LIST_DATA.push({ name: name, role: role });
       }
       await saveStaffList();
       showToast(editIndex !== '' ? 'Staff member updated' : 'Staff member added', 'ok');
@@ -7104,7 +7079,6 @@
     els.stList.innerHTML = STAFF_LIST_DATA.map(function(s, i){
       return '<div class="player-card" style="margin-bottom:8px;">' +
         '<div class="player-top"><div class="player-name">'+escapeHtml(s.name)+'</div><span class="entry-time">'+escapeHtml(s.role)+'</span></div>' +
-        (s.discordId ? '<div class="public-field-row"><label>Discord ID</label><span>'+escapeHtml(s.discordId)+'</span></div>' : '') +
         '<div style="display:flex;gap:8px;margin-top:8px;">' +
           '<button type="button" class="btn small ghost" data-staff-edit="'+i+'">Edit</button>' +
           '<button type="button" class="btn small ghost" data-staff-remove="'+i+'" style="color:var(--ban);">Remove</button>' +
@@ -7119,7 +7093,6 @@
         els.stEditIndex.value = i;
         els.stName.value = s.name;
         els.stRole.value = s.role;
-        els.stDiscordId.value = s.discordId || '';
         els.stFormTitle.textContent = 'Edit staff member';
         els.stSaveBtn.textContent = 'Save changes';
         els.stCancelEditBtn.style.display = 'inline-block';
@@ -7145,63 +7118,6 @@
     });
   }
   els.stRefreshBtn.addEventListener('click', loadStaffRoster);
-
-  // ==================== Who's Online (Discord presence) ====================
-  var PRESENCE_META = {
-    online: { label: 'Online', color: '#4ade80' },
-    idle: { label: 'Idle', color: '#ffd43b' },
-    dnd: { label: 'Do Not Disturb', color: '#ff5c5c' },
-    offline: { label: 'Offline', color: '#6b7280' }
-  };
-
-  async function loadPresence(){
-    if (!STATE.settings.workerUrl || !STATE.settings.workerKey){
-      els.presenceList.innerHTML = '<div class="empty-state">Configure Worker URL and admin key in Settings first.</div>';
-      return;
-    }
-    els.presenceList.innerHTML = '<div class="empty-state">Loading...</div>';
-    try{
-      var rosterRes = await fetch(STATE.settings.workerUrl + '/staff/list', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ adminKey: STATE.settings.workerKey })
-      });
-      var rosterData = await rosterRes.json();
-      var roster = (rosterData.staff || []).filter(function(s){ return s.discordId; });
-
-      if (roster.length===0){
-        els.presenceList.innerHTML = '<div class="empty-state">No staff with a Discord ID saved yet. Add one on the Staff List page to start tracking their status.</div>';
-        return;
-      }
-
-      var presRes = await fetch(STATE.settings.workerUrl + '/presence/list', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ adminKey: STATE.settings.workerKey })
-      });
-      var presData = await presRes.json();
-      var presence = presData.presence || {};
-
-      els.presenceList.innerHTML = roster.map(function(s){
-        var pres = presence[s.discordId];
-        var status = pres ? (PRESENCE_META[pres.status] ? pres.status : 'offline') : null;
-        var meta = status ? PRESENCE_META[status] : null;
-        var lastSeen = pres && pres.updatedAt ? new Date(pres.updatedAt).toLocaleString() : null;
-        return '<div class="player-card" style="margin-bottom:8px;">' +
-          '<div class="player-top">' +
-            '<div class="player-name" style="display:flex;align-items:center;gap:8px;">' +
-              '<span style="width:9px;height:9px;border-radius:50%;background:'+(meta?meta.color:'#3a3f4a')+';display:inline-block;flex-shrink:0;"></span>' +
-              escapeHtml(s.name) +
-            '</div>' +
-            '<span class="entry-time">'+escapeHtml(s.role)+'</span>' +
-          '</div>' +
-          '<div class="public-field-row"><label>Status</label><span>'+(meta?meta.label:'No data yet')+'</span></div>' +
-          (lastSeen ? '<div class="public-field-row"><label>Last updated</label><span>'+lastSeen+'</span></div>' : '') +
-        '</div>';
-      }).join('');
-    }catch(err){
-      els.presenceList.innerHTML = '<div class="empty-state">'+escapeHtml(err.message || 'Could not load presence data.')+'</div>';
-    }
-  }
-  els.presenceRefreshBtn.addEventListener('click', loadPresence);
 
   els.stPostBtn.addEventListener('click', async function(){
     els.stPostMsg.textContent = '';
@@ -7895,7 +7811,7 @@
     banappeals: ['banappeals'],
     tickets: ['tickets'],
     siteupdates: ['siteupdates'],
-    staff: ['staff','presence'],
+    staff: ['staff'],
     announcements: ['ann','events'],
     players: ['players','lookup'],
     audit: ['audit'],
@@ -8367,7 +8283,6 @@
       else if (CURRENT_SECTION==='tickets' && typeof loadSupportTicketsAdmin==='function') loadSupportTicketsAdmin();
       else if (CURRENT_SECTION==='audit' && typeof loadServerAuditLog==='function'){ loadServerAuditLog(); }
       else if (CURRENT_SECTION==='loginsecurity' && typeof loadLoginAttempts==='function') loadLoginAttempts();
-      else if (CURRENT_SECTION==='presence' && typeof loadPresence==='function') loadPresence();
     } else if (session.role === 'player'){
       if (CURRENT_PLAYER_TAB==='support' && typeof loadPlayerTickets==='function') loadPlayerTickets(session);
     }
