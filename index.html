@@ -352,6 +352,7 @@
   .nav-item:hover{background:var(--panel-2);color:var(--text);}
   .nav-item.active{background:var(--accent-bg);color:var(--accent);font-weight:600;}
   .nav-item.active svg{opacity:1;}
+  .nav-badge{margin-left:auto;background:var(--ban);color:#fff;font-size:10.5px;font-weight:700;line-height:1;border-radius:20px;padding:3px 7px;flex-shrink:0;}
 
   .audit-list{display:flex;flex-direction:column;gap:2px;max-height:70vh;overflow-y:auto;}
   .audit-row{display:grid;grid-template-columns:150px 130px 1fr auto;gap:14px;padding:10px 8px;border-bottom:1px solid var(--border-soft);font-size:13px;align-items:baseline;}
@@ -851,6 +852,7 @@
       <button type="button" class="nav-item" data-section="tickets">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v5a2 2 0 0 1 0 4v1a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-1a2 2 0 0 1 0-4z"/><path d="M9 9h6M9 13h6"/></svg>
         Support Tickets
+        <span id="ticketNavBadge" class="nav-badge" style="display:none;"></span>
       </button>
 
       <div class="nav-group-label">People</div>
@@ -2228,7 +2230,7 @@
    'myActivityRefreshBtn','myActivityContent',
    'acNewUsername','acNewPassword','acNewDiscordId','acNewSteamId','acCreateBtn','acCreateMsg',
    'acEditUsername','acFormTitle','acPasswordField','acRole','acPermissionsField','acCancelEditBtn',
-   'ticketsFilterBar','ticketsList','ticketsRefreshBtn',
+   'ticketsFilterBar','ticketsList','ticketsRefreshBtn','ticketNavBadge',
    'applyWrap','applyBody',
    'webhookNameInput','webhookUrlInput','addWebhookBtn','webhookListUI',
    'workerUrlInput','workerKeyInput','guildIdInput',
@@ -6840,6 +6842,7 @@
   els.acCancelEditBtn.addEventListener('click', resetAccountForm);
 
   var CURRENT_ACCOUNTS_DATA = [];
+  var CLOSED_TICKETS_BY_USER = {};
 
   async function loadAccounts(){
     if (!STATE.settings.workerUrl || !STATE.settings.workerKey){
@@ -6855,6 +6858,29 @@
       var data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Could not load accounts.');
       CURRENT_ACCOUNTS_DATA = data.users || [];
+
+      CLOSED_TICKETS_BY_USER = {};
+      try{
+        var ctRes = await fetch(STATE.settings.workerUrl + '/support/list-closed', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ adminKey: STATE.settings.workerKey })
+        });
+        if (ctRes.ok){
+          var ctData = await ctRes.json();
+          (ctData.tickets || []).forEach(function(t){
+            var user = CURRENT_ACCOUNTS_DATA.find(function(u){
+              return (t.submitterUsername && u.username===t.submitterUsername) ||
+                     (t.submitterDiscordId && u.discordId===t.submitterDiscordId) ||
+                     (t.submitterSteamId && u.steamId===t.submitterSteamId);
+            });
+            if (user){
+              if (!CLOSED_TICKETS_BY_USER[user.username]) CLOSED_TICKETS_BY_USER[user.username] = [];
+              CLOSED_TICKETS_BY_USER[user.username].push(t);
+            }
+          });
+        }
+      }catch(e){ /* closed-ticket history is a bonus; don't block the account list if it fails */ }
+
       renderAccountsList();
     }catch(err){
       els.acList.innerHTML = '<div class="empty-state">'+escapeHtml(err.message || 'Could not load accounts.')+'</div>';
@@ -6878,12 +6904,23 @@
     els.acList.innerHTML = users.map(function(u){
         var joined = u.createdAt ? new Date(u.createdAt).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}) : 'Unknown date';
         var role = u.role || 'player';
+        var closedTickets = CLOSED_TICKETS_BY_USER[u.username] || [];
         return '<div class="player-card" style="margin-bottom:8px;'+(u.banned?'border-color:var(--ban);':'')+'">' +
           '<div class="player-top"><div class="player-name">'+escapeHtml(u.username)+(u.banned?' <span class="badge status-denied">Banned</span>':'')+'</div><span class="entry-time">Joined '+joined+'</span></div>' +
           '<div class="public-field-row"><label>Role</label><span class="badge status-'+(role==='player'?'accepted':'in_progress')+'">'+ROLE_LABEL[role]+'</span></div>' +
           '<div class="public-field-row"><label>Discord ID</label><span>'+escapeHtml(u.discordId || '\u2014')+'</span></div>' +
           '<div class="public-field-row"><label>SteamID64</label><span>'+escapeHtml(u.steamId || '\u2014')+'</span></div>' +
           (u.banned ? '<div class="public-field-row"><label>Ban reason</label><span style="text-align:right;max-width:60%;color:var(--ban);">'+escapeHtml(u.banReason||'')+'</span></div>' : '') +
+          '<div class="public-field-row"><label>Support tickets</label><span>'+closedTickets.length+' closed'+(closedTickets.length ? ' <button type="button" class="link-msg-btn" data-account-tickets-toggle="'+escapeHtml(u.username)+'" style="margin-left:6px;">View</button>' : '')+'</span></div>' +
+          (closedTickets.length ? '<div id="acTickets-'+escapeHtml(u.username)+'" style="display:none;margin-top:8px;padding:10px;background:var(--field);border-radius:var(--radius-sm);">' +
+            closedTickets.map(function(t){
+              var d = t.createdAt ? new Date(t.createdAt).toLocaleDateString() : '';
+              return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border-soft);font-size:12px;">' +
+                '<span>'+escapeHtml(t.subject)+' <span style="color:var(--text-3);">('+escapeHtml(t.category)+' \u00b7 '+d+')</span></span>' +
+                '<button type="button" class="btn small ghost" data-account-ticket-transcript="'+t.id+'" data-account-owner="'+escapeHtml(u.username)+'">Transcript</button>' +
+              '</div>';
+            }).join('') +
+          '</div>' : '') +
           '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">' +
             '<button type="button" class="btn small ghost" data-account-edit="'+escapeHtml(u.username)+'">Edit role &amp; permissions</button>' +
             (u.banned ?
@@ -6894,6 +6931,22 @@
           '</div>' +
         '</div>';
       }).join('');
+      els.acList.querySelectorAll('[data-account-tickets-toggle]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          var box = document.getElementById('acTickets-'+btn.dataset.accountTicketsToggle);
+          if (!box) return;
+          var showing = box.style.display !== 'none';
+          box.style.display = showing ? 'none' : 'block';
+          btn.textContent = showing ? 'View' : 'Hide';
+        });
+      });
+      els.acList.querySelectorAll('[data-account-ticket-transcript]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          var username = btn.dataset.accountOwner;
+          var t = (CLOSED_TICKETS_BY_USER[username] || []).find(function(x){ return x.id===btn.dataset.accountTicketTranscript; });
+          if (t) downloadTicketTranscript(t);
+        });
+      });
       els.acList.querySelectorAll('[data-account-ban]').forEach(function(btn){
         btn.addEventListener('click', function(){
           var username = btn.dataset.accountBan;
@@ -7196,6 +7249,30 @@
     return bits.join(' \u00b7 ') || 'Unknown';
   }
 
+  function updateTicketNavBadge(count){
+    if (!els.ticketNavBadge) return;
+    if (count > 0){
+      els.ticketNavBadge.textContent = count > 99 ? '99+' : String(count);
+      els.ticketNavBadge.style.display = '';
+    } else {
+      els.ticketNavBadge.style.display = 'none';
+    }
+  }
+  async function pollTicketNavBadge(){
+    var session = getSession();
+    if (!session || session.role !== 'owner') return;
+    if (!STATE.settings.workerUrl || !STATE.settings.workerKey) return;
+    try{
+      var res = await fetch(STATE.settings.workerUrl + '/support/list', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ adminKey: STATE.settings.workerKey })
+      });
+      if (!res.ok) return;
+      var data = await res.json();
+      updateTicketNavBadge((data.tickets || []).length);
+    }catch(e){ /* best-effort; badge just waits for the next cycle */ }
+  }
+
   async function loadSupportTicketsAdmin(){
     if (!STATE.settings.workerUrl || !STATE.settings.workerKey){
       els.ticketsFilterBar.innerHTML = '';
@@ -7210,6 +7287,7 @@
       var data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Could not load tickets.');
       CURRENT_TICKETS_DATA = data.tickets || [];
+      updateTicketNavBadge(CURRENT_TICKETS_DATA.length);
       renderTicketsFilterBar();
       renderTicketsList();
     }catch(err){
@@ -7218,14 +7296,14 @@
   }
 
   function renderTicketsFilterBar(){
-    var counts = { all: CURRENT_TICKETS_DATA.length, open:0, in_progress:0, resolved:0, closed:0 };
+    var counts = { all: CURRENT_TICKETS_DATA.length, open:0, in_progress:0, resolved:0 };
     CURRENT_TICKETS_DATA.forEach(function(t){
       var s = t.status || 'open';
       if (counts[s]===undefined) counts[s]=0;
       counts[s]++;
     });
     els.ticketsFilterBar.innerHTML = '<div class="apps-filter-bar">' +
-      ['all','open','in_progress','resolved','closed'].map(function(key){
+      ['all','open','in_progress','resolved'].map(function(key){
         return '<button type="button" class="apps-filter-btn'+(CURRENT_TICKETS_FILTER===key?' active':'')+'" data-tickets-filter="'+key+'">' +
           TICKET_FILTER_LABEL[key] + '<span class="apps-filter-count">'+(counts[key]||0)+'</span></button>';
       }).join('') +
@@ -7366,13 +7444,20 @@
         e.stopPropagation();
         var id = btn.dataset.ticketClaim;
         var doClaim = btn.dataset.claimAction === 'claim';
+        if (!STATE.settings.workerUrl || !STATE.settings.workerKey){
+          showToast('Configure Worker URL and admin key in Settings first.', 'err');
+          return;
+        }
         btn.disabled = true;
         try{
           var res = await fetch(STATE.settings.workerUrl + '/support/claim', {
             method:'POST', headers:{'Content-Type':'application/json'},
             body: JSON.stringify({ adminKey: STATE.settings.workerKey, id: id, claim: doClaim, staffName: getDeviceLabel() })
           });
-          if (!res.ok) throw new Error('Could not update claim.');
+          if (!res.ok){
+            var errData; try{ errData = await res.json(); }catch(e2){ errData = {}; }
+            throw new Error(errData.error || ('Could not update claim (status '+res.status+').'));
+          }
           showToast(doClaim ? 'Ticket claimed' : 'Ticket unclaimed', 'ok');
           logAudit('Support ticket claim', doClaim ? 'Claimed a support ticket' : 'Unclaimed a support ticket');
           loadSupportTicketsAdmin();
@@ -7419,13 +7504,18 @@
         var id = btn.dataset.ticketSave;
         var statusSel = els.ticketsList.querySelector('[data-ticket-status="'+id+'"]');
         var msgEl = els.ticketsList.querySelector('[data-ticket-msg="'+id+'"]');
+        var t = CURRENT_TICKETS_DATA.find(function(x){ return x.id===id; });
         btn.disabled = true; msgEl.textContent = 'Saving...'; msgEl.style.color = 'var(--text-2)';
         try{
           var res = await fetch(STATE.settings.workerUrl + '/support/status', {
             method:'POST', headers:{'Content-Type':'application/json'},
             body: JSON.stringify({ adminKey: STATE.settings.workerKey, id: id, status: statusSel.value, staffName: getDeviceLabel() })
           });
-          if (!res.ok) throw new Error('Could not update ticket.');
+          if (!res.ok){
+            var errData; try{ errData = await res.json(); }catch(e2){ errData = {}; }
+            throw new Error(errData.error || ('Could not update ticket (status '+res.status+').'));
+          }
+          if (statusSel.value==='closed' && t) downloadTicketTranscript(Object.assign({}, t, { status:'closed' }));
           showToast('Ticket updated', 'ok');
           logAudit('Support ticket updated', 'Set ticket status to <b>'+statusSel.value+'</b>');
           loadSupportTicketsAdmin();
@@ -7947,6 +8037,7 @@
       loadServerStatusIntoSettings();
       loadBlockedDevices();
       prefillAdminNameFields(session);
+      pollTicketNavBadge();
     } else if (['moderator','admin','staffowner'].indexOf(session.role) !== -1){
       els.playerWrap.style.display = 'none';
       adminWrapEl.style.display = 'block';
@@ -8314,6 +8405,7 @@
       else if (CURRENT_SECTION==='tickets' && typeof loadSupportTicketsAdmin==='function') loadSupportTicketsAdmin();
       else if (CURRENT_SECTION==='audit' && typeof loadServerAuditLog==='function'){ loadServerAuditLog(); }
       else if (CURRENT_SECTION==='loginsecurity' && typeof loadLoginAttempts==='function') loadLoginAttempts();
+      else pollTicketNavBadge();
     } else if (session.role === 'player'){
       if (CURRENT_PLAYER_TAB==='support' && typeof loadPlayerTickets==='function') loadPlayerTickets(session);
     }
