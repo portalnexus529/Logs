@@ -802,6 +802,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
         Audit logs
       </button>
+      <button type="button" class="nav-item" data-section="loginsecurity">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Login Security
+      </button>
       <button type="button" class="nav-item" data-section="staffstats">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
         Staff Stats
@@ -841,6 +845,10 @@
       <button type="button" class="nav-item" data-section="staff">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M18 8l1.5 1.5L22 7"/></svg>
         Staff List
+      </button>
+      <button type="button" class="nav-item" data-section="presence">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/></svg>
+        Who's Online
       </button>
       <button type="button" class="nav-item" data-section="tickets">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v5a2 2 0 0 1 0 4v1a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-1a2 2 0 0 1 0-4z"/><path d="M9 9h6M9 13h6"/></svg>
@@ -1565,6 +1573,10 @@
                   <input type="text" id="stRole" placeholder="e.g. Head Admin">
                 </div>
               </div>
+              <div class="field">
+                <label for="stDiscordId">Discord user ID <span style="color:var(--text-3);font-weight:400;">(optional \u2014 enables live online status)</span></label>
+                <input type="text" id="stDiscordId" placeholder="e.g. 123456789012345678">
+              </div>
               <div style="display:flex;gap:8px;">
                 <button class="btn primary" id="stSaveBtn" style="flex:1;">Add to roster</button>
                 <button class="btn ghost" id="stCancelEditBtn" style="display:none;">Cancel edit</button>
@@ -1584,6 +1596,19 @@
             <div class="panel-head"><h2>Current roster</h2><button class="btn ghost small" id="stRefreshBtn">Refresh</button></div>
             <div class="panel-body">
               <div id="stList"><div class="empty-state">Loading...</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="sectionPresence" class="dash-section" style="display:none;">
+        <div class="panel">
+          <div class="panel-head"><h2>Who's Online <span style="display:inline-flex;align-items:center;gap:5px;font-size:10.5px;color:var(--text-3);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-left:8px;"><span style="width:6px;height:6px;border-radius:50%;background:#4ade80;display:inline-block;animation:livePulse 1.6s ease-in-out infinite;"></span>Live</span></h2><button class="btn ghost small" id="presenceRefreshBtn">Refresh</button></div>
+          <div class="panel-body">
+            <p style="font-size:11.5px;color:var(--text-3);margin:0 0 14px;line-height:1.6;">Live Discord presence for staff members who have a Discord ID saved in the Staff List page. Requires a small setup in BotGhost \u2014 see the note below.</p>
+            <div id="presenceList"><div class="empty-state">Loading...</div></div>
+            <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border-soft);font-size:11.5px;color:var(--text-3);line-height:1.7;">
+              <b style="color:var(--text-2);">One-time setup in BotGhost:</b> create a Timed Event (Interval, e.g. every 2 minutes). For each staff member, add a step that reads their {Member.presence} and sends an API Request (POST) to your Worker at <code style="background:var(--field);padding:2px 5px;border-radius:4px;">/presence/update</code> with body <code style="background:var(--field);padding:2px 5px;border-radius:4px;">{"adminKey":"...","discordId":"...","status":"..."}</code>. Enable the Presence Intent in BotGhost's Settings first.
             </div>
           </div>
         </div>
@@ -1655,8 +1680,10 @@
             </div>
           </div>
         </div>
+      </div>
 
-        <div class="panel" style="margin-top:20px;">
+      <div id="sectionLoginSecurity" class="dash-section" style="display:none;">
+        <div class="panel">
           <div class="panel-head"><h2>Login Security</h2><button class="btn ghost small" id="loginAttemptsRefreshBtn">Refresh</button></div>
           <div class="panel-body">
             <p style="font-size:12.5px;color:var(--text-3);margin:0 0 14px;">Every attempt to log in as owner &mdash; successful or not &mdash; is recorded here by device, not IP address. To test it yourself, just try logging in with a wrong password a couple of times, then hit Refresh.</p>
@@ -2213,7 +2240,8 @@
    'mgAppType','mgApplicantName','mgStatusSeg','mgReason','mgGenerateBtn','mgFormMsg','mgOutput','mgCopyBtn',
    'dnUserId','dnTitle','dnMessage','dnUseGeneratedBtn','dnSendBtn','dnMsg',
    'suEditId','suTitle','suTag','suPinnedToggle','suDescription','suChannelId','suSaveBtn','suCancelEditBtn','suFormMsg','suList','suRefreshBtn','suFormTitle',
-   'stEditIndex','stName','stRole','stSaveBtn','stCancelEditBtn','stFormMsg','stChannelId','stPostBtn','stPostMsg','stList','stRefreshBtn','stFormTitle',
+   'stEditIndex','stName','stRole','stDiscordId','stSaveBtn','stCancelEditBtn','stFormMsg','stChannelId','stPostBtn','stPostMsg','stList','stRefreshBtn','stFormTitle',
+   'presenceRefreshBtn','presenceList',
    'acRefreshBtn','acList','acSearch',
    'myActivityRefreshBtn','myActivityContent',
    'acNewUsername','acNewPassword','acNewDiscordId','acNewSteamId','acCreateBtn','acCreateMsg',
@@ -2498,7 +2526,7 @@
     els.linkInlineInput.value=''; els.linkInlineRow.classList.remove('show');
   });
 
-  var SECTION_IDS = { dashboard:'sectionDashboard', myactivity:'sectionMyActivity', game:'sectionGame', discord:'sectionDiscord', ann:'sectionAnn', events:'sectionEvents', formbuilder:'sectionFormBuilder', applications:'sectionApplications', banappeals:'sectionBanAppeals', msggen:'sectionMsgGen', discordnotify:'sectionDiscordNotify', siteupdates:'sectionSiteUpdates', staff:'sectionStaff', tickets:'sectionTickets', ledger:'sectionLedger', audit:'sectionAudit', staffstats:'sectionStaffStats', players:'sectionPlayers', accounts:'sectionAccounts', lookup:'sectionLookup', settings:'sectionSettings', diagnostics:'sectionDiagnostics' };
+  var SECTION_IDS = { dashboard:'sectionDashboard', myactivity:'sectionMyActivity', game:'sectionGame', discord:'sectionDiscord', ann:'sectionAnn', events:'sectionEvents', formbuilder:'sectionFormBuilder', applications:'sectionApplications', banappeals:'sectionBanAppeals', msggen:'sectionMsgGen', discordnotify:'sectionDiscordNotify', siteupdates:'sectionSiteUpdates', staff:'sectionStaff', presence:'sectionPresence', tickets:'sectionTickets', ledger:'sectionLedger', audit:'sectionAudit', loginsecurity:'sectionLoginSecurity', staffstats:'sectionStaffStats', players:'sectionPlayers', accounts:'sectionAccounts', lookup:'sectionLookup', settings:'sectionSettings', diagnostics:'sectionDiagnostics' };
   var CURRENT_SECTION = 'dashboard';
   function switchSection(target){
     CURRENT_SECTION = target;
@@ -2508,12 +2536,14 @@
       if (el) el.style.display = (key===target) ? 'block' : 'none';
     });
     if (target==='applications' && typeof loadApplications==='function') loadApplications();
-    if (target==='audit' && typeof loadServerAuditLog==='function'){ loadServerAuditLog(); loadLoginAttempts(); }
+    if (target==='audit' && typeof loadServerAuditLog==='function'){ loadServerAuditLog(); }
+    if (target==='loginsecurity' && typeof loadLoginAttempts==='function') loadLoginAttempts();
     if (target==='staffstats' && typeof loadStaffStats==='function') loadStaffStats();
     if (target==='myactivity' && typeof loadMyActivity==='function') loadMyActivity();
     if (target==='banappeals' && typeof loadBanAppeals==='function') loadBanAppeals();
     if (target==='siteupdates' && typeof loadSiteUpdates==='function') loadSiteUpdates();
     if (target==='staff' && typeof loadStaffRoster==='function') loadStaffRoster();
+    if (target==='presence' && typeof loadPresence==='function') loadPresence();
     if (target==='accounts' && typeof loadAccounts==='function') loadAccounts();
     if (target==='tickets' && typeof loadSupportTicketsAdmin==='function') loadSupportTicketsAdmin();
     els.sideNavEl.classList.remove('open');
@@ -3868,7 +3898,7 @@
         els.loginAttemptsWarning.style.display = 'none';
       }
 
-      els.loginAttemptsList.innerHTML = attempts.map(function(a){
+      els.loginAttemptsList.innerHTML = attempts.slice(0, 10).map(function(a){
         var d = new Date(a.ts);
         var timeStr = d.toLocaleDateString(undefined,{month:'short',day:'numeric'}) + ' \u00b7 ' + d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
         var badge = a.success
@@ -3883,7 +3913,46 @@
           badge +
           '<span>'+deviceTag+'</span>' +
         '</div>';
-      }).join('');
+      }).join('') + (attempts.length > 10 ? '<button type="button" class="btn small ghost" id="loginAttemptsShowAllBtn" style="margin-top:10px;">Show all '+attempts.length+' attempts</button>' : '');
+
+      var showAllBtn = document.getElementById('loginAttemptsShowAllBtn');
+      if (showAllBtn) showAllBtn.addEventListener('click', function(){
+        els.loginAttemptsList.innerHTML = attempts.map(function(a){
+          var d = new Date(a.ts);
+          var timeStr = d.toLocaleDateString(undefined,{month:'short',day:'numeric'}) + ' \u00b7 ' + d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+          var badge = a.success
+            ? '<span class="badge appeal-yes">Success</span>'
+            : '<span class="badge appeal-no">Failed'+(a.reason?(' \u2014 '+escapeHtml(a.reason)):'')+'</span>';
+          var isMe = a.deviceId && a.deviceId === DEVICE_ID;
+          var deviceTag = a.deviceId
+            ? (isMe ? '<span style="font-size:10px;color:var(--text-3);">This device</span>' : '<button type="button" class="link-msg-btn" data-blockloginattempt="'+escapeHtml(a.deviceId)+'" style="color:var(--ban);">Block this device</button>')
+            : '<span style="font-size:10px;color:var(--text-3);">No device ID</span>';
+          return '<div class="audit-row" style="grid-template-columns:150px 100px 1fr;">' +
+            '<span class="audit-time">'+timeStr+'</span>' +
+            badge +
+            '<span>'+deviceTag+'</span>' +
+          '</div>';
+        }).join('');
+        els.loginAttemptsList.querySelectorAll('[data-blockloginattempt]').forEach(function(btn){
+          btn.addEventListener('click', function(){
+            var deviceId = btn.dataset.blockloginattempt;
+            askConfirm('Block this device from logging in as owner? Remember: this blocks a stored device ID, not a real credential \u2014 if you suspect they actually know the password, change OWNER_PASSWORD in Cloudflare too.', async function(){
+              try{
+                var res2 = await fetch(STATE.settings.workerUrl + '/devices/block', {
+                  method:'POST', headers:{'Content-Type':'application/json'},
+                  body: JSON.stringify({ adminKey: STATE.settings.workerKey, deviceId: deviceId })
+                });
+                if (!res2.ok) throw new Error('Could not block device.');
+                showToast('Device blocked', 'ok');
+                logAudit('Device blocked', 'Blocked device <b>'+escapeHtml(deviceId)+'</b> from logging in');
+                loadLoginAttempts();
+              }catch(err){
+                showToast(err.message || 'Could not block device.', 'err');
+              }
+            }, 'Block device');
+          });
+        });
+      });
 
       els.loginAttemptsList.querySelectorAll('[data-blockloginattempt]').forEach(function(btn){
         btn.addEventListener('click', function(){
@@ -4115,7 +4184,7 @@
             '<button type="button" class="link-msg-btn" data-blockdevice="'+escapeHtml(a.deviceId)+'" style="color:var(--ban);margin-left:6px;">Block this device</button>';
         return '<div class="audit-row"><span class="audit-time">'+timeStr+'</span><span class="audit-tag">'+escapeHtml(a.action)+'</span><span class="audit-detail">'+a.detail+'</span><span style="display:flex;align-items:center;gap:4px;justify-self:end;">'+deviceTag+'</span></div>';
       }).join('');
-      return '<details class="bg-section" open style="margin-bottom:8px;">' +
+      return '<details class="bg-section" style="margin-bottom:8px;">' +
         '<summary>'+escapeHtml(cat)+' <span style="color:var(--text-3);font-weight:400;">('+groups[cat].length+')</span></summary>' +
         '<div class="bg-body" style="padding:0;">'+rows+'</div>' +
       '</details>';
@@ -6927,6 +6996,7 @@
     els.stEditIndex.value = '';
     els.stName.value = '';
     els.stRole.value = '';
+    els.stDiscordId.value = '';
     els.stFormTitle.textContent = 'Add a staff member';
     els.stSaveBtn.textContent = 'Add to roster';
     els.stCancelEditBtn.style.display = 'none';
@@ -6948,6 +7018,7 @@
     els.stFormMsg.textContent = '';
     var name = els.stName.value.trim();
     var role = els.stRole.value.trim();
+    var discordId = els.stDiscordId.value.trim();
     if (!STATE.settings.workerUrl || !STATE.settings.workerKey){
       els.stFormMsg.textContent = 'Configure Worker URL and admin key in Settings first.';
       els.stFormMsg.style.color = 'var(--ban)';
@@ -6962,9 +7033,9 @@
     try{
       var editIndex = els.stEditIndex.value;
       if (editIndex !== ''){
-        STAFF_LIST_DATA[Number(editIndex)] = { id: STAFF_LIST_DATA[Number(editIndex)].id, name: name, role: role };
+        STAFF_LIST_DATA[Number(editIndex)] = { id: STAFF_LIST_DATA[Number(editIndex)].id, name: name, role: role, discordId: discordId };
       } else {
-        STAFF_LIST_DATA.push({ name: name, role: role });
+        STAFF_LIST_DATA.push({ name: name, role: role, discordId: discordId });
       }
       await saveStaffList();
       showToast(editIndex !== '' ? 'Staff member updated' : 'Staff member added', 'ok');
@@ -7007,6 +7078,7 @@
     els.stList.innerHTML = STAFF_LIST_DATA.map(function(s, i){
       return '<div class="player-card" style="margin-bottom:8px;">' +
         '<div class="player-top"><div class="player-name">'+escapeHtml(s.name)+'</div><span class="entry-time">'+escapeHtml(s.role)+'</span></div>' +
+        (s.discordId ? '<div class="public-field-row"><label>Discord ID</label><span>'+escapeHtml(s.discordId)+'</span></div>' : '') +
         '<div style="display:flex;gap:8px;margin-top:8px;">' +
           '<button type="button" class="btn small ghost" data-staff-edit="'+i+'">Edit</button>' +
           '<button type="button" class="btn small ghost" data-staff-remove="'+i+'" style="color:var(--ban);">Remove</button>' +
@@ -7021,6 +7093,7 @@
         els.stEditIndex.value = i;
         els.stName.value = s.name;
         els.stRole.value = s.role;
+        els.stDiscordId.value = s.discordId || '';
         els.stFormTitle.textContent = 'Edit staff member';
         els.stSaveBtn.textContent = 'Save changes';
         els.stCancelEditBtn.style.display = 'inline-block';
@@ -7046,6 +7119,63 @@
     });
   }
   els.stRefreshBtn.addEventListener('click', loadStaffRoster);
+
+  // ==================== Who's Online (Discord presence) ====================
+  var PRESENCE_META = {
+    online: { label: 'Online', color: '#4ade80' },
+    idle: { label: 'Idle', color: '#ffd43b' },
+    dnd: { label: 'Do Not Disturb', color: '#ff5c5c' },
+    offline: { label: 'Offline', color: '#6b7280' }
+  };
+
+  async function loadPresence(){
+    if (!STATE.settings.workerUrl || !STATE.settings.workerKey){
+      els.presenceList.innerHTML = '<div class="empty-state">Configure Worker URL and admin key in Settings first.</div>';
+      return;
+    }
+    els.presenceList.innerHTML = '<div class="empty-state">Loading...</div>';
+    try{
+      var rosterRes = await fetch(STATE.settings.workerUrl + '/staff/list', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ adminKey: STATE.settings.workerKey })
+      });
+      var rosterData = await rosterRes.json();
+      var roster = (rosterData.staff || []).filter(function(s){ return s.discordId; });
+
+      if (roster.length===0){
+        els.presenceList.innerHTML = '<div class="empty-state">No staff with a Discord ID saved yet. Add one on the Staff List page to start tracking their status.</div>';
+        return;
+      }
+
+      var presRes = await fetch(STATE.settings.workerUrl + '/presence/list', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ adminKey: STATE.settings.workerKey })
+      });
+      var presData = await presRes.json();
+      var presence = presData.presence || {};
+
+      els.presenceList.innerHTML = roster.map(function(s){
+        var pres = presence[s.discordId];
+        var status = pres ? (PRESENCE_META[pres.status] ? pres.status : 'offline') : null;
+        var meta = status ? PRESENCE_META[status] : null;
+        var lastSeen = pres && pres.updatedAt ? new Date(pres.updatedAt).toLocaleString() : null;
+        return '<div class="player-card" style="margin-bottom:8px;">' +
+          '<div class="player-top">' +
+            '<div class="player-name" style="display:flex;align-items:center;gap:8px;">' +
+              '<span style="width:9px;height:9px;border-radius:50%;background:'+(meta?meta.color:'#3a3f4a')+';display:inline-block;flex-shrink:0;"></span>' +
+              escapeHtml(s.name) +
+            '</div>' +
+            '<span class="entry-time">'+escapeHtml(s.role)+'</span>' +
+          '</div>' +
+          '<div class="public-field-row"><label>Status</label><span>'+(meta?meta.label:'No data yet')+'</span></div>' +
+          (lastSeen ? '<div class="public-field-row"><label>Last updated</label><span>'+lastSeen+'</span></div>' : '') +
+        '</div>';
+      }).join('');
+    }catch(err){
+      els.presenceList.innerHTML = '<div class="empty-state">'+escapeHtml(err.message || 'Could not load presence data.')+'</div>';
+    }
+  }
+  els.presenceRefreshBtn.addEventListener('click', loadPresence);
 
   els.stPostBtn.addEventListener('click', async function(){
     els.stPostMsg.textContent = '';
@@ -7739,13 +7869,13 @@
     banappeals: ['banappeals'],
     tickets: ['tickets'],
     siteupdates: ['siteupdates'],
-    staff: ['staff'],
+    staff: ['staff','presence'],
     announcements: ['ann','events'],
     players: ['players','lookup'],
     audit: ['audit'],
     cases: ['ledger']
   };
-  var OWNER_ONLY_SECTIONS = ['settings','diagnostics','accounts','staffstats'];
+  var OWNER_ONLY_SECTIONS = ['settings','diagnostics','accounts','staffstats','loginsecurity'];
 
   function applyStaffPermissionGating(session){
     var perms = session.permissions || {};
@@ -8209,7 +8339,9 @@
       if (CURRENT_SECTION==='applications' && typeof loadApplications==='function') loadApplications();
       else if (CURRENT_SECTION==='banappeals' && typeof loadBanAppeals==='function') loadBanAppeals();
       else if (CURRENT_SECTION==='tickets' && typeof loadSupportTicketsAdmin==='function') loadSupportTicketsAdmin();
-      else if (CURRENT_SECTION==='audit' && typeof loadServerAuditLog==='function'){ loadServerAuditLog(); loadLoginAttempts(); }
+      else if (CURRENT_SECTION==='audit' && typeof loadServerAuditLog==='function'){ loadServerAuditLog(); }
+      else if (CURRENT_SECTION==='loginsecurity' && typeof loadLoginAttempts==='function') loadLoginAttempts();
+      else if (CURRENT_SECTION==='presence' && typeof loadPresence==='function') loadPresence();
     } else if (session.role === 'player'){
       if (CURRENT_PLAYER_TAB==='support' && typeof loadPlayerTickets==='function') loadPlayerTickets(session);
     }
