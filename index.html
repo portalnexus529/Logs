@@ -7453,7 +7453,7 @@
         try{
           var res = await fetch(STATE.settings.workerUrl + '/support/claim', {
             method:'POST', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({ adminKey: STATE.settings.workerKey, id: id, claim: doClaim, staffName: getDeviceLabel() })
+            body: JSON.stringify({ adminKey: STATE.settings.workerKey, id: id, claim: doClaim, staffName: getStaffDisplayName() })
           });
           if (!res.ok){
             var errData; try{ errData = await res.json(); }catch(e2){ errData = {}; }
@@ -7481,7 +7481,7 @@
         try{
           var res = await fetch(STATE.settings.workerUrl + '/support/staff-reply', {
             method:'POST', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({ adminKey: STATE.settings.workerKey, id: id, text: text, staffName: getDeviceLabel() })
+            body: JSON.stringify({ adminKey: STATE.settings.workerKey, id: id, text: text, staffName: getStaffDisplayName() })
           });
           if (!res.ok) throw new Error('Could not send message.');
           input.value = '';
@@ -7510,7 +7510,7 @@
         try{
           var res = await fetch(STATE.settings.workerUrl + '/support/status', {
             method:'POST', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({ adminKey: STATE.settings.workerKey, id: id, status: statusSel.value, staffName: getDeviceLabel() })
+            body: JSON.stringify({ adminKey: STATE.settings.workerKey, id: id, status: statusSel.value, staffName: getStaffDisplayName() })
           });
           if (!res.ok){
             var errData; try{ errData = await res.json(); }catch(e2){ errData = {}; }
@@ -7537,7 +7537,7 @@
           try{
             var res = await fetch(STATE.settings.workerUrl + '/support/status', {
               method:'POST', headers:{'Content-Type':'application/json'},
-              body: JSON.stringify({ adminKey: STATE.settings.workerKey, id: id, status: 'closed', staffName: getDeviceLabel() })
+              body: JSON.stringify({ adminKey: STATE.settings.workerKey, id: id, status: 'closed', staffName: getStaffDisplayName() })
             });
             if (!res.ok) throw new Error('Could not close ticket.');
             if (t) downloadTicketTranscript(Object.assign({}, t, { status: 'closed' }));
@@ -7858,6 +7858,11 @@
     var label = null;
     try{ label = localStorage.getItem('modlog:deviceLabel'); }catch(e){}
     return label || 'Unnamed device';
+  }
+  function getStaffDisplayName(){
+    var session = getSession();
+    if (session && session.role !== 'owner' && session.username) return session.username;
+    return getDeviceLabel();
   }
   var DEVICE_ID = getDeviceId();
 
