@@ -398,13 +398,16 @@
   .response-card-body{display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border-soft);}
   .response-card.expanded .response-card-body{display:block;}
   .response-card-actions{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap;}
-  .ticket-thread{max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin:12px 0;padding-right:2px;}
-  .ticket-msg{max-width:82%;padding:9px 12px;border-radius:12px;font-size:12.5px;line-height:1.5;}
-  .ticket-msg-user{background:var(--field);border:1px solid var(--border-soft);align-self:flex-start;border-bottom-left-radius:3px;}
-  .ticket-msg-staff{background:var(--accent-bg);border:1px solid var(--accent);align-self:flex-end;border-bottom-right-radius:3px;}
-  .ticket-msg-system{align-self:center;background:none;color:var(--text-3);font-size:11px;font-style:italic;padding:2px;}
-  .ticket-msg-author{font-size:10.5px;font-weight:700;opacity:.75;margin-bottom:3px;}
-  .ticket-claim-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-2);margin-bottom:10px;}
+  .ticket-thread{max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin:12px 0;padding:12px;background:var(--bg);border-radius:var(--radius-sm);border:1px solid var(--border-soft);}
+  .ticket-msg{max-width:82%;min-width:100px;padding:9px 13px;border-radius:14px;font-size:12.5px;line-height:1.5;word-break:break-word;}
+  .ticket-msg-user{background:var(--field);border:1px solid var(--border-soft);align-self:flex-start;border-bottom-left-radius:4px;}
+  .ticket-msg-staff{background:var(--accent-bg);border:1px solid var(--accent);align-self:flex-end;border-bottom-right-radius:4px;}
+  .ticket-msg-system{align-self:center;background:var(--field);color:var(--text-3);font-size:10.5px;font-style:normal;padding:5px 14px;border-radius:20px;max-width:none;}
+  .ticket-msg-author{font-size:10px;font-weight:700;opacity:.7;margin-bottom:3px;text-transform:uppercase;letter-spacing:.03em;}
+  .ticket-meta-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+  .ticket-category-chip{font-size:10.5px;font-weight:600;background:var(--field);border:1px solid var(--border-soft);color:var(--text-2);padding:4px 11px;border-radius:20px;}
+  .ticket-claim-pill{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:500;color:var(--text-2);background:var(--field);border:1px solid var(--border-soft);padding:5px 12px;border-radius:20px;}
+  .ticket-claim-pill.claimed{background:var(--accent-bg);border-color:var(--accent);color:var(--accent);}
   @media (max-width:640px){
     .response-card-name{white-space:normal;}
     .apps-sort-select{margin-left:0;}
@@ -7390,11 +7393,13 @@
           '</div>' +
         '</div>' +
         '<div class="response-card-body">' +
-          '<div class="public-field-row"><label>Category</label><span>'+escapeHtml(t.category)+'</span></div>' +
-          '<div class="public-field-row"><label>Submitted by</label><span>'+escapeHtml(ticketSubmitterLabel(t))+'</span></div>' +
-          '<div class="ticket-claim-row">' +
-            (claimed ? 'Claimed by <b style="color:var(--text);">'+escapeHtml(t.claimedByName)+'</b>' : 'Unclaimed') +
-            '<button type="button" class="btn small ghost" data-ticket-claim="'+t.id+'" data-claim-action="'+(claimed?'unclaim':'claim')+'">'+(claimed?'Unclaim':'Claim ticket')+'</button>' +
+          '<div class="ticket-meta-row">' +
+            '<span class="ticket-category-chip">'+escapeHtml(t.category)+'</span>' +
+            '<span class="ticket-category-chip">'+escapeHtml(ticketSubmitterLabel(t))+'</span>' +
+          '</div>' +
+          '<div class="ticket-meta-row">' +
+            '<span class="ticket-claim-pill'+(claimed?' claimed':'')+'">'+(claimed ? '\ud83c\udfa7 Claimed by '+escapeHtml(t.claimedByName) : '\u23f3 Unclaimed') +'</span>' +
+            '<button type="button" class="btn small ghost" data-ticket-claim="'+t.id+'" data-claim-action="'+(claimed?'unclaim':'claim')+'" style="margin-left:auto;">'+(claimed?'Unclaim':'Claim ticket')+'</button>' +
           '</div>' +
           '<div class="ticket-thread" data-ticket-thread="'+t.id+'">'+renderTicketMessages(t)+'</div>' +
           (status==='closed' ?
@@ -8248,8 +8253,10 @@
             '</div>' +
           '</div>' +
           '<div class="response-card-body">' +
-            '<div class="public-field-row"><label>Category</label><span>'+escapeHtml(t.category)+'</span></div>' +
-            '<div class="ticket-claim-row">'+(claimed ? 'You\u2019re speaking with <b style="color:var(--text);">'+escapeHtml(t.claimedByName)+'</b>' : 'Waiting for a staff member to pick this up')+'</div>' +
+            '<div class="ticket-meta-row">' +
+              '<span class="ticket-category-chip">'+escapeHtml(t.category)+'</span>' +
+              '<span class="ticket-claim-pill'+(claimed?' claimed':'')+'">'+(claimed ? '\ud83c\udfa7 Speaking with '+escapeHtml(t.claimedByName) : '\u23f3 Waiting for a staff member')+'</span>' +
+            '</div>' +
             '<div class="ticket-thread" data-pt-thread="'+t.id+'">'+renderTicketMessages(t)+'</div>' +
             (status==='closed' ?
               '<div class="empty-state" style="padding:8px 0;">This ticket is closed. Submit a new ticket if you need further help.</div>' :
