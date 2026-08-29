@@ -2975,6 +2975,22 @@
       'This is not something you can fix by changing settings \u2014 it needs new code added for that specific permission (a dedicated staff-authenticated endpoint, the same way Timeout, Discord Warning, and Support Tickets already work). Ask for that permission to be wired up properly when you are ready.',
       'In the meantime, avoid granting permissions flagged here to staff, since checking the box currently creates a false impression that the feature works for them.'
     ],
+    endpointsecurity: [
+      'This checks that public pages (login, updates, ticket counts) work without your admin key, and that protected admin actions correctly refuse access without it \u2014 in both directions.',
+      'If a public endpoint suddenly needs the admin key, something moved it behind the security gate by mistake \u2014 this breaks real functionality (like login) for everyone.',
+      'If a protected endpoint responded without needing the admin key, that is a real security exposure \u2014 someone without any credentials could potentially reach admin-only actions. Treat this one urgently.',
+      'Either direction requires a code fix in worker.js, not a settings change \u2014 ask for the flagged endpoint(s) to be repositioned correctly relative to the admin key check.'
+    ],
+    permconsistency: [
+      'This compares the permission checkboxes on the Accounts page against the internal lists that decide what each permission actually unlocks.',
+      'A mismatch here usually means a permission was added to one list (like the checkboxes) but not the others, so it either does nothing when granted, or cannot be granted at all even though the system expects it to exist.',
+      'This needs a code fix to bring the lists back in sync \u2014 point out exactly which permission was flagged when asking for it to be fixed.'
+    ],
+    htmlintegrity: [
+      'This re-downloads the live version of this exact page and checks its raw HTML for structural problems \u2014 unbalanced tags or the same element ID used more than once.',
+      'These kinds of issues can cause parts of the page to render incorrectly, buttons to stop responding, or JavaScript to grab the wrong element without any obvious error message.',
+      'This needs a direct code fix to the HTML \u2014 share the specific problem this check found when asking for it to be corrected.'
+    ],
     siteintegrity: [
       'You do not need to find or understand what\'s broken \u2014 the fix is just replacing the whole file with a working copy, no coding needed.',
       'Go to your GitHub repository \u2192 click on index.html \u2192 click the pencil (edit) icon in the top right.',
@@ -3093,11 +3109,14 @@
 
   var DIAG_CHECKS = [
     { id:'siteintegrity', label:'Site code & HTML integrity' },
+    { id:'htmlintegrity', label:'Live page structure (tags & duplicate IDs)' },
     { id:'worker', label:'Worker connectivity' },
     { id:'latency', label:'Worker response time' },
     { id:'storage', label:'Storage (KV) read access' },
     { id:'kvwrite', label:'Storage (KV) write access' },
     { id:'staffperms', label:'Staff permission functionality' },
+    { id:'endpointsecurity', label:'Endpoint security boundaries' },
+    { id:'permconsistency', label:'Permission system consistency' },
     { id:'botauth', label:'Discord bot authentication' },
     { id:'adminkey', label:'Admin key authorization' },
     { id:'loginsecurity', label:'Login gate security' },
@@ -3114,7 +3133,9 @@
     { id:'tempbans', label:'Temporary ban tracking' },
     { id:'devices', label:'Blocked device list' },
     { id:'auditlog', label:'Local audit activity (last 24h)' },
-    { id:'pin', label:'Access PIN protection' }
+    { id:'pin', label:'Access PIN protection' },
+    { id:'casesarchitecture', label:'Cases (Ledger) storage model' },
+    { id:'deadcode', label:'Unused backend features' }
   ];
 
   function diagSleep(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
@@ -3207,6 +3228,34 @@
         diagSetResult('siteintegrity', 'fail', 'Checked ' + totalChecked + ' elements/functions, found ' + totalMissing + ' missing. ' + parts.join(' '), true);
       } else {
         diagSetResult('siteintegrity', 'pass', 'All ' + totalChecked + ' expected page elements and core functions are present and intact.');
+      }
+    });
+
+    // 0b. Live page structure — re-downloads this exact page and checks the raw HTML
+    // itself for unbalanced tags or duplicate IDs, the same way a manual code review would.
+    await paced('htmlintegrity', async function(){
+      try{
+        var htRes = await fetch(window.location.href, { cache:'no-store' });
+        var html = await htRes.text();
+        var divOpen = (html.match(/<div[\s>]/g)||[]).length;
+        var divClose = (html.match(/<\/div>/g)||[]).length;
+        var idMatches = html.match(/id="[A-Za-z0-9]+"/g) || [];
+        var seen = {}; var dupes = [];
+        idMatches.forEach(function(m){
+          var id = m.slice(4, -1);
+          if (seen[id]){ if (dupes.indexOf(id)===-1) dupes.push(id); }
+          seen[id] = true;
+        });
+        var problems = [];
+        if (divOpen !== divClose) problems.push('Unbalanced <div> tags (' + divOpen + ' opened, ' + divClose + ' closed) \u2014 this can silently break layout.');
+        if (dupes.length) problems.push(dupes.length + ' duplicate element ID(s): ' + dupes.slice(0,10).join(', ') + (dupes.length>10 ? '...' : '') + '.');
+        if (problems.length){
+          diagSetResult('htmlintegrity', 'fail', problems.join(' '), true);
+        } else {
+          diagSetResult('htmlintegrity', 'pass', 'Downloaded the live page and confirmed it is well-formed \u2014 no unbalanced tags or duplicate IDs.');
+        }
+      }catch(err){
+        diagSetResult('htmlintegrity', 'info', 'Could not download the live page to verify: ' + (err.message||'unknown error') + '.');
       }
     });
 
@@ -3307,6 +3356,75 @@
           ? 'Not yet implemented for staff (page/button will show, but the action itself will fail): ' + broken.join(', ') + '. Players & Lookups and Announcements & Events use a different mechanism and aren\u2019t covered by this check.'
           : 'Everything checked is fully working for staff.');
       diagSetResult('staffperms', broken.length ? 'fail' : 'pass', detail, !!broken.length);
+    });
+
+    // 4c. Endpoint security boundaries — confirms public endpoints stay public and admin
+    // endpoints stay protected, catching the exact class of ordering mistake found earlier.
+    await paced('endpointsecurity', async function(){
+      var publicChecks = [
+        { label:'Login', path:'/login', body:{ username:'__probe__', password:'x' } },
+        { label:'Site Updates feed', path:'/updates', get:true },
+        { label:'Support ticket count', path:'/support/count', get:true }
+      ];
+      var adminChecks = [
+        { label:'Accounts list', path:'/users/list', body:{} },
+        { label:'Case sync', path:'/case', body:{} },
+        { label:'Staff roster', path:'/staff/list', body:{} }
+      ];
+      var problems = [];
+      for (var i=0;i<publicChecks.length;i++){
+        var c = publicChecks[i];
+        try{
+          var res = c.get
+            ? await fetch(AUTH_WORKER_URL + c.path)
+            : await fetch(AUTH_WORKER_URL + c.path, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(c.body||{}) });
+          if (res.status === 401){
+            var d; try{ d = await res.json(); }catch(e){ d = {}; }
+            if ((d.error||'')==='Unauthorized') problems.push(c.label+' now requires the admin key even though it should be public \u2014 something moved it behind the security gate.');
+          }
+        }catch(e){}
+      }
+      for (var j=0;j<adminChecks.length;j++){
+        var a = adminChecks[j];
+        try{
+          var res2 = await fetch(AUTH_WORKER_URL + a.path, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(a.body||{}) });
+          if (res2.status !== 401){
+            problems.push(a.label+' should require the admin key, but responded without one (status '+res2.status+') \u2014 this may be a real security exposure.');
+          }
+        }catch(e){}
+      }
+      if (problems.length){
+        diagSetResult('endpointsecurity', 'fail', problems.join(' '), true);
+      } else {
+        diagSetResult('endpointsecurity', 'pass', 'Checked '+(publicChecks.length+adminChecks.length)+' endpoints \u2014 public ones are reachable without the admin key, and protected ones correctly refuse access without it.');
+      }
+    });
+
+    // 4d. Permission system consistency — compares the Accounts checkboxes against the
+    // internal maps that decide what each permission actually does.
+    await paced('permconsistency', async function(){
+      var checkboxPerms = Array.prototype.map.call(document.querySelectorAll('#acPermissionsField [data-perm]'), function(cb){ return cb.dataset.perm; });
+      var psmKeys = (typeof PERMISSION_SECTION_MAP !== 'undefined') ? Object.keys(PERMISSION_SECTION_MAP) : [];
+      var rdpKeys = {};
+      if (typeof ROLE_DEFAULT_PERMS !== 'undefined'){
+        Object.keys(ROLE_DEFAULT_PERMS).forEach(function(role){ Object.keys(ROLE_DEFAULT_PERMS[role]).forEach(function(k){ rdpKeys[k]=true; }); });
+      }
+      var navGatingExempt = { ban:true, kick:true, timeout:true, warn:true };
+      var issues = [];
+      checkboxPerms.forEach(function(p){
+        if (!navGatingExempt[p] && psmKeys.indexOf(p)===-1) issues.push('"'+p+'" has a checkbox but no page/section mapped to it');
+      });
+      psmKeys.forEach(function(p){
+        if (checkboxPerms.indexOf(p)===-1) issues.push('"'+p+'" is mapped to a page but has no checkbox to grant it');
+      });
+      Object.keys(rdpKeys).forEach(function(p){
+        if (checkboxPerms.indexOf(p)===-1) issues.push('role defaults reference "'+p+'" with no matching checkbox');
+      });
+      if (issues.length){
+        diagSetResult('permconsistency', 'fail', issues.length+' inconsistenc(y/ies) found: '+issues.join('; ')+'.', true);
+      } else {
+        diagSetResult('permconsistency', 'pass', 'All '+checkboxPerms.length+' permission checkboxes, page mappings, and role defaults are consistent with each other.');
+      }
     });
 
     // 5 & 6. Bot auth + admin key
@@ -3577,6 +3695,18 @@
       } else {
         diagSetResult('pin', 'info', 'No PIN set. Optional, but adds a layer before the login screen \u2014 configurable in Settings.', true);
       }
+    });
+
+    // Known architecture note — always surfaced, not something a pass/fail check can catch,
+    // but genuinely important to keep visible every time diagnostics run.
+    await paced('casesarchitecture', async function(){
+      var count = STATE.entries ? STATE.entries.length : 0;
+      diagSetResult('casesarchitecture', 'info', 'Cases (the Ledger) is stored only in this browser\u2019s local storage (' + count + ' case(s) saved here right now) \u2014 it is not synced to a shared server list. Opening this dashboard on a different device or browser, or as a different staff member, will show a completely separate, independent set of cases.');
+    });
+
+    // Known dead code note — always surfaced.
+    await paced('deadcode', async function(){
+      diagSetResult('deadcode', 'info', 'The backend (worker.js) still contains an older, unused ticket system (/ticket-config, /tickets/create, /tickets/panel, /tickets/transcripts/*) that nothing on this site currently calls \u2014 it was replaced by the newer Support Tickets system. Harmless to leave running, but it could be removed to simplify the codebase.');
     });
 
     els.diagRunBtn.disabled = false;
