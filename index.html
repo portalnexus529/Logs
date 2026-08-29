@@ -2969,6 +2969,12 @@
   }
 
   var DIAG_FIXES = {
+    staffperms: [
+      'This checks whether each staff-grantable permission actually has a working backend behind it, by calling its real endpoint with fake credentials and reading the response \u2014 not just checking that the button exists.',
+      'A permission showing as \u201cnot implemented\u201d means: the page or button will appear for staff you grant it to, but the action itself will fail when they try to use it, because it still secretly requires your master admin key.',
+      'This is not something you can fix by changing settings \u2014 it needs new code added for that specific permission (a dedicated staff-authenticated endpoint, the same way Timeout, Discord Warning, and Support Tickets already work). Ask for that permission to be wired up properly when you are ready.',
+      'In the meantime, avoid granting permissions flagged here to staff, since checking the box currently creates a false impression that the feature works for them.'
+    ],
     siteintegrity: [
       'You do not need to find or understand what\'s broken \u2014 the fix is just replacing the whole file with a working copy, no coding needed.',
       'Go to your GitHub repository \u2192 click on index.html \u2192 click the pencil (edit) icon in the top right.',
@@ -3091,6 +3097,7 @@
     { id:'latency', label:'Worker response time' },
     { id:'storage', label:'Storage (KV) read access' },
     { id:'kvwrite', label:'Storage (KV) write access' },
+    { id:'staffperms', label:'Staff permission functionality' },
     { id:'botauth', label:'Discord bot authentication' },
     { id:'adminkey', label:'Admin key authorization' },
     { id:'loginsecurity', label:'Login gate security' },
@@ -3254,6 +3261,52 @@
       }catch(err){
         diagSetResult('kvwrite', 'fail', 'Request failed: ' + (err.message||'unknown error'), true);
       }
+    });
+
+    // 4b. Staff permission functionality — actually calls each staff-grantable permission's
+    // real endpoint (with intentionally invalid credentials) and reads the response to tell
+    // whether that permission has genuine staff-side access, or just an appearance of it.
+    async function testStaffPermEndpoint(path, extraBody){
+      try{
+        var res = await fetch(AUTH_WORKER_URL + path, {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify(Object.assign({ username: '__diagnostic_probe__', passwordHash: 'x' }, extraBody||{}))
+        });
+        var data; try{ data = await res.json(); }catch(e){ data = {}; }
+        var msg = (data.error || '').toLowerCase();
+        var working = res.status === 404 && msg.indexOf('no account') !== -1;
+        return { working: working };
+      }catch(e){
+        return { working: false };
+      }
+    }
+    await paced('staffperms', async function(){
+      var checks = [
+        { label:'Timeout', path:'/staff/timeout', extraBody:{ guildId:'0', userId:'0', durationMs:1 } },
+        { label:'Discord Warning', path:'/staff/warn', extraBody:{ userId:'0' } },
+        { label:'Support Tickets', path:'/staff/tickets/list', extraBody:{} },
+        { label:'Ban members', path:'/staff/ban', extraBody:{ guildId:'0', userId:'0' } },
+        { label:'Kick members', path:'/staff/kick', extraBody:{ guildId:'0', userId:'0' } },
+        { label:'Cases (Unban action)', path:'/staff/unban', extraBody:{ guildId:'0', userId:'0' } },
+        { label:'Applications', path:'/staff/applications/list', extraBody:{} },
+        { label:'Ban Appeals', path:'/staff/banappeals/list', extraBody:{} },
+        { label:'Site Updates', path:'/staff/updates/list', extraBody:{} },
+        { label:'Staff List', path:'/staff/roster/list', extraBody:{} },
+        { label:'Audit Log', path:'/staff/audit/list', extraBody:{} }
+      ];
+      var results = [];
+      for (var i=0;i<checks.length;i++){
+        var r = await testStaffPermEndpoint(checks[i].path, checks[i].extraBody);
+        results.push({ label: checks[i].label, working: r.working });
+      }
+      var working = results.filter(function(r){ return r.working; }).map(function(r){ return r.label; });
+      var broken = results.filter(function(r){ return !r.working; }).map(function(r){ return r.label; });
+      var detail = working.length + ' of ' + results.length + ' staff-grantable permissions are fully functional: ' +
+        (working.join(', ') || 'none') + '. ' +
+        (broken.length
+          ? 'Not yet implemented for staff (page/button will show, but the action itself will fail): ' + broken.join(', ') + '. Players & Lookups and Announcements & Events use a different mechanism and aren\u2019t covered by this check.'
+          : 'Everything checked is fully working for staff.');
+      diagSetResult('staffperms', broken.length ? 'fail' : 'pass', detail, !!broken.length);
     });
 
     // 5 & 6. Bot auth + admin key
