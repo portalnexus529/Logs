@@ -796,6 +796,15 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.3 4.3a18 18 0 0 0-4.5-1.4l-.3.6a16 16 0 0 1 3.8 1.3M8.5 3.5a18 18 0 0 0-4.5 1.4M3.5 5.8C1.8 10 1.4 14.1 2.1 18.1a18 18 0 0 0 5.5 2.8l1-1.6M20.5 5.8c1.7 4.2 2.1 8.3 1.4 12.3a18 18 0 0 1-5.5 2.8l-1-1.6"/><circle cx="9" cy="13" r="1.3"/><circle cx="15" cy="13" r="1.3"/></svg>
         Discord actions
       </button>
+      <button type="button" class="nav-item" data-section="assigntask">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        Assign Task
+      </button>
+      <button type="button" class="nav-item" data-section="mytasks">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10M7 12h10M7 16h6"/></svg>
+        My Tasks
+        <span id="tasksNavBadge" class="nav-badge" style="display:none;"></span>
+      </button>
       <button type="button" class="nav-item" data-section="ledger">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
         Cases
@@ -1166,6 +1175,81 @@
         <button class="btn primary" id="discPublishBtn">Publish Discord ban report</button>
         <div id="discFormMsg"></div>
         </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="sectionAssignTask" class="dash-section" style="display:none;">
+        <div class="panel">
+          <div class="panel-head"><h2>Assign Task</h2></div>
+          <div class="panel-body">
+            <p style="font-size:12px;color:var(--text-3);margin:0 0 16px;line-height:1.6;">Give a staff member a one-time action against one specific person, without granting them broad Ban/Kick/Timeout access. They'll see exactly this task, and only this task, and can only use it once.</p>
+
+            <div class="two-col">
+              <div class="field">
+                <label for="taskAssignee">Assign to (staff username)</label>
+                <select id="taskAssignee"><option value="">Loading staff accounts...</option></select>
+              </div>
+              <div class="field">
+                <label for="taskAction">Action</label>
+                <select id="taskAction">
+                  <option value="ban">Ban</option>
+                  <option value="kick">Kick</option>
+                  <option value="timeout">Timeout</option>
+                  <option value="warn">Discord Warning</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="two-col">
+              <div class="field">
+                <label for="taskTargetId">Target Discord user ID</label>
+                <input type="text" id="taskTargetId" placeholder="e.g. 123456789012345678">
+              </div>
+              <div class="field">
+                <label for="taskTargetName">Target username <span style="color:var(--text-3);font-weight:400;">(optional, for display)</span></label>
+                <input type="text" id="taskTargetName" placeholder="e.g. Ghost#0001">
+              </div>
+            </div>
+
+            <div class="field" id="taskDurationField" style="display:none;">
+              <label for="taskDurationValue">Timeout duration</label>
+              <div style="display:flex;gap:8px;">
+                <input type="number" id="taskDurationValue" placeholder="e.g. 60" min="1" style="flex:1;">
+                <select id="taskDurationUnit" style="width:auto;">
+                  <option value="60000">Minutes</option>
+                  <option value="3600000">Hours</option>
+                  <option value="86400000">Days</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="taskReason">Reason <span style="color:var(--text-3);font-weight:400;">(shown to the staff member, and in the DM if enabled)</span></label>
+              <textarea id="taskReason" rows="2" placeholder="Why this action is being taken"></textarea>
+            </div>
+
+            <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:500;margin-bottom:14px;"><input type="checkbox" id="taskSendDm" style="width:auto;" checked> Send the target a DM when the task is completed</label>
+
+            <button class="btn primary" id="taskCreateBtn" style="width:100%;">Assign task</button>
+            <div id="taskCreateMsg" style="margin-top:8px;font-size:12.5px;"></div>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-top:20px;">
+          <div class="panel-head"><h2>All Tasks</h2><button class="btn ghost small" id="taskListRefreshBtn">Refresh</button></div>
+          <div class="panel-body">
+            <div id="taskAdminList"><div class="empty-state">Loading...</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="sectionMyTasks" class="dash-section" style="display:none;">
+        <div class="panel">
+          <div class="panel-head"><h2>My Tasks</h2><button class="btn ghost small" id="myTasksRefreshBtn">Refresh</button></div>
+          <div class="panel-body">
+            <p style="font-size:12px;color:var(--text-3);margin:0 0 14px;">Actions assigned to you specifically by the owner. Each one can only be used once.</p>
+            <div id="myTasksList"><div class="empty-state">Loading...</div></div>
           </div>
         </div>
       </div>
@@ -2234,6 +2318,8 @@
    'acNewUsername','acNewPassword','acNewDiscordId','acNewSteamId','acCreateBtn','acCreateMsg',
    'acEditUsername','acFormTitle','acPasswordField','acRole','acPermissionsField','acCancelEditBtn',
    'ticketsFilterBar','ticketsList','ticketsRefreshBtn','ticketNavBadge',
+   'taskAssignee','taskAction','taskTargetId','taskTargetName','taskDurationField','taskDurationValue','taskDurationUnit','taskReason','taskSendDm','taskCreateBtn','taskCreateMsg','taskListRefreshBtn','taskAdminList',
+   'myTasksRefreshBtn','myTasksList','tasksNavBadge',
    'applyWrap','applyBody',
    'webhookNameInput','webhookUrlInput','addWebhookBtn','webhookListUI',
    'workerUrlInput','workerKeyInput','guildIdInput',
@@ -2539,7 +2625,7 @@
     els.linkInlineInput.value=''; els.linkInlineRow.classList.remove('show');
   });
 
-  var SECTION_IDS = { dashboard:'sectionDashboard', myactivity:'sectionMyActivity', game:'sectionGame', discord:'sectionDiscord', ann:'sectionAnn', events:'sectionEvents', formbuilder:'sectionFormBuilder', applications:'sectionApplications', banappeals:'sectionBanAppeals', msggen:'sectionMsgGen', discordnotify:'sectionDiscordNotify', siteupdates:'sectionSiteUpdates', staff:'sectionStaff', tickets:'sectionTickets', ledger:'sectionLedger', audit:'sectionAudit', loginsecurity:'sectionLoginSecurity', staffstats:'sectionStaffStats', players:'sectionPlayers', accounts:'sectionAccounts', lookup:'sectionLookup', settings:'sectionSettings', diagnostics:'sectionDiagnostics' };
+  var SECTION_IDS = { dashboard:'sectionDashboard', myactivity:'sectionMyActivity', game:'sectionGame', discord:'sectionDiscord', assigntask:'sectionAssignTask', mytasks:'sectionMyTasks', ann:'sectionAnn', events:'sectionEvents', formbuilder:'sectionFormBuilder', applications:'sectionApplications', banappeals:'sectionBanAppeals', msggen:'sectionMsgGen', discordnotify:'sectionDiscordNotify', siteupdates:'sectionSiteUpdates', staff:'sectionStaff', tickets:'sectionTickets', ledger:'sectionLedger', audit:'sectionAudit', loginsecurity:'sectionLoginSecurity', staffstats:'sectionStaffStats', players:'sectionPlayers', accounts:'sectionAccounts', lookup:'sectionLookup', settings:'sectionSettings', diagnostics:'sectionDiagnostics' };
   var CURRENT_SECTION = 'dashboard';
   function switchSection(target){
     CURRENT_SECTION = target;
@@ -2556,6 +2642,8 @@
     if (target==='banappeals' && typeof loadBanAppeals==='function') loadBanAppeals();
     if (target==='siteupdates' && typeof loadSiteUpdates==='function') loadSiteUpdates();
     if (target==='staff' && typeof loadStaffRoster==='function') loadStaffRoster();
+    if (target==='assigntask' && typeof loadTaskAssigneeOptions==='function'){ loadTaskAssigneeOptions(); loadAdminTaskList(); }
+    if (target==='mytasks' && typeof loadMyTasks==='function') loadMyTasks();
     if (target==='accounts' && typeof loadAccounts==='function') loadAccounts();
     if (target==='tickets' && typeof loadSupportTicketsAdmin==='function') loadSupportTicketsAdmin();
     els.sideNavEl.classList.remove('open');
@@ -7373,6 +7461,223 @@
     }
   });
 
+  // ==================== Assign Task (owner) / My Tasks (staff) ====================
+  var TASK_ACTION_LABEL = { ban:'Ban', kick:'Kick', timeout:'Timeout', warn:'Discord Warning' };
+  var TASK_ACTION_EMOJI = { ban:'\ud83d\udd28', kick:'\ud83d\udc62', timeout:'\u23f3', warn:'\u26a0\ufe0f' };
+  var TASK_STATUS_BADGE = {
+    pending: '<span class="badge status-in_progress">Pending</span>',
+    completed: '<span class="badge status-accepted">Completed</span>',
+    cancelled: '<span class="badge status-denied">Cancelled</span>'
+  };
+
+  async function loadTaskAssigneeOptions(){
+    if (!STATE.settings.workerUrl || !STATE.settings.workerKey){
+      els.taskAssignee.innerHTML = '<option value="">Configure Worker URL and admin key in Settings first</option>';
+      return;
+    }
+    try{
+      var res = await fetch(STATE.settings.workerUrl + '/users/list', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ adminKey: STATE.settings.workerKey })
+      });
+      var data = await res.json();
+      var staffUsers = (data.users || []).filter(function(u){ return ['moderator','admin','staffowner'].indexOf(u.role)!==-1 && !u.banned; });
+      if (staffUsers.length===0){
+        els.taskAssignee.innerHTML = '<option value="">No staff accounts yet</option>';
+        return;
+      }
+      els.taskAssignee.innerHTML = staffUsers.map(function(u){
+        return '<option value="'+escapeHtml(u.username)+'">'+escapeHtml(u.username)+' ('+(ROLE_LABEL[u.role]||u.role)+')</option>';
+      }).join('');
+    }catch(err){
+      els.taskAssignee.innerHTML = '<option value="">Could not load staff accounts</option>';
+    }
+  }
+
+  els.taskAction.addEventListener('change', function(){
+    els.taskDurationField.style.display = els.taskAction.value==='timeout' ? 'block' : 'none';
+  });
+
+  els.taskCreateBtn.addEventListener('click', async function(){
+    els.taskCreateMsg.textContent = '';
+    var assignedTo = els.taskAssignee.value;
+    var action = els.taskAction.value;
+    var targetUserId = els.taskTargetId.value.trim();
+    var targetUsername = els.taskTargetName.value.trim();
+    var reason = els.taskReason.value.trim();
+    var sendDm = els.taskSendDm.checked;
+    if (!STATE.settings.workerUrl || !STATE.settings.workerKey){
+      els.taskCreateMsg.textContent = 'Configure Worker URL and admin key in Settings first.';
+      els.taskCreateMsg.style.color = 'var(--ban)';
+      return;
+    }
+    if (!assignedTo){
+      els.taskCreateMsg.textContent = 'Choose a staff member to assign this to.';
+      els.taskCreateMsg.style.color = 'var(--ban)';
+      return;
+    }
+    if (!targetUserId){
+      els.taskCreateMsg.textContent = 'Enter the target Discord user ID.';
+      els.taskCreateMsg.style.color = 'var(--ban)';
+      return;
+    }
+    if (!STATE.settings.guildId){
+      els.taskCreateMsg.textContent = 'No Discord server ID configured yet. Save one in Settings first.';
+      els.taskCreateMsg.style.color = 'var(--ban)';
+      return;
+    }
+    var durationMs = null;
+    if (action==='timeout'){
+      var durVal = Number(els.taskDurationValue.value);
+      if (!durVal || durVal <= 0){
+        els.taskCreateMsg.textContent = 'Enter how long the timeout should last.';
+        els.taskCreateMsg.style.color = 'var(--ban)';
+        return;
+      }
+      durationMs = durVal * Number(els.taskDurationUnit.value);
+      if (durationMs > 28*86400000){
+        els.taskCreateMsg.textContent = 'Discord timeouts cap at 28 days maximum.';
+        els.taskCreateMsg.style.color = 'var(--ban)';
+        return;
+      }
+    }
+    els.taskCreateBtn.disabled = true;
+    try{
+      var res = await fetch(STATE.settings.workerUrl + '/tasks/create', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          adminKey: STATE.settings.workerKey, assignedTo: assignedTo, action: action,
+          targetUserId: targetUserId, targetUsername: targetUsername, reason: reason,
+          durationMs: durationMs, guildId: STATE.settings.guildId, sendDm: sendDm,
+          serverName: STATE.settings.serverName || undefined
+        })
+      });
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not assign task.');
+      showToast('Task assigned to '+assignedTo, 'ok');
+      logAudit('Task assigned', 'Assigned a '+TASK_ACTION_LABEL[action]+' task on '+escapeHtml(targetUsername||targetUserId)+' to <b>'+escapeHtml(assignedTo)+'</b>');
+      els.taskTargetId.value=''; els.taskTargetName.value=''; els.taskReason.value=''; els.taskDurationValue.value='';
+      loadAdminTaskList();
+    }catch(err){
+      els.taskCreateMsg.textContent = err.message || 'Could not assign task.';
+      els.taskCreateMsg.style.color = 'var(--ban)';
+    }finally{
+      els.taskCreateBtn.disabled = false;
+    }
+  });
+
+  async function loadAdminTaskList(){
+    if (!STATE.settings.workerUrl || !STATE.settings.workerKey){
+      els.taskAdminList.innerHTML = '<div class="empty-state">Configure Worker URL and admin key in Settings first.</div>';
+      return;
+    }
+    els.taskAdminList.innerHTML = '<div class="empty-state">Loading...</div>';
+    try{
+      var res = await fetch(STATE.settings.workerUrl + '/tasks/list', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ adminKey: STATE.settings.workerKey })
+      });
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not load tasks.');
+      var tasks = data.tasks || [];
+      if (tasks.length===0){ els.taskAdminList.innerHTML = '<div class="empty-state">No tasks assigned yet.</div>'; return; }
+      els.taskAdminList.innerHTML = tasks.map(function(t){
+        var d = new Date(t.createdAt).toLocaleString();
+        return '<div class="player-card" style="margin-bottom:8px;">' +
+          '<div class="player-top"><div class="player-name">'+TASK_ACTION_EMOJI[t.action]+' '+TASK_ACTION_LABEL[t.action]+' \u2014 '+escapeHtml(t.targetUsername || t.targetUserId)+'</div>'+(TASK_STATUS_BADGE[t.status]||'')+'</div>' +
+          '<div class="public-field-row"><label>Assigned to</label><span>'+escapeHtml(t.assignedTo)+'</span></div>' +
+          (t.reason ? '<div class="public-field-row"><label>Reason</label><span style="text-align:right;max-width:60%;">'+escapeHtml(t.reason)+'</span></div>' : '') +
+          '<div class="public-field-row"><label>Created</label><span>'+d+'</span></div>' +
+          (t.status==='pending' ? '<button type="button" class="btn small ghost" data-task-cancel="'+t.id+'" style="margin-top:8px;color:var(--ban);">Cancel task</button>' : '') +
+        '</div>';
+      }).join('');
+      els.taskAdminList.querySelectorAll('[data-task-cancel]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          var id = btn.dataset.taskCancel;
+          askConfirm('Cancel this task before it\u2019s carried out?', async function(){
+            try{
+              var res2 = await fetch(STATE.settings.workerUrl + '/tasks/cancel', {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ adminKey: STATE.settings.workerKey, id: id })
+              });
+              if (!res2.ok) throw new Error('Could not cancel task.');
+              showToast('Task cancelled', 'ok');
+              loadAdminTaskList();
+            }catch(err){
+              showToast(err.message || 'Could not cancel task.', 'err');
+            }
+          }, 'Cancel task');
+        });
+      });
+    }catch(err){
+      els.taskAdminList.innerHTML = '<div class="empty-state">'+escapeHtml(err.message || 'Could not load tasks.')+'</div>';
+    }
+  }
+  els.taskListRefreshBtn.addEventListener('click', loadAdminTaskList);
+
+  function updateTasksNavBadge(count){
+    if (!els.tasksNavBadge) return;
+    if (count > 0){
+      els.tasksNavBadge.textContent = count > 99 ? '99+' : String(count);
+      els.tasksNavBadge.style.display = '';
+    } else {
+      els.tasksNavBadge.style.display = 'none';
+    }
+  }
+
+  async function loadMyTasks(){
+    var session = getSession();
+    if (!session) return;
+    if (!els.myTasksList) return;
+    try{
+      var res = await fetch(AUTH_WORKER_URL + '/staff/tasks/list', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ username: session.username, passwordHash: session.passwordHash })
+      });
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not load your tasks.');
+      var tasks = data.tasks || [];
+      updateTasksNavBadge(tasks.filter(function(t){ return t.status==='pending'; }).length);
+      if (CURRENT_SECTION !== 'mytasks') return;
+      if (tasks.length===0){ els.myTasksList.innerHTML = '<div class="empty-state">No tasks assigned to you right now.</div>'; return; }
+      els.myTasksList.innerHTML = tasks.map(function(t){
+        var d = new Date(t.createdAt).toLocaleString();
+        return '<div class="player-card" style="margin-bottom:8px;">' +
+          '<div class="player-top"><div class="player-name">'+TASK_ACTION_EMOJI[t.action]+' '+TASK_ACTION_LABEL[t.action]+' \u2014 '+escapeHtml(t.targetUsername || t.targetUserId)+'</div>'+(TASK_STATUS_BADGE[t.status]||'')+'</div>' +
+          (t.reason ? '<div class="public-field-row"><label>Reason</label><span style="text-align:right;max-width:60%;">'+escapeHtml(t.reason)+'</span></div>' : '') +
+          '<div class="public-field-row"><label>Assigned</label><span>'+d+'</span></div>' +
+          (t.status==='pending' ? '<button type="button" class="btn primary small" data-task-execute="'+t.id+'" style="margin-top:8px;">Carry out this '+TASK_ACTION_LABEL[t.action].toLowerCase()+'</button>' : '') +
+          (t.status==='completed' ? '<div style="font-size:11.5px;color:#4ade80;margin-top:6px;">\u2713 Completed</div>' : '') +
+        '</div>';
+      }).join('');
+      els.myTasksList.querySelectorAll('[data-task-execute]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          var id = btn.dataset.taskExecute;
+          var t = tasks.find(function(x){ return x.id===id; });
+          askConfirm('Carry out this '+TASK_ACTION_LABEL[t.action].toLowerCase()+' on '+escapeHtml(t.targetUsername||t.targetUserId)+'? This cannot be undone from here.', async function(){
+            btn.disabled = true; btn.textContent = 'Working...';
+            try{
+              var res2 = await fetch(AUTH_WORKER_URL + '/staff/tasks/execute', {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ username: session.username, passwordHash: session.passwordHash, taskId: id })
+              });
+              var data2 = await res2.json();
+              if (!res2.ok) throw new Error(data2.error || 'Could not carry out this task.');
+              showToast('Task completed', 'ok');
+              loadMyTasks();
+            }catch(err){
+              showToast(err.message || 'Could not carry out this task.', 'err');
+              btn.disabled = false; btn.textContent = 'Carry out this '+TASK_ACTION_LABEL[t.action].toLowerCase();
+            }
+          }, 'Carry out');
+        });
+      });
+    }catch(err){
+      if (CURRENT_SECTION === 'mytasks') els.myTasksList.innerHTML = '<div class="empty-state">'+escapeHtml(err.message || 'Could not load your tasks.')+'</div>';
+    }
+  }
+  if (els.myTasksRefreshBtn) els.myTasksRefreshBtn.addEventListener('click', loadMyTasks);
+
   // ==================== Support Tickets (admin) ====================
   var TICKET_STATUS_LABEL = { open:'\ud83d\udfe1 Open', in_progress:'\ud83d\udd35 In Progress', resolved:'\u2705 Resolved', closed:'\u26aa Closed' };
   var TICKET_FILTER_LABEL = { all:'All', open:'Open', in_progress:'In Progress', resolved:'Resolved', closed:'Closed' };
@@ -8137,11 +8442,11 @@
     audit: ['audit'],
     cases: ['ledger']
   };
-  var OWNER_ONLY_SECTIONS = ['settings','diagnostics','accounts','staffstats','loginsecurity'];
+  var OWNER_ONLY_SECTIONS = ['settings','diagnostics','accounts','staffstats','loginsecurity','assigntask'];
 
   function applyStaffPermissionGating(session){
     var perms = session.permissions || {};
-    var allowedSections = { dashboard:true, myactivity:true };
+    var allowedSections = { dashboard:true, myactivity:true, mytasks:true };
     if (perms.ban || perms.kick || perms.timeout || perms.warn) allowedSections.discord = true;
     Object.keys(PERMISSION_SECTION_MAP).forEach(function(permKey){
       if (perms[permKey]){
@@ -8244,6 +8549,7 @@
       applyStaffPermissionGating(session);
       prefillAdminNameFields(session);
       pollTicketNavBadge();
+      if (typeof loadMyTasks==='function') loadMyTasks();
     } else {
       adminWrapEl.style.display = 'none';
       els.playerWrap.style.display = 'block';
@@ -8611,6 +8917,7 @@
       if (CURRENT_PLAYER_TAB==='support' && typeof loadPlayerTickets==='function') loadPlayerTickets(session);
     } else if (['moderator','admin','staffowner'].indexOf(session.role) !== -1){
       pollTicketNavBadge();
+      if (typeof loadMyTasks==='function') loadMyTasks();
     }
   }
 
