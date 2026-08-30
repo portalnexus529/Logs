@@ -1736,6 +1736,14 @@
         <div class="ledger-list" id="ledgerList">
           <div class="empty-state">No reports logged yet.</div>
         </div>
+
+        <div class="panel" style="margin-top:20px;" data-cases-tasks-panel>
+          <div class="panel-head"><h2>Completed Tasks</h2><button class="btn ghost small" id="taskCasesRefreshBtn">Refresh</button></div>
+          <div class="panel-body">
+            <p style="font-size:11.5px;color:var(--text-3);margin:0 0 14px;">Actions that staff have carried out from one-time assigned tasks. These live on the server, separate from the reports above, so they show up here regardless of which device completed them.</p>
+            <div id="taskCasesList"><div class="empty-state">Loading...</div></div>
+          </div>
+        </div>
       </div>
     </div>
       </div>
@@ -2319,7 +2327,7 @@
    'acEditUsername','acFormTitle','acPasswordField','acRole','acPermissionsField','acCancelEditBtn',
    'ticketsFilterBar','ticketsList','ticketsRefreshBtn','ticketNavBadge',
    'taskAssignee','taskAction','taskTargetId','taskTargetName','taskDurationField','taskDurationValue','taskDurationUnit','taskReason','taskSendDm','taskCreateBtn','taskCreateMsg','taskListRefreshBtn','taskAdminList',
-   'myTasksRefreshBtn','myTasksList','tasksNavBadge',
+   'myTasksRefreshBtn','myTasksList','tasksNavBadge','taskCasesRefreshBtn','taskCasesList',
    'applyWrap','applyBody',
    'webhookNameInput','webhookUrlInput','addWebhookBtn','webhookListUI',
    'workerUrlInput','workerKeyInput','guildIdInput',
@@ -2643,6 +2651,7 @@
     if (target==='siteupdates' && typeof loadSiteUpdates==='function') loadSiteUpdates();
     if (target==='staff' && typeof loadStaffRoster==='function') loadStaffRoster();
     if (target==='assigntask' && typeof loadTaskAssigneeOptions==='function'){ loadTaskAssigneeOptions(); loadAdminTaskList(); }
+    if (target==='ledger' && typeof loadTaskCasesList==='function') loadTaskCasesList();
     if (target==='mytasks' && typeof loadMyTasks==='function') loadMyTasks();
     if (target==='accounts' && typeof loadAccounts==='function') loadAccounts();
     if (target==='tickets' && typeof loadSupportTicketsAdmin==='function') loadSupportTicketsAdmin();
@@ -7614,6 +7623,50 @@
     }
   }
   els.taskListRefreshBtn.addEventListener('click', loadAdminTaskList);
+
+  // Shows completed tasks inside the Cases page — owner sees them via /tasks/list, staff with
+  // the Cases permission see them via the dedicated completed-only staff endpoint.
+  async function loadTaskCasesList(){
+    if (!els.taskCasesList) return;
+    els.taskCasesList.innerHTML = '<div class="empty-state">Loading...</div>';
+    try{
+      var tasks;
+      if (isStaffTicketSession()){
+        var session = getSession();
+        var res = await fetch(AUTH_WORKER_URL + '/staff/tasks/completed', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ username: session.username, passwordHash: session.passwordHash })
+        });
+        var data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Could not load completed tasks.');
+        tasks = data.tasks || [];
+      } else {
+        if (!STATE.settings.workerUrl || !STATE.settings.workerKey){
+          els.taskCasesList.innerHTML = '<div class="empty-state">Configure Worker URL and admin key in Settings first.</div>';
+          return;
+        }
+        var res2 = await fetch(STATE.settings.workerUrl + '/tasks/list', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ adminKey: STATE.settings.workerKey })
+        });
+        var data2 = await res2.json();
+        if (!res2.ok) throw new Error(data2.error || 'Could not load completed tasks.');
+        tasks = (data2.tasks || []).filter(function(t){ return t.status==='completed'; });
+      }
+      if (tasks.length===0){ els.taskCasesList.innerHTML = '<div class="empty-state">No tasks completed yet.</div>'; return; }
+      els.taskCasesList.innerHTML = tasks.map(function(t){
+        var d = t.completedAt ? new Date(t.completedAt).toLocaleString() : '';
+        return '<div class="player-card" style="margin-bottom:8px;">' +
+          '<div class="player-top"><div class="player-name">'+TASK_ACTION_EMOJI[t.action]+' '+TASK_ACTION_LABEL[t.action]+' \u2014 '+escapeHtml(t.targetUsername || t.targetUserId)+'</div><span class="entry-time">'+d+'</span></div>' +
+          '<div class="public-field-row"><label>Carried out by</label><span>'+escapeHtml(t.assignedTo)+'</span></div>' +
+          (t.reason ? '<div class="public-field-row"><label>Reason</label><span style="text-align:right;max-width:60%;">'+escapeHtml(t.reason)+'</span></div>' : '') +
+        '</div>';
+      }).join('');
+    }catch(err){
+      els.taskCasesList.innerHTML = '<div class="empty-state">'+escapeHtml(err.message || 'Could not load completed tasks.')+'</div>';
+    }
+  }
+  if (els.taskCasesRefreshBtn) els.taskCasesRefreshBtn.addEventListener('click', loadTaskCasesList);
 
   function updateTasksNavBadge(count){
     if (!els.tasksNavBadge) return;
