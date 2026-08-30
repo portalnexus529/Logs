@@ -624,10 +624,6 @@
         <label for="loginPassword">Password</label>
         <input type="password" id="loginPassword" placeholder="Enter your password">
       </div>
-      <div class="field" id="loginTotpField" style="display:none;">
-        <label for="loginTotpCode">6-digit code from your authenticator app</label>
-        <input type="text" id="loginTotpCode" placeholder="123456" inputmode="numeric" maxlength="6">
-      </div>
       <div id="loginMsg" style="font-size:12.5px;color:var(--ban);min-height:16px;margin-bottom:6px;"></div>
       <button type="button" class="btn primary" id="loginBtn" style="width:100%;">Log in</button>
     </div>
@@ -2083,29 +2079,6 @@
         <p style="font-size:11.5px;color:var(--text-3);margin:6px 0 0;">This is a basic deterrent, not real security &mdash; it's checked in this browser's own code, so anyone determined enough could bypass it by reading the page source. It's meant to keep casual visitors out, not to replace a real login system.</p>
       </div>
 
-      <div class="field" style="border-top:1px solid var(--border-soft);padding-top:16px;margin-top:6px;">
-        <label style="margin-bottom:6px;">Two-Factor Authentication <span id="twoFaStatusBadge" style="font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:6px;"></span></label>
-        <p style="font-size:11.5px;color:var(--text-3);margin:0 0 10px;">Adds a second step to your own login &mdash; a 6-digit code from an app like Google Authenticator or Authy, on top of your password. This protects your login specifically; it has no effect on the admin key used elsewhere.</p>
-        <div id="twoFaOffView">
-          <button type="button" class="btn primary small" id="twoFaStartSetupBtn">Set up 2FA</button>
-        </div>
-        <div id="twoFaSetupView" style="display:none;">
-          <p style="font-size:12px;margin:0 0 8px;">Open your authenticator app, choose "Enter a setup key" (or similar), and enter this code manually:</p>
-          <div style="background:var(--field);border:1px solid var(--border-soft);border-radius:var(--radius-sm);padding:10px 14px;font-family:monospace;font-size:15px;letter-spacing:0.05em;margin-bottom:10px;word-break:break-all;" id="twoFaSecretDisplay"></div>
-          <div class="field" style="margin-bottom:10px;">
-            <label for="twoFaConfirmCode">Enter the 6-digit code it shows you, to confirm it's working</label>
-            <input type="text" id="twoFaConfirmCode" placeholder="123456" inputmode="numeric" maxlength="6" style="max-width:160px;">
-          </div>
-          <button type="button" class="btn primary small" id="twoFaConfirmBtn">Confirm and enable</button>
-          <button type="button" class="btn small ghost" id="twoFaCancelSetupBtn">Cancel</button>
-        </div>
-        <div id="twoFaOnView" style="display:none;">
-          <p style="font-size:12px;color:#4ade80;margin:0 0 10px;">&#10003; Two-factor authentication is enabled on your login.</p>
-          <button type="button" class="btn small" id="twoFaDisableBtn" style="color:var(--ban);">Disable 2FA</button>
-        </div>
-        <div id="twoFaMsg" style="font-size:12.5px;margin-top:8px;"></div>
-      </div>
-
       <div class="settings-actions">
         <button class="btn primary small" id="saveSettingsBtn">Save settings</button>
         <button class="btn small" id="testWebhookBtn">Send test message</button>
@@ -2380,7 +2353,6 @@
   var els = {};
   ['serverNameInput','webhookInput','ticketLinkInput','appealFormSelect','refreshAppealFormsBtn','saveSettingsBtn','testWebhookBtn','exportBtn','importBtn','importFile',
    'lockOverlay','lockPinInput','lockMsg','lockUnlockBtn','accessPinInput','removePinBtn',
-   'twoFaStatusBadge','twoFaOffView','twoFaSetupView','twoFaOnView','twoFaStartSetupBtn','twoFaSecretDisplay','twoFaConfirmCode','twoFaConfirmBtn','twoFaCancelSetupBtn','twoFaDisableBtn','twoFaMsg',
    'authOverlay','authTabLogin','authTabSignup','authBrandName','loginFormBox','signupFormBox',
    'maintenanceView','authNormalView','maintTitleOut','maintMessageOut','maintReturnOut','staffLoginLink',
    'bannedView','bannedReasonOut','bannedAtOut','bannedBackBtn',
@@ -2394,7 +2366,7 @@
    'exportStatsCsvBtn','exportStatsPdfBtn','exportAuditCsvBtn','exportAuditPdfBtn',
    'statusWrap','statusBody',
    'checkAppealWrap','checkAppealBody',
-   'loginUsername','loginPassword','loginMsg','loginBtn','loginTotpField','loginTotpCode',
+   'loginUsername','loginPassword','loginMsg','loginBtn',
    'signupUsername','signupPassword','signupDiscordId','signupSteamId','signupMsg','signupBtn',
    'playerWrap','playerWelcome','playerLogoutBtn','playerCasesFeed','ownerLogoutBtn',
    'playerTabs','playerCasesPanel','playerUpdatesPanel','playerSupportPanel',
@@ -2963,92 +2935,6 @@
       checkLock();
       showToast('PIN removed', 'ok');
     }, 'Remove');
-  });
-
-  function render2FAState(enabled){
-    els.twoFaOffView.style.display = enabled ? 'none' : 'block';
-    els.twoFaOnView.style.display = enabled ? 'block' : 'none';
-    els.twoFaSetupView.style.display = 'none';
-    els.twoFaStatusBadge.textContent = enabled ? 'ON' : 'OFF';
-    els.twoFaStatusBadge.style.background = enabled ? 'rgba(74,222,128,0.15)' : 'var(--field)';
-    els.twoFaStatusBadge.style.color = enabled ? '#4ade80' : 'var(--text-3)';
-  }
-
-  async function load2FAStatus(){
-    if (!STATE.settings.workerUrl || !STATE.settings.workerKey) return;
-    try{
-      var res = await fetch(STATE.settings.workerUrl + '/2fa/status', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ adminKey: STATE.settings.workerKey })
-      });
-      var data = await res.json();
-      render2FAState(!!data.enabled);
-    }catch(e){ /* leave as-is if unreachable */ }
-  }
-
-  els.twoFaStartSetupBtn.addEventListener('click', async function(){
-    els.twoFaMsg.textContent = '';
-    if (!STATE.settings.workerUrl || !STATE.settings.workerKey){
-      els.twoFaMsg.textContent = 'Configure Worker URL and admin key first.'; els.twoFaMsg.style.color='var(--ban)'; return;
-    }
-    try{
-      var res = await fetch(STATE.settings.workerUrl + '/2fa/setup', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ adminKey: STATE.settings.workerKey })
-      });
-      var data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Could not start 2FA setup.');
-      els.twoFaSecretDisplay.textContent = data.secret;
-      els.twoFaOffView.style.display = 'none';
-      els.twoFaSetupView.style.display = 'block';
-      els.twoFaConfirmCode.value = '';
-    }catch(err){
-      els.twoFaMsg.textContent = err.message || 'Could not start 2FA setup.'; els.twoFaMsg.style.color='var(--ban)';
-    }
-  });
-
-  els.twoFaCancelSetupBtn.addEventListener('click', function(){
-    render2FAState(false);
-    els.twoFaMsg.textContent = '';
-  });
-
-  els.twoFaConfirmBtn.addEventListener('click', async function(){
-    els.twoFaMsg.textContent = '';
-    var code = els.twoFaConfirmCode.value.trim();
-    if (!code){ els.twoFaMsg.textContent = 'Enter the code from your app.'; els.twoFaMsg.style.color='var(--ban)'; return; }
-    els.twoFaConfirmBtn.disabled = true;
-    try{
-      var res = await fetch(STATE.settings.workerUrl + '/2fa/confirm', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ adminKey: STATE.settings.workerKey, code: code })
-      });
-      var data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'That code didn\u2019t match.');
-      render2FAState(true);
-      showToast('Two-factor authentication enabled', 'ok');
-      logAudit('2FA enabled', 'Enabled two-factor authentication for the owner login');
-    }catch(err){
-      els.twoFaMsg.textContent = err.message || 'That code didn\u2019t match.'; els.twoFaMsg.style.color='var(--ban)';
-    }finally{
-      els.twoFaConfirmBtn.disabled = false;
-    }
-  });
-
-  els.twoFaDisableBtn.addEventListener('click', function(){
-    askConfirm('Turn off two-factor authentication? Your login will go back to just a password.', async function(){
-      try{
-        var res = await fetch(STATE.settings.workerUrl + '/2fa/disable', {
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ adminKey: STATE.settings.workerKey })
-        });
-        if (!res.ok) throw new Error('Could not disable 2FA.');
-        render2FAState(false);
-        showToast('Two-factor authentication disabled', 'ok');
-        logAudit('2FA disabled', 'Disabled two-factor authentication for the owner login');
-      }catch(err){
-        showToast(err.message || 'Could not disable 2FA.', 'err');
-      }
-    }, 'Disable 2FA');
   });
 
   var MAINT_FORM_ENABLED = false;
@@ -8260,7 +8146,6 @@
               '' :
               '<button type="button" class="btn small ghost" data-ticket-close="'+t.id+'" style="color:var(--ban);">Close ticket</button>'
             ) +
-            '<button type="button" class="btn small ghost" data-ticket-transcript="'+t.id+'">Download transcript</button>' +
           '</div>' +
           '<div style="font-size:11.5px;margin-top:6px;" data-ticket-msg="'+t.id+'"></div>' +
         '</div>' +
@@ -8398,7 +8283,7 @@
         btn.disabled = true; msgEl.textContent = 'Saving...'; msgEl.style.color = 'var(--text-2)';
         try{
           await updateTicketStatus(id, statusSel.value);
-          if (statusSel.value==='closed' && t) downloadTicketTranscript(Object.assign({}, t, { status:'closed' }));
+          if (statusSel.value==='closed' && t && getSession().role==='owner') downloadTicketTranscript(Object.assign({}, t, { status:'closed' }));
           showToast('Ticket updated', 'ok');
           logAudit('Support ticket updated', 'Set ticket status to <b>'+statusSel.value+'</b>');
           loadSupportTicketsAdmin();
@@ -8414,11 +8299,11 @@
         e.stopPropagation();
         var id = btn.dataset.ticketClose;
         var t = CURRENT_TICKETS_DATA.find(function(x){ return x.id===id; });
-        askConfirm('Close this ticket? Replying will no longer be possible for either side. You\u2019ll get a transcript download.', async function(){
+        askConfirm('Close this ticket? Replying will no longer be possible for either side.', async function(){
           btn.disabled = true;
           try{
             await updateTicketStatus(id, 'closed');
-            if (t) downloadTicketTranscript(Object.assign({}, t, { status: 'closed' }));
+            if (t && getSession().role==='owner') downloadTicketTranscript(Object.assign({}, t, { status: 'closed' }));
             showToast('Ticket closed', 'ok');
             logAudit('Support ticket closed', 'Closed a support ticket');
             loadSupportTicketsAdmin();
@@ -8426,14 +8311,6 @@
             showToast(err.message || 'Could not close ticket.', 'err');
           }
         }, 'Close ticket');
-      });
-    });
-
-    els.ticketsList.querySelectorAll('[data-ticket-transcript]').forEach(function(btn){
-      btn.addEventListener('click', function(e){
-        e.stopPropagation();
-        var t = CURRENT_TICKETS_DATA.find(function(x){ return x.id===btn.dataset.ticketTranscript; });
-        if (t) downloadTicketTranscript(t);
       });
     });
   }
@@ -8988,7 +8865,6 @@
       resetPermissionGating();
       checkLock();
       loadMaintenanceIntoSettings();
-      load2FAStatus();
       loadAppealFormOptions();
       loadServerStatusIntoSettings();
       loadBlockedDevices();
@@ -9026,22 +8902,14 @@
   els.loginBtn.addEventListener('click', async function(){
     var username = els.loginUsername.value.trim();
     var password = els.loginPassword.value;
-    var totpCode = els.loginTotpCode.value.trim();
     if (!username || !password){ els.loginMsg.textContent = 'Enter a username and password.'; els.loginMsg.style.color='var(--ban)'; return; }
     els.loginBtn.disabled = true; els.loginMsg.textContent = 'Logging in...'; els.loginMsg.style.color = 'var(--text-2)';
     try{
       var res = await fetch(AUTH_WORKER_URL + '/login', {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ username: username, password: password, deviceId: DEVICE_ID, totpCode: totpCode || undefined })
+        body: JSON.stringify({ username: username, password: password, deviceId: DEVICE_ID })
       });
       var data = await res.json();
-      if (data.needs2fa){
-        els.loginTotpField.style.display = 'block';
-        els.loginTotpCode.focus();
-        els.loginMsg.textContent = 'Enter the 6-digit code from your authenticator app.';
-        els.loginMsg.style.color = 'var(--text-2)';
-        return;
-      }
       if (!res.ok){
         if (data.banned){
           showBannedScreen(data.reason, data.bannedAt);
@@ -9067,8 +8935,6 @@
       setSession(sessionObj);
       els.loginMsg.textContent = '';
       els.loginPassword.value = '';
-      els.loginTotpCode.value = '';
-      els.loginTotpField.style.display = 'none';
       routeByAuth();
     }catch(err){
       els.loginMsg.textContent = err.message || 'Login failed.'; els.loginMsg.style.color = 'var(--ban)';
@@ -9235,13 +9101,7 @@
               '</div>' +
               '<div class="response-card-actions">' +
                 '<button type="button" class="btn small ghost" data-pt-close="'+t.id+'" style="color:var(--ban);">Close ticket</button>' +
-                '<button type="button" class="btn small ghost" data-pt-transcript="'+t.id+'">Download transcript</button>' +
               '</div>'
-            ) +
-            (status==='closed' ?
-              '<div class="response-card-actions">' +
-                '<button type="button" class="btn small ghost" data-pt-transcript="'+t.id+'">Download transcript</button>' +
-              '</div>' : ''
             ) +
           '</div>' +
         '</div>';
@@ -9297,8 +9157,7 @@
         btn.addEventListener('click', function(e){
           e.stopPropagation();
           var id = btn.dataset.ptClose;
-          var t = CURRENT_PLAYER_TICKETS_DATA.find(function(x){ return x.id===id; });
-          askConfirm('Close this ticket? You won\u2019t be able to reply after this. You\u2019ll get a transcript download.', async function(){
+          askConfirm('Close this ticket? You won\u2019t be able to reply after this.', async function(){
             btn.disabled = true;
             try{
               var res3 = await fetch(AUTH_WORKER_URL + '/support/close', {
@@ -9311,20 +9170,11 @@
                 })
               });
               if (!res3.ok) throw new Error('Could not close ticket.');
-              if (t) downloadTicketTranscript(Object.assign({}, t, { status: 'closed' }));
               loadPlayerTickets(CURRENT_PLAYER_SESSION);
             }catch(err){
               showToast(err.message || 'Could not close ticket.', 'err');
             }
           }, 'Close ticket');
-        });
-      });
-
-      els.ptTicketsList.querySelectorAll('[data-pt-transcript]').forEach(function(btn){
-        btn.addEventListener('click', function(e){
-          e.stopPropagation();
-          var t = CURRENT_PLAYER_TICKETS_DATA.find(function(x){ return x.id===btn.dataset.ptTranscript; });
-          if (t) downloadTicketTranscript(t);
         });
       });
     }catch(err){
