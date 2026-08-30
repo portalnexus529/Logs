@@ -3330,13 +3330,18 @@
 
     // 0b. Live page structure — re-downloads this exact page and checks the raw HTML
     // itself for unbalanced tags or duplicate IDs, the same way a manual code review would.
+    // Only the markup before <script> is checked, so this can never flag its own source code
+    // as if it were part of the page (a regex literal containing "<div" would otherwise
+    // create a false positive against itself).
     await paced('htmlintegrity', async function(){
       try{
         var htRes = await fetch(window.location.href, { cache:'no-store' });
         var html = await htRes.text();
-        var divOpen = (html.match(/<div[\s>]/g)||[]).length;
-        var divClose = (html.match(/<\/div>/g)||[]).length;
-        var idMatches = html.match(/id="[A-Za-z0-9]+"/g) || [];
+        var scriptIdx = html.indexOf('<script>');
+        var htmlPart = scriptIdx !== -1 ? html.slice(0, scriptIdx) : html;
+        var divOpen = (htmlPart.match(/<div[\s>]/g)||[]).length;
+        var divClose = (htmlPart.match(/<\/div>/g)||[]).length;
+        var idMatches = htmlPart.match(/id="[A-Za-z0-9]+"/g) || [];
         var seen = {}; var dupes = [];
         idMatches.forEach(function(m){
           var id = m.slice(4, -1);
