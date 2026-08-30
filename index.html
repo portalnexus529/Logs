@@ -692,6 +692,7 @@
     <button type="button" class="player-tab active" data-ptab="cases">Case History</button>
     <button type="button" class="player-tab" data-ptab="updates">Updates</button>
     <button type="button" class="player-tab" data-ptab="support">Support</button>
+    <button type="button" class="player-tab" data-ptab="account">Account</button>
   </div>
 
   <div class="panel" id="playerCasesPanel">
@@ -737,6 +738,27 @@
       <div id="ptFormMsg" style="font-size:12.5px;margin-top:8px;"></div>
       <h3 style="font-size:13.5px;font-weight:700;margin:24px 0 12px;padding-top:16px;border-top:1px solid var(--border-soft);">Your tickets <span style="display:inline-flex;align-items:center;gap:5px;font-size:10px;color:var(--text-3);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-left:6px;"><span style="width:6px;height:6px;border-radius:50%;background:#4ade80;display:inline-block;animation:livePulse 1.6s ease-in-out infinite;"></span>Live</span></h3>
       <div id="ptTicketsList"><div class="empty-state">Loading...</div></div>
+    </div>
+  </div>
+
+  <div class="panel" id="playerAccountPanel" style="display:none;">
+    <div class="panel-head"><h2>Account</h2></div>
+    <div class="panel-body">
+      <p style="font-size:12px;color:var(--text-3);margin:0 0 16px;">Change your username or password below. You'll need to enter your current password either way, to confirm it's really you.</p>
+      <div class="field">
+        <label for="pAccCurrentPassword">Current password</label>
+        <input type="password" id="pAccCurrentPassword" placeholder="Required">
+      </div>
+      <div class="field">
+        <label for="pAccNewUsername">New username <span style="color:var(--text-3);font-weight:400;">(optional \u2014 leave blank to keep it)</span></label>
+        <input type="text" id="pAccNewUsername" placeholder="Leave blank to keep your current username">
+      </div>
+      <div class="field">
+        <label for="pAccNewPassword">New password <span style="color:var(--text-3);font-weight:400;">(optional \u2014 leave blank to keep it)</span></label>
+        <input type="password" id="pAccNewPassword" placeholder="Leave blank to keep your current password">
+      </div>
+      <button class="btn primary" id="pAccSaveBtn">Save changes</button>
+      <div id="pAccMsg" style="font-size:12.5px;margin-top:8px;"></div>
     </div>
   </div>
 </div>
@@ -785,6 +807,10 @@
       <button type="button" class="nav-item" data-section="myactivity">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/></svg>
         My Activity
+      </button>
+      <button type="button" class="nav-item" data-section="myaccount">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        My Account
       </button>
 
       <div class="nav-group-label">Moderation</div>
@@ -926,6 +952,29 @@
           <div class="panel-body">
             <p style="font-size:12.5px;color:var(--text-3);margin:0 0 14px;line-height:1.6;">A running tally of every ban, kick, warning, and Discord action you've filed through this site.</p>
             <div id="myActivityContent"><div class="empty-state">Loading...</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="sectionMyAccount" class="dash-section" style="display:none;">
+        <div class="panel">
+          <div class="panel-head"><h2>My Account</h2></div>
+          <div class="panel-body">
+            <p style="font-size:12px;color:var(--text-3);margin:0 0 16px;">Change your username or password below. You'll need to enter your current password either way, to confirm it's really you.</p>
+            <div class="field">
+              <label for="sAccCurrentPassword">Current password</label>
+              <input type="password" id="sAccCurrentPassword" placeholder="Required">
+            </div>
+            <div class="field">
+              <label for="sAccNewUsername">New username <span style="color:var(--text-3);font-weight:400;">(optional \u2014 leave blank to keep it)</span></label>
+              <input type="text" id="sAccNewUsername" placeholder="Leave blank to keep your current username">
+            </div>
+            <div class="field">
+              <label for="sAccNewPassword">New password <span style="color:var(--text-3);font-weight:400;">(optional \u2014 leave blank to keep it)</span></label>
+              <input type="password" id="sAccNewPassword" placeholder="Leave blank to keep your current password">
+            </div>
+            <button class="btn primary" id="sAccSaveBtn">Save changes</button>
+            <div id="sAccMsg" style="font-size:12.5px;margin-top:8px;"></div>
           </div>
         </div>
       </div>
@@ -2328,6 +2377,8 @@
    'ticketsFilterBar','ticketsList','ticketsRefreshBtn','ticketNavBadge',
    'taskAssignee','taskAction','taskTargetId','taskTargetName','taskDurationField','taskDurationValue','taskDurationUnit','taskReason','taskSendDm','taskCreateBtn','taskCreateMsg','taskListRefreshBtn','taskAdminList',
    'myTasksRefreshBtn','myTasksList','tasksNavBadge','taskCasesRefreshBtn','taskCasesList',
+   'sAccCurrentPassword','sAccNewUsername','sAccNewPassword','sAccSaveBtn','sAccMsg',
+   'playerAccountPanel','pAccCurrentPassword','pAccNewUsername','pAccNewPassword','pAccSaveBtn','pAccMsg',
    'applyWrap','applyBody',
    'webhookNameInput','webhookUrlInput','addWebhookBtn','webhookListUI',
    'workerUrlInput','workerKeyInput','guildIdInput',
@@ -2633,7 +2684,7 @@
     els.linkInlineInput.value=''; els.linkInlineRow.classList.remove('show');
   });
 
-  var SECTION_IDS = { dashboard:'sectionDashboard', myactivity:'sectionMyActivity', game:'sectionGame', discord:'sectionDiscord', assigntask:'sectionAssignTask', mytasks:'sectionMyTasks', ann:'sectionAnn', events:'sectionEvents', formbuilder:'sectionFormBuilder', applications:'sectionApplications', banappeals:'sectionBanAppeals', msggen:'sectionMsgGen', discordnotify:'sectionDiscordNotify', siteupdates:'sectionSiteUpdates', staff:'sectionStaff', tickets:'sectionTickets', ledger:'sectionLedger', audit:'sectionAudit', loginsecurity:'sectionLoginSecurity', staffstats:'sectionStaffStats', players:'sectionPlayers', accounts:'sectionAccounts', lookup:'sectionLookup', settings:'sectionSettings', diagnostics:'sectionDiagnostics' };
+  var SECTION_IDS = { dashboard:'sectionDashboard', myactivity:'sectionMyActivity', myaccount:'sectionMyAccount', game:'sectionGame', discord:'sectionDiscord', assigntask:'sectionAssignTask', mytasks:'sectionMyTasks', ann:'sectionAnn', events:'sectionEvents', formbuilder:'sectionFormBuilder', applications:'sectionApplications', banappeals:'sectionBanAppeals', msggen:'sectionMsgGen', discordnotify:'sectionDiscordNotify', siteupdates:'sectionSiteUpdates', staff:'sectionStaff', tickets:'sectionTickets', ledger:'sectionLedger', audit:'sectionAudit', loginsecurity:'sectionLoginSecurity', staffstats:'sectionStaffStats', players:'sectionPlayers', accounts:'sectionAccounts', lookup:'sectionLookup', settings:'sectionSettings', diagnostics:'sectionDiagnostics' };
   var CURRENT_SECTION = 'dashboard';
   function switchSection(target){
     CURRENT_SECTION = target;
@@ -8435,6 +8486,74 @@
     try{ localStorage.removeItem('modlog:auth'); }catch(e){}
   }
 
+  // Shared by both the player Account tab and the staff My Account page — updates username
+  // and/or password for any non-owner account, then keeps the local session in sync.
+  async function submitAccountUpdate(fields){
+    var session = getSession();
+    if (!session || !session.username) throw new Error('You need to be logged in.');
+    if (!fields.currentPassword){
+      throw new Error('Enter your current password.');
+    }
+    var res = await fetch(AUTH_WORKER_URL + '/account/update', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        username: session.username,
+        currentPassword: fields.currentPassword,
+        newUsername: fields.newUsername || undefined,
+        newPassword: fields.newPassword || undefined
+      })
+    });
+    var data; try{ data = await res.json(); }catch(e){ data = {}; }
+    if (!res.ok) throw new Error(data.error || ('Could not update account (status '+res.status+')'));
+    if (data.username && data.username !== session.username){
+      session.username = data.username;
+      setSession(session);
+    }
+    return data;
+  }
+
+  els.sAccSaveBtn.addEventListener('click', async function(){
+    els.sAccMsg.textContent = '';
+    els.sAccSaveBtn.disabled = true;
+    try{
+      var data = await submitAccountUpdate({
+        currentPassword: els.sAccCurrentPassword.value,
+        newUsername: els.sAccNewUsername.value.trim(),
+        newPassword: els.sAccNewPassword.value
+      });
+      els.sAccMsg.textContent = 'Saved. ' + (data.username ? 'Your username is now "'+data.username+'".' : '');
+      els.sAccMsg.style.color = '#4ade80';
+      els.sAccCurrentPassword.value = ''; els.sAccNewUsername.value = ''; els.sAccNewPassword.value = '';
+      showToast('Account updated', 'ok');
+    }catch(err){
+      els.sAccMsg.textContent = err.message || 'Could not update account.';
+      els.sAccMsg.style.color = 'var(--ban)';
+    }finally{
+      els.sAccSaveBtn.disabled = false;
+    }
+  });
+
+  els.pAccSaveBtn.addEventListener('click', async function(){
+    els.pAccMsg.textContent = '';
+    els.pAccSaveBtn.disabled = true;
+    try{
+      var data = await submitAccountUpdate({
+        currentPassword: els.pAccCurrentPassword.value,
+        newUsername: els.pAccNewUsername.value.trim(),
+        newPassword: els.pAccNewPassword.value
+      });
+      els.pAccMsg.textContent = 'Saved. ' + (data.username ? 'Your username is now "'+data.username+'".' : '');
+      els.pAccMsg.style.color = '#4ade80';
+      els.pAccCurrentPassword.value = ''; els.pAccNewUsername.value = ''; els.pAccNewPassword.value = '';
+      if (els.playerWelcome && data.username) els.playerWelcome.textContent = 'Logged in as ' + data.username;
+    }catch(err){
+      els.pAccMsg.textContent = err.message || 'Could not update account.';
+      els.pAccMsg.style.color = 'var(--ban)';
+    }finally{
+      els.pAccSaveBtn.disabled = false;
+    }
+  });
+
   function currentUserCan(permKey){
     var session = getSession();
     if (!session) return false;
@@ -8506,7 +8625,7 @@
 
   function applyStaffPermissionGating(session){
     var perms = session.permissions || {};
-    var allowedSections = { dashboard:true, myactivity:true, mytasks:true };
+    var allowedSections = { dashboard:true, myactivity:true, myaccount:true, mytasks:true };
     if (perms.ban || perms.kick || perms.timeout || perms.warn) allowedSections.discord = true;
     Object.keys(PERMISSION_SECTION_MAP).forEach(function(permKey){
       if (perms[permKey]){
@@ -8553,6 +8672,8 @@
     }
     var myActivityBtn = document.querySelector('.nav-item[data-section="myactivity"]');
     if (myActivityBtn) myActivityBtn.style.display = 'none';
+    var myAccountBtn = document.querySelector('.nav-item[data-section="myaccount"]');
+    if (myAccountBtn) myAccountBtn.style.display = 'none';
   }
 
   function prefillAdminNameFields(session){
@@ -8710,6 +8831,7 @@
     els.playerCasesPanel.style.display = CURRENT_PLAYER_TAB==='cases' ? 'block' : 'none';
     els.playerUpdatesPanel.style.display = CURRENT_PLAYER_TAB==='updates' ? 'block' : 'none';
     els.playerSupportPanel.style.display = CURRENT_PLAYER_TAB==='support' ? 'block' : 'none';
+    els.playerAccountPanel.style.display = CURRENT_PLAYER_TAB==='account' ? 'block' : 'none';
   });
 
   async function loadPlayerCases(session){
