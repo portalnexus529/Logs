@@ -3337,9 +3337,9 @@
         { label:'Ban members', path:'/staff/ban', extraBody:{ guildId:'0', userId:'0' } },
         { label:'Kick members', path:'/staff/kick', extraBody:{ guildId:'0', userId:'0' } },
         { label:'Cases (Unban action)', path:'/staff/unban', extraBody:{ guildId:'0', userId:'0' } },
-        { label:'Applications', path:'/staff/applications/list', extraBody:{} },
-        { label:'Ban Appeals', path:'/staff/banappeals/list', extraBody:{} },
-        { label:'Site Updates', path:'/staff/updates/list', extraBody:{} },
+        { label:'Applications', path:'/staff/applications/forms', extraBody:{} },
+        { label:'Ban Appeals', path:'/staff/applications/responses', extraBody:{ formId:'0' } },
+        { label:'Site Updates', path:'/staff/updates/save', extraBody:{} },
         { label:'Staff List', path:'/staff/roster/list', extraBody:{} },
         { label:'Audit Log', path:'/staff/audit/list', extraBody:{} }
       ];
@@ -4046,7 +4046,13 @@
     AUDIT_LOG.unshift({ ts: Date.now(), action: action, detail: detail, deviceId: DEVICE_ID });
     saveAuditLog();
     renderAuditLog();
-    if (STATE.settings.workerUrl && STATE.settings.workerKey){
+    var session = getSession();
+    if (session && isStaffTicketSession()){
+      fetch(AUTH_WORKER_URL + '/staff/audit/log', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ username: session.username, passwordHash: session.passwordHash, action: action, detail: detail })
+      }).catch(function(){ /* best-effort; local copy above is the fallback if this fails */ });
+    } else if (STATE.settings.workerUrl && STATE.settings.workerKey){
       fetch(STATE.settings.workerUrl + '/audit/log', {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ adminKey: STATE.settings.workerKey, action: action, detail: detail, deviceId: DEVICE_ID, deviceLabel: getDeviceLabel() })
@@ -4056,14 +4062,8 @@
   var SERVER_AUDIT_LOG = null;
 
   async function loadServerAuditLog(){
-    if (!STATE.settings.workerUrl || !STATE.settings.workerKey) return;
     try{
-      var res = await fetch(STATE.settings.workerUrl + '/audit/list', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ adminKey: STATE.settings.workerKey })
-      });
-      if (!res.ok) return;
-      var data = await res.json();
+      var data = await staffOrOwnerFetch('/staff/audit/list', '/audit/list');
       SERVER_AUDIT_LOG = data.entries || [];
       renderAuditLog();
     }catch(e){ /* fall back to local-only view if unreachable */ }
@@ -4694,7 +4694,7 @@
       if (e.category) badges += '<span class="badge scope">'+escapeHtml(e.category)+'</span>';
       if (e.action==='ban' && e.banScope) badges += '<span class="badge scope">'+({game:'Game ban',discord:'Discord ban',both:'Game + Discord'})[e.banScope]+'</span>';
       if (isBanType(e.action) && e.appeal) badges += '<span class="badge '+(e.appeal==='yes'?'appeal-yes':'appeal-no')+'">'+(e.appeal==='yes'?'Appealable':'Not appealable')+'</span>';
-      var showUnbanBtn = (e.action==='dban' && !e.unbannedAt && currentUserCan('ban'));
+      var showUnbanBtn = (e.action==='dban' && !e.unbannedAt && currentUserCan('cases'));
       if (hasDuration(e.action) && e.expiresAt){
         var msLeft = e.expiresAt - Date.now();
         if (msLeft <= 0){
@@ -4909,22 +4909,32 @@
       btn.addEventListener('click', function(){
         var entry = STATE.entries.find(function(x){ return x.id===btn.dataset.unban; });
         if (!entry) return;
-        if (!currentUserCan('ban')){
+        if (!currentUserCan('cases')){
           showToast('Your account does not have permission to unban members.', 'err');
           return;
         }
         askConfirm('Lift the Discord ban on '+entry.player+' now?', async function(){
-          if (!STATE.settings.workerUrl || !STATE.settings.workerKey || !STATE.settings.guildId){
-            showToast('Bot action settings are not configured. Open Settings first.', 'err');
-            return;
-          }
+          var session = getSession();
           btn.disabled = true; btn.textContent = 'Unbanning...';
           try{
-            var res = await fetch(STATE.settings.workerUrl + '/unban', {
-              method:'POST', headers:{'Content-Type':'application/json'},
-              body: JSON.stringify({ adminKey: STATE.settings.workerKey, guildId: STATE.settings.guildId, userId: entry.steamId, reason: 'Temporary ban expired' })
-            });
-            var data = await res.json();
+            var res, data;
+            if (isStaffTicketSession()){
+              res = await fetch(AUTH_WORKER_URL + '/staff/unban', {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ username: session.username, passwordHash: session.passwordHash, guildId: STATE.settings.guildId, userId: entry.steamId })
+              });
+            } else {
+              if (!STATE.settings.workerUrl || !STATE.settings.workerKey || !STATE.settings.guildId){
+                showToast('Bot action settings are not configured. Open Settings first.', 'err');
+                btn.disabled = false; btn.textContent = 'Unban now';
+                return;
+              }
+              res = await fetch(STATE.settings.workerUrl + '/unban', {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ adminKey: STATE.settings.workerKey, guildId: STATE.settings.guildId, userId: entry.steamId, reason: 'Temporary ban expired' })
+              });
+            }
+            try{ data = await res.json(); }catch(e){ data = {}; }
             if (!res.ok) throw new Error(data.error || 'Unban failed (status '+res.status+')');
 
             entry.unbannedAt = Date.now();
@@ -6108,19 +6118,35 @@
 
   function setAppsMsg(text, kind){ els.appsFormMsg.textContent = text||''; els.appsFormMsg.className = kind||''; }
 
-  async function loadApplications(){
-    if (!STATE.settings.workerUrl || !STATE.settings.workerKey){
-      els.appsList.innerHTML = '<div class="empty-state">Configure Worker URL and admin key in Settings first.</div>';
-      return;
+  // Shared helper: calls a staff-safe endpoint for staff sessions, or the owner's admin-key
+  // endpoint otherwise. Keeps the branching logic in one place instead of repeating it everywhere.
+  async function staffOrOwnerFetch(staffPath, ownerPath, extraBody){
+    var session = getSession();
+    if (isStaffTicketSession()){
+      var sBody = Object.assign({ username: session.username, passwordHash: session.passwordHash }, extraBody||{});
+      var sRes = await fetch(AUTH_WORKER_URL + staffPath, {
+        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(sBody)
+      });
+      var sData; try{ sData = await sRes.json(); }catch(e){ sData = {}; }
+      if (!sRes.ok) throw new Error(sData.error || ('Request failed (status '+sRes.status+')'));
+      return sData;
     }
+    if (!STATE.settings.workerUrl || !STATE.settings.workerKey){
+      throw new Error('Configure Worker URL and admin key in Settings first.');
+    }
+    var oBody = Object.assign({ adminKey: STATE.settings.workerKey }, extraBody||{});
+    var oRes = await fetch(STATE.settings.workerUrl + ownerPath, {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(oBody)
+    });
+    var oData; try{ oData = await oRes.json(); }catch(e){ oData = {}; }
+    if (!oRes.ok) throw new Error(oData.error || ('Request failed (status '+oRes.status+')'));
+    return oData;
+  }
+
+  async function loadApplications(){
     els.appsList.innerHTML = '<div class="empty-state">Loading forms...</div>';
     try{
-      var res = await fetch(STATE.settings.workerUrl + '/forms/list', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ adminKey: STATE.settings.workerKey })
-      });
-      var data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Could not load forms.');
+      var data = await staffOrOwnerFetch('/staff/applications/forms', '/forms/list');
       APPS_CACHE = data.forms || [];
       renderApplicationsList();
     }catch(err){
@@ -6260,12 +6286,7 @@
     els.appsResponsesList.innerHTML = '<div class="empty-state">Loading responses...</div>';
     els.appsResponsesPanel.scrollIntoView({ behavior:'smooth' });
     try{
-      var res = await fetch(STATE.settings.workerUrl + '/forms/responses', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ adminKey: STATE.settings.workerKey, formId: formId })
-      });
-      var data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Could not load responses.');
+      var data = await staffOrOwnerFetch('/staff/applications/responses', '/forms/responses', { formId: formId });
       CURRENT_RESPONSES_DATA = data.responses || [];
       if (CURRENT_RESPONSES_DATA.length===0){
         els.appsResponsesList.innerHTML = '<div class="empty-state">No responses yet.</div>';
@@ -6427,11 +6448,7 @@
       sel.addEventListener('change', async function(){
         var responseId = sel.dataset.responseStatus;
         try{
-          var r2 = await fetch(STATE.settings.workerUrl + '/forms/responses/status', {
-            method:'POST', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({ adminKey: STATE.settings.workerKey, formId: formId, responseId: responseId, status: sel.value })
-          });
-          if (!r2.ok) throw new Error('Could not update status.');
+          await staffOrOwnerFetch('/staff/applications/status', '/forms/responses/status', { formId: formId, responseId: responseId, status: sel.value });
           var respObj = CURRENT_RESPONSES_DATA.find(function(x){ return x.id===responseId; });
           if (respObj) respObj.status = sel.value;
           showToast('Status updated', 'ok');
@@ -6456,10 +6473,8 @@
         btn.disabled = true; msgEl.textContent = 'Sending...'; msgEl.style.color = 'var(--text-2)';
         try{
           var noteVal = noteInput ? noteInput.value : '';
-          fetch(STATE.settings.workerUrl + '/forms/responses/status', {
-            method:'POST', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({ adminKey: STATE.settings.workerKey, formId: formId, responseId: responseId, status: statusSel.value, note: noteVal })
-          }).catch(function(){ /* best-effort; DM below is the primary action */ });
+          staffOrOwnerFetch('/staff/applications/status', '/forms/responses/status', { formId: formId, responseId: responseId, status: statusSel.value, note: noteVal })
+            .catch(function(){ /* best-effort; DM below is the primary action */ });
           var embed = buildAppealStatusEmbed(form ? form.title : 'submission', statusSel.value, noteVal);
           var r3 = await fetch(STATE.settings.workerUrl + '/dm/send', {
             method:'POST', headers:{'Content-Type':'application/json'},
@@ -6568,22 +6583,13 @@
       els.banAppealsList.innerHTML = '<div class="empty-state">No ban appeal form is selected yet. Go to Settings and pick one under "Ban appeal form".</div>';
       return;
     }
-    if (!STATE.settings.workerUrl || !STATE.settings.workerKey){
-      els.banAppealsList.innerHTML = '<div class="empty-state">Configure Worker URL and admin key in Settings first.</div>';
-      return;
-    }
     els.banAppealsList.innerHTML = '<div class="empty-state">Loading...</div>';
     try{
       var formRes = await fetch(AUTH_WORKER_URL + '/form?id=' + encodeURIComponent(STATE.settings.appealFormId));
       var form = await formRes.json();
       if (!formRes.ok) throw new Error(form.error || 'The selected appeal form could not be found.');
 
-      var res = await fetch(STATE.settings.workerUrl + '/forms/responses', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ adminKey: STATE.settings.workerKey, formId: STATE.settings.appealFormId })
-      });
-      var data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Could not load appeals.');
+      var data = await staffOrOwnerFetch('/staff/applications/responses', '/forms/responses', { formId: STATE.settings.appealFormId });
       var responses = data.responses || [];
       if (responses.length===0){ els.banAppealsList.innerHTML = '<div class="empty-state">No appeals submitted yet.</div>'; return; }
 
@@ -6652,11 +6658,7 @@
         sel.addEventListener('change', async function(){
           var responseId = sel.dataset.baStatus;
           try{
-            var r2 = await fetch(STATE.settings.workerUrl + '/forms/responses/status', {
-              method:'POST', headers:{'Content-Type':'application/json'},
-              body: JSON.stringify({ adminKey: STATE.settings.workerKey, formId: STATE.settings.appealFormId, responseId: responseId, status: sel.value })
-            });
-            if (!r2.ok) throw new Error('Could not update status.');
+            await staffOrOwnerFetch('/staff/applications/status', '/forms/responses/status', { formId: STATE.settings.appealFormId, responseId: responseId, status: sel.value });
             showToast('Status updated', 'ok');
             logAudit('Appeal status', 'Set appeal status to <b>'+sel.value+'</b>');
           }catch(err){
@@ -6676,10 +6678,8 @@
           btn.disabled = true; msgEl.textContent = 'Sending...'; msgEl.style.color = 'var(--text-2)';
           try{
             var baNoteVal = noteInput ? noteInput.value : '';
-            fetch(STATE.settings.workerUrl + '/forms/responses/status', {
-              method:'POST', headers:{'Content-Type':'application/json'},
-              body: JSON.stringify({ adminKey: STATE.settings.workerKey, formId: STATE.settings.appealFormId, responseId: responseId, status: statusSel.value, note: baNoteVal })
-            }).catch(function(){ /* best-effort; DM below is the primary action */ });
+            staffOrOwnerFetch('/staff/applications/status', '/forms/responses/status', { formId: STATE.settings.appealFormId, responseId: responseId, status: statusSel.value, note: baNoteVal })
+              .catch(function(){ /* best-effort; DM below is the primary action */ });
             var embed = buildAppealStatusEmbed(form.title || 'ban appeal', statusSel.value, baNoteVal);
             var r3 = await fetch(STATE.settings.workerUrl + '/dm/send', {
               method:'POST', headers:{'Content-Type':'application/json'},
@@ -6875,11 +6875,6 @@
     els.suFormMsg.textContent = '';
     var title = els.suTitle.value.trim();
     var description = els.suDescription.value.trim();
-    if (!STATE.settings.workerUrl || !STATE.settings.workerKey){
-      els.suFormMsg.textContent = 'Configure Worker URL and admin key in Settings first.';
-      els.suFormMsg.style.color = 'var(--ban)';
-      return;
-    }
     if (!title || !description){
       els.suFormMsg.textContent = 'Enter a title and description.';
       els.suFormMsg.style.color = 'var(--ban)';
@@ -6888,18 +6883,12 @@
     var pinned = els.suPinnedToggle.querySelector('button.active').dataset.v === 'yes';
     els.suSaveBtn.disabled = true;
     try{
-      var res = await fetch(STATE.settings.workerUrl + '/updates/save', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({
-          adminKey: STATE.settings.workerKey,
-          id: els.suEditId.value || undefined,
-          title: title, description: description, tag: els.suTag.value, pinned: pinned,
-          channelId: els.suChannelId.value.trim() || undefined,
-          serverName: STATE.settings.serverName || undefined
-        })
+      var data = await staffOrOwnerFetch('/staff/updates/save', '/updates/save', {
+        id: els.suEditId.value || undefined,
+        title: title, description: description, tag: els.suTag.value, pinned: pinned,
+        channelId: els.suChannelId.value.trim() || undefined,
+        serverName: STATE.settings.serverName || undefined
       });
-      var data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Could not post the update.');
       showToast(els.suEditId.value ? 'Update saved' : 'Update posted', 'ok');
       logAudit('Site update posted', 'Posted a site update: <b>'+escapeHtml(title)+'</b>');
       if (els.suChannelId.value.trim()){
@@ -6917,13 +6906,9 @@
   });
 
   async function loadSiteUpdates(){
-    if (!STATE.settings.workerUrl){
-      els.suList.innerHTML = '<div class="empty-state">Configure Worker URL in Settings first.</div>';
-      return;
-    }
     els.suList.innerHTML = '<div class="empty-state">Loading...</div>';
     try{
-      var res = await fetch(STATE.settings.workerUrl + '/updates');
+      var res = await fetch(AUTH_WORKER_URL + '/updates');
       var data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Could not load updates.');
       var updates = data.updates || [];
@@ -6963,11 +6948,7 @@
           var id = btn.dataset.updateDelete;
           askConfirm('Delete this update permanently?', async function(){
             try{
-              var r2 = await fetch(STATE.settings.workerUrl + '/updates/delete', {
-                method:'POST', headers:{'Content-Type':'application/json'},
-                body: JSON.stringify({ adminKey: STATE.settings.workerKey, id: id })
-              });
-              if (!r2.ok) throw new Error('Could not delete update.');
+              await staffOrOwnerFetch('/staff/updates/delete', '/updates/delete', { id: id });
               showToast('Update deleted', 'ok');
               logAudit('Site update deleted', 'Deleted a site update');
               loadSiteUpdates();
@@ -7276,12 +7257,7 @@
   els.stCancelEditBtn.addEventListener('click', resetStaffForm);
 
   async function saveStaffList(){
-    var res = await fetch(STATE.settings.workerUrl + '/staff/save', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ adminKey: STATE.settings.workerKey, staff: STAFF_LIST_DATA })
-    });
-    var data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Could not save the roster.');
+    var data = await staffOrOwnerFetch('/staff/roster/save', '/staff/save', { staff: STAFF_LIST_DATA });
     STAFF_LIST_DATA = data.staff || STAFF_LIST_DATA;
   }
 
@@ -7289,11 +7265,6 @@
     els.stFormMsg.textContent = '';
     var name = els.stName.value.trim();
     var role = els.stRole.value.trim();
-    if (!STATE.settings.workerUrl || !STATE.settings.workerKey){
-      els.stFormMsg.textContent = 'Configure Worker URL and admin key in Settings first.';
-      els.stFormMsg.style.color = 'var(--ban)';
-      return;
-    }
     if (!name || !role){
       els.stFormMsg.textContent = 'Enter a name and a role.';
       els.stFormMsg.style.color = 'var(--ban)';
@@ -7321,18 +7292,9 @@
   });
 
   async function loadStaffRoster(){
-    if (!STATE.settings.workerUrl || !STATE.settings.workerKey){
-      els.stList.innerHTML = '<div class="empty-state">Configure Worker URL and admin key in Settings first.</div>';
-      return;
-    }
     els.stList.innerHTML = '<div class="empty-state">Loading...</div>';
     try{
-      var res = await fetch(STATE.settings.workerUrl + '/staff/list', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ adminKey: STATE.settings.workerKey })
-      });
-      var data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Could not load the roster.');
+      var data = await staffOrOwnerFetch('/staff/roster/list', '/staff/list');
       STAFF_LIST_DATA = data.staff || [];
       renderStaffList();
     }catch(err){
@@ -7391,11 +7353,6 @@
   els.stPostBtn.addEventListener('click', async function(){
     els.stPostMsg.textContent = '';
     var channelId = els.stChannelId.value.trim();
-    if (!STATE.settings.workerUrl || !STATE.settings.workerKey){
-      els.stPostMsg.textContent = 'Configure Worker URL and admin key in Settings first.';
-      els.stPostMsg.style.color = 'var(--ban)';
-      return;
-    }
     if (!channelId){
       els.stPostMsg.textContent = 'Enter a Discord channel ID.';
       els.stPostMsg.style.color = 'var(--ban)';
@@ -7404,12 +7361,8 @@
     els.stPostBtn.disabled = true;
     els.stPostMsg.textContent = 'Posting...'; els.stPostMsg.style.color = 'var(--text-2)';
     try{
-      var res = await fetch(STATE.settings.workerUrl + '/staff/post', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ adminKey: STATE.settings.workerKey, channelId: channelId, serverName: STATE.settings.serverName || undefined })
-      });
-      var data = await res.json();
-      if (!res.ok || !data.discordPosted) throw new Error(data.error || data.discordError || 'Could not post to Discord.');
+      var data = await staffOrOwnerFetch('/staff/roster/post', '/staff/post', { channelId: channelId, serverName: STATE.settings.serverName || undefined });
+      if (!data.discordPosted) throw new Error(data.error || data.discordError || 'Could not post to Discord.');
       els.stPostMsg.textContent = 'Posted to Discord.'; els.stPostMsg.style.color = '#4ade80';
       showToast('Staff list posted to Discord', 'ok');
       logAudit('Staff list posted', 'Posted the staff roster to Discord');
