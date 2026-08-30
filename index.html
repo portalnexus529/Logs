@@ -5586,7 +5586,7 @@
     }
 
     if (isStaffOnly){
-      if (action !== 'dtimeout'){
+      if (['dban','dkick','dtimeout'].indexOf(action) === -1){
         throw new Error('Your account does not have permission to do that. Only the actions granted to your role are available.');
       }
       var guildRes = await fetch(AUTH_WORKER_URL + '/guild-id');
@@ -5594,14 +5594,16 @@
       if (!guildData.guildId){
         throw new Error('No Discord server ID has been configured yet. Ask the owner to save it once in Settings.');
       }
-      var res2 = await fetch(AUTH_WORKER_URL + '/staff/timeout', {
+      var staffEndpoint = action==='dban' ? '/staff/ban' : action==='dkick' ? '/staff/kick' : '/staff/timeout';
+      var staffBody = {
+        username: session.username, passwordHash: session.passwordHash,
+        guildId: guildData.guildId, userId: userId, reason: reason, dmEmbed: dmEmbed || undefined
+      };
+      if (action==='dtimeout' || action==='dban') staffBody.durationMs = durationMsVal;
+      var res2 = await fetch(AUTH_WORKER_URL + staffEndpoint, {
         method:'POST',
         headers:{ 'Content-Type':'application/json' },
-        body: JSON.stringify({
-          username: session.username, passwordHash: session.passwordHash,
-          guildId: guildData.guildId, userId: userId, durationMs: durationMsVal,
-          reason: reason, dmEmbed: dmEmbed || undefined
-        })
+        body: JSON.stringify(staffBody)
       });
       var data2;
       try{ data2 = await res2.json(); }catch(e){ data2 = {}; }
