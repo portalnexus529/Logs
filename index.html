@@ -440,8 +440,52 @@
 
   .lock-overlay{position:fixed;inset:0;background:radial-gradient(circle at 50% 30%, var(--panel-2) 0%, var(--bg) 70%);backdrop-filter:blur(2px);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;overflow-y:auto;}
 
-  .auth-shell{display:flex;gap:22px;align-items:flex-start;justify-content:center;flex-wrap:wrap;max-width:800px;width:100%;}
-  .auth-box{background:linear-gradient(165deg, var(--panel) 0%, var(--panel-2) 130%);border:1px solid var(--border-soft);border-radius:18px;padding:38px 36px 32px;max-width:400px;width:100%;box-shadow:0 1px 2px rgba(0,0,0,0.4),0 30px 80px rgba(0,0,0,0.55),inset 0 1px 0 rgba(255,255,255,0.04);}
+  /* ---------- LOGIN / SIGNUP SCREEN ---------- */
+  .auth-orb{position:fixed;border-radius:50%;filter:blur(70px);pointer-events:none;z-index:0;opacity:.55;}
+  .auth-orb-1{width:480px;height:480px;background:radial-gradient(circle, rgba(217,169,78,0.55) 0%, rgba(217,169,78,0) 70%);top:-120px;left:-100px;animation:orbFloat1 16s ease-in-out infinite;}
+  .auth-orb-2{width:420px;height:420px;background:radial-gradient(circle, rgba(120,60,150,0.4) 0%, rgba(120,60,150,0) 70%);bottom:-140px;right:-80px;animation:orbFloat2 20s ease-in-out infinite;}
+  .auth-orb-3{width:340px;height:340px;background:radial-gradient(circle, rgba(217,169,78,0.3) 0%, rgba(217,169,78,0) 70%);top:40%;right:15%;animation:orbFloat3 13s ease-in-out infinite;}
+  @keyframes orbFloat1{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(60px,40px) scale(1.1);}}
+  @keyframes orbFloat2{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(-50px,-30px) scale(1.15);}}
+  @keyframes orbFloat3{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(-30px,50px) scale(0.9);}}
+
+  @keyframes authRise{from{opacity:0;transform:translateY(22px);}to{opacity:1;transform:translateY(0);}}
+
+  .auth-shell{
+    display:grid;grid-template-columns:1fr 1fr;align-items:stretch;justify-content:center;
+    max-width:920px;width:100%;position:relative;z-index:1;
+    border-radius:22px;overflow:hidden;
+    box-shadow:0 1px 2px rgba(0,0,0,0.4),0 40px 100px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.04);
+    animation:authRise .6s cubic-bezier(.2,.8,.2,1) both;
+  }
+  .auth-brand-panel{
+    background:linear-gradient(155deg, #1e1810 0%, #15121a 55%, #0f0d12 100%);
+    padding:48px 42px;display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden;
+    border-right:1px solid var(--border-soft);
+  }
+  .auth-brand-logo{width:52px;height:52px;border-radius:14px;margin-bottom:28px;box-shadow:0 10px 30px rgba(217,169,78,0.35);animation:authRise .7s cubic-bezier(.2,.8,.2,1) .1s both;}
+  .auth-brand-panel h2{font-size:28px;font-weight:700;margin:0 0 14px;letter-spacing:-0.02em;line-height:1.15;
+    background:linear-gradient(135deg, var(--text) 0%, var(--accent-2) 160%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+    animation:authRise .7s cubic-bezier(.2,.8,.2,1) .18s both;
+  }
+  .auth-brand-tagline{font-size:14.5px;color:var(--text-2);line-height:1.65;margin:0 0 30px;animation:authRise .7s cubic-bezier(.2,.8,.2,1) .26s both;}
+  .auth-feature-list{display:flex;flex-direction:column;gap:14px;animation:authRise .7s cubic-bezier(.2,.8,.2,1) .34s both;}
+  .auth-feature{font-size:13.5px;color:var(--text-2);display:flex;align-items:center;gap:11px;}
+  .auth-feature-dot{width:7px;height:7px;border-radius:50%;background:var(--accent-2);box-shadow:0 0 10px rgba(217,169,78,0.7);flex-shrink:0;}
+
+  .auth-box{
+    background:linear-gradient(165deg, var(--panel) 0%, var(--panel-2) 130%);
+    padding:44px 40px;width:100%;
+    animation:authRise .7s cubic-bezier(.2,.8,.2,1) .12s both;
+  }
+  .auth-box .auth-brand{display:none;}
+  @media (max-width:800px){
+    .auth-shell{grid-template-columns:1fr;max-width:420px;border-radius:18px;}
+    .auth-brand-panel{display:none;}
+    .auth-box{padding:38px 32px 32px;}
+    .auth-box .auth-brand{display:block;}
+    .auth-orb{opacity:.35;}
+  }
   .update-item{padding:12px 0;border-bottom:1px solid var(--border-soft);}
   .update-item:last-child{border-bottom:none;padding-bottom:0;}
   .update-item:first-child{padding-top:0;}
@@ -596,7 +640,20 @@
 </div>
 
 <div class="lock-overlay" id="authOverlay" style="display:none;">
+  <div class="auth-orb auth-orb-1"></div>
+  <div class="auth-orb auth-orb-2"></div>
+  <div class="auth-orb auth-orb-3"></div>
   <div class="auth-shell">
+  <div class="auth-brand-panel">
+    <svg class="auth-brand-logo" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#0a0b0e"/><rect x="5.3" y="12" width="3.4" height="7" rx="1.7" fill="#ff5c5c"/><rect x="10.3" y="6.5" width="3.4" height="12.5" rx="1.7" fill="#ffa94d"/><rect x="15.3" y="9.5" width="3.4" height="9.5" rx="1.7" fill="#ffd43b"/></svg>
+    <h2 id="authBrandPanelName">The Watchers</h2>
+    <p class="auth-brand-tagline">Moderation, applications, and support — all in one place, built for a team that takes their community seriously.</p>
+    <div class="auth-feature-list">
+      <div class="auth-feature"><span class="auth-feature-dot"></span>Live moderation cases &amp; Discord actions</div>
+      <div class="auth-feature"><span class="auth-feature-dot"></span>Staff permissions built for real teams</div>
+      <div class="auth-feature"><span class="auth-feature-dot"></span>Support tickets, applications &amp; appeals</div>
+    </div>
+  </div>
   <div class="auth-box">
 
     <div id="maintenanceView" style="display:none;text-align:center;">
