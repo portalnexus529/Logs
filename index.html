@@ -153,6 +153,11 @@
   .topbar-left p{margin:4px 0 0;color:var(--text-3);font-size:var(--fs-sm);}
   .topbar-right{display:flex;gap:var(--space-2);align-items:center;}
 
+  .player-portal-header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:var(--space-4);margin-bottom:var(--space-5);border-bottom:1px solid var(--border-soft);gap:14px;flex-wrap:wrap;}
+  .player-portal-eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--accent);margin-bottom:6px;}
+  .player-portal-header h1{font-size:var(--fs-2xl);font-weight:700;letter-spacing:-0.02em;margin:0;}
+  .player-portal-header p{margin:5px 0 0;color:var(--text-3);font-size:var(--fs-sm);}
+
   .chip{
     display:flex;flex-direction:column;align-items:center;justify-content:center;
     background:var(--surface);border:1px solid var(--border-soft);border-radius:var(--radius-sm);
@@ -239,7 +244,7 @@
   .seg button[data-a="dban"].active .dot{background:var(--discord);}
   .seg button[data-a="dkick"].active{background:var(--discord-bg);border-color:var(--discord);color:#c7ccfb;}
   .seg button[data-a="dkick"].active .dot{background:var(--discord);}
-  .seg button[data-mg-status="accepted"].active{background:rgba(74,222,128,0.14);border-color:var(--success);color:#86efac;}
+  .seg button[data-mg-status="accepted"].active{background:var(--success-bg);border-color:var(--success);color:#86efac;}
   .seg button[data-mg-status="accepted"].active .dot{background:var(--success);}
   .seg button[data-mg-status="denied"].active{background:var(--ban-bg);border-color:var(--ban);color:#fca5a5;}
   .seg button[data-mg-status="denied"].active .dot{background:var(--ban);}
@@ -351,7 +356,7 @@
 
   .badge-line{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:5px;}
   .badge.scope{background:var(--panel);color:var(--text-2);border:1px solid var(--border);}
-  .badge.appeal-yes{background:rgba(74,222,128,0.12);color:#86efac;}
+  .badge.appeal-yes{background:var(--success-bg);color:#86efac;}
   .badge.appeal-no{background:var(--ban-bg);color:#fca5a5;}
   .entry-bg{font-size:11.5px;color:var(--text-3);margin-bottom:5px;line-height:1.5;}
   .entry-internal{font-size:12px;color:var(--text-2);background:var(--field);border-left:2px solid var(--text-3);padding:6px 8px;margin-bottom:5px;border-radius:0 6px 6px 0;}
@@ -368,7 +373,7 @@
   .confirm-actions{display:flex;gap:10px;justify-content:flex-end;}  .status-select{width:auto;padding:4px 8px;font-size:11px;font-weight:600;border-radius:20px;border:1px solid var(--border);background:var(--panel-2);color:var(--text-2);}
   .status-select.active{background:rgba(91,141,239,0.12);border-color:var(--accent);color:var(--accent);}
   .status-select.pending{background:var(--warn-bg);border-color:var(--warn);color:#fde047;}
-  .status-select.solved{background:rgba(74,222,128,0.12);border-color:var(--success);color:#86efac;}
+  .status-select.solved{background:var(--success-bg);border-color:var(--success);color:#86efac;}
 
   .link-msg-row{margin-top:4px;}
   .link-msg-btn{background:none;border:none;color:var(--accent);font-size:11px;cursor:pointer;padding:2px 0;text-decoration:underline;}
@@ -455,11 +460,11 @@
   .apps-sort-select{width:auto!important;margin-left:auto;font-size:12.5px!important;padding:6px 10px!important;}
 
   .badge.status-pending{background:var(--warn-bg);color:#fde047;}
-  .badge.status-accepted{background:rgba(74,222,128,0.12);color:#86efac;}
+  .badge.status-accepted{background:var(--success-bg);color:#86efac;}
   .badge.status-denied{background:var(--ban-bg);color:#fca5a5;}
   .badge.status-open{background:var(--warn-bg);color:#fde047;}
   .badge.status-in_progress{background:var(--accent-bg);color:var(--accent);}
-  .badge.status-resolved{background:rgba(74,222,128,0.12);color:#86efac;}
+  .badge.status-resolved{background:var(--success-bg);color:#86efac;}
   .badge.status-closed{background:var(--field);color:var(--text-3);}
 
   .response-card{border:1px solid var(--border-soft);background:var(--panel-2);border-radius:var(--radius-sm);
@@ -668,7 +673,7 @@
   .diag-icon{width:22px;height:22px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:1px;}
   .diag-icon.pending{background:var(--field);border:1px solid var(--border);}
   .diag-icon.checking{background:var(--accent-bg);border:2px solid var(--accent);border-top-color:transparent;animation:diagSpin .7s linear infinite;}
-  .diag-icon.pass{background:rgba(74,222,128,0.15);color:var(--success);}
+  .diag-icon.pass{background:var(--success-bg);color:var(--success);}
   .diag-icon.fail{background:var(--ban-bg);color:var(--ban);}
   .diag-icon.info{background:var(--accent-bg);color:var(--accent);}
   @keyframes diagSpin{to{transform:rotate(360deg);}}
@@ -789,14 +794,13 @@
 </div>
 
 <div class="wrap" id="playerWrap" style="display:none;">
-  <div class="topbar">
-    <div class="topbar-left">
-      <h1>Your profile</h1>
+  <div class="player-portal-header">
+    <div>
+      <div class="player-portal-eyebrow">Your account</div>
+      <h1 id="playerWelcomeName">Welcome back</h1>
       <p id="playerWelcome"></p>
     </div>
-    <div class="topbar-right">
-      <button class="btn small" id="playerLogoutBtn">Log out</button>
-    </div>
+    <button class="btn small" id="playerLogoutBtn">Log out</button>
   </div>
 
   <div class="player-tabs" id="playerTabs">
@@ -2521,7 +2525,7 @@
    'checkAppealWrap','checkAppealBody',
    'loginUsername','loginPassword','loginMsg','loginBtn',
    'signupUsername','signupPassword','signupDiscordId','signupSteamId','signupMsg','signupBtn',
-   'playerWrap','playerWelcome','playerLogoutBtn','playerCasesFeed','ownerLogoutBtn',
+   'playerWrap','playerWelcome','playerWelcomeName','playerLogoutBtn','playerCasesFeed','ownerLogoutBtn',
    'playerTabs','playerCasesPanel','playerUpdatesPanel','playerSupportPanel',
    'ptCategory','ptSubject','ptMessage','ptSubmitBtn','ptFormMsg','ptTicketsList',
    'sideNavBrand','themeToggleBtn','themeIcon','mobileMenuBtn','sideNavCloseBtn','sideNavEl',
@@ -8432,7 +8436,7 @@
     els.statusWrap.style.display = 'block';
 
     var STATUS_META = {
-      online: { label: 'Online', color: 'var(--success)', bg: 'rgba(74,222,128,0.12)' },
+      online: { label: 'Online', color: 'var(--success)', bg: 'var(--success-bg)' },
       offline: { label: 'Offline', color: 'var(--ban)', bg: 'var(--ban-bg)' },
       maintenance: { label: 'Maintenance', color: 'var(--warn)', bg: 'var(--warn-bg)' }
     };
@@ -8475,7 +8479,7 @@
 
     var STATUS_META = {
       pending: { label: 'Pending', color: 'var(--warn)', bg: 'var(--warn-bg)' },
-      accepted: { label: 'Accepted', color: 'var(--success)', bg: 'rgba(74,222,128,0.12)' },
+      accepted: { label: 'Accepted', color: 'var(--success)', bg: 'var(--success-bg)' },
       denied: { label: 'Denied', color: 'var(--ban)', bg: 'var(--ban-bg)' }
     };
 
@@ -8518,7 +8522,7 @@
 
     var STATUS_META = {
       pending: { label: 'Pending', color: 'var(--warn)', bg: 'var(--warn-bg)' },
-      accepted: { label: 'Accepted', color: 'var(--success)', bg: 'rgba(74,222,128,0.12)' },
+      accepted: { label: 'Accepted', color: 'var(--success)', bg: 'var(--success-bg)' },
       denied: { label: 'Denied', color: 'var(--ban)', bg: 'var(--ban-bg)' }
     };
 
@@ -8736,7 +8740,7 @@
       els.pAccMsg.textContent = 'Saved. ' + (data.username ? 'Your username is now "'+data.username+'".' : '');
       els.pAccMsg.style.color = 'var(--success)';
       els.pAccCurrentPassword.value = ''; els.pAccNewUsername.value = ''; els.pAccNewPassword.value = '';
-      if (els.playerWelcome && data.username) els.playerWelcome.textContent = 'Logged in as ' + data.username;
+      if (els.playerWelcomeName && data.username) els.playerWelcomeName.textContent = data.username;
     }catch(err){
       els.pAccMsg.textContent = err.message || 'Could not update account.';
       els.pAccMsg.style.color = 'var(--ban)';
@@ -8947,7 +8951,8 @@
     } else {
       adminWrapEl.style.display = 'none';
       els.playerWrap.style.display = 'block';
-      els.playerWelcome.textContent = 'Logged in as ' + session.username;
+      if (els.playerWelcomeName) els.playerWelcomeName.textContent = session.username;
+      els.playerWelcome.textContent = 'Everything tied to your account, in one place.';
       loadPlayerCases(session);
       loadPublicUpdatesFeed('playerUpdatesList');
       CURRENT_PLAYER_SESSION = session;
