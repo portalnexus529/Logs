@@ -811,6 +811,7 @@
     <button type="button" class="player-tab" data-ptab="updates">Updates</button>
     <button type="button" class="player-tab" data-ptab="support">Support</button>
     <button type="button" class="player-tab" data-ptab="account">Account</button>
+    <button type="button" class="player-tab" data-ptab="suggestions">Suggestions</button>
   </div>
 
   <div class="panel" id="playerCasesPanel">
@@ -877,6 +878,22 @@
       </div>
       <button class="btn primary" id="pAccSaveBtn">Save changes</button>
       <div id="pAccMsg" style="font-size:12.5px;margin-top:8px;"></div>
+    </div>
+  </div>
+
+  <div class="panel" id="playerSuggestionsPanel" style="display:none;">
+    <div class="panel-head"><h2>Suggestions</h2></div>
+    <div class="panel-body">
+      <p style="font-size:12px;color:var(--text-3);margin:0 0 16px;">Got an idea for the server? Send it straight to staff.</p>
+      <div class="field">
+        <label for="ptSuggestionText">Your suggestion</label>
+        <textarea id="ptSuggestionText" placeholder="What would you like to see added or changed?" rows="4"></textarea>
+      </div>
+      <button class="btn primary" id="ptSuggestionSubmitBtn">Send suggestion</button>
+      <div id="ptSuggestionMsg" style="font-size:12.5px;margin-top:8px;"></div>
+
+      <h3 style="font-size:13.5px;font-weight:700;margin:26px 0 12px;padding-top:16px;border-top:1px solid var(--border-soft);">Your past suggestions</h3>
+      <div id="ptSuggestionsList"><div class="empty-state">Loading...</div></div>
     </div>
   </div>
 </div>
@@ -1005,6 +1022,11 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v5a2 2 0 0 1 0 4v1a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-1a2 2 0 0 1 0-4z"/><path d="M9 9h6M9 13h6"/></svg>
         Support Tickets
         <span id="ticketNavBadge" class="nav-badge" style="display:none;"></span>
+      </button>
+      <button type="button" class="nav-item" data-section="suggestions">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/><circle cx="12" cy="12" r="10"/></svg>
+        Suggestions
+        <span id="suggestionsNavBadge" class="nav-badge" style="display:none;"></span>
       </button>
       </div>
 
@@ -1932,6 +1954,17 @@
         </div>
       </div>
 
+      <div id="sectionSuggestions" class="dash-section" style="display:none;">
+        <div class="panel">
+          <div class="panel-head"><h2>Suggestions</h2><button class="btn ghost small" id="suggestionsRefreshBtn">Refresh</button></div>
+          <div class="panel-body">
+            <p style="font-size:12px;color:var(--text-3);margin:0 0 14px;">Ideas submitted by your players. Mark each one as reviewed, planned, or declined to keep track of where things stand.</p>
+            <div id="suggestionsFilterBar" style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;"></div>
+            <div id="suggestionsList"><div class="empty-state">Loading...</div></div>
+          </div>
+        </div>
+      </div>
+
       <div id="sectionLedger" class="dash-section" style="display:none;">
         <div class="panel">
       <div class="panel-head"><h2>Cases</h2><button class="btn ghost small" id="clearAllBtn">Clear all</button></div>
@@ -2152,6 +2185,7 @@
                   <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" data-perm="players" style="width:auto;"> Players &amp; Lookups</label>
                   <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" data-perm="audit" style="width:auto;"> Audit Log</label>
                   <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" data-perm="cases" style="width:auto;"> Cases (full ledger)</label>
+                  <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" data-perm="suggestions" style="width:auto;"> Suggestions</label>
                 </div>
                 <p style="font-size:11px;color:var(--text-3);margin:8px 0 0;line-height:1.5;">Settings, Diagnostics, and Accounts always stay owner-only, no matter what's checked here.</p>
               </div>
@@ -2568,6 +2602,8 @@
    'myTasksRefreshBtn','myTasksList','tasksNavBadge','taskCasesRefreshBtn','taskCasesList',
    'sAccCurrentPassword','sAccNewUsername','sAccNewPassword','sAccSaveBtn','sAccMsg',
    'playerAccountPanel','pAccCurrentPassword','pAccNewUsername','pAccNewPassword','pAccSaveBtn','pAccMsg',
+   'playerSuggestionsPanel','ptSuggestionText','ptSuggestionSubmitBtn','ptSuggestionMsg','ptSuggestionsList',
+   'suggestionsRefreshBtn','suggestionsFilterBar','suggestionsList','suggestionsNavBadge',
    'applyWrap','applyBody',
    'webhookNameInput','webhookUrlInput','addWebhookBtn','webhookListUI',
    'workerUrlInput','workerKeyInput','guildIdInput',
@@ -2873,7 +2909,7 @@
     els.linkInlineInput.value=''; els.linkInlineRow.classList.remove('show');
   });
 
-  var SECTION_IDS = { dashboard:'sectionDashboard', myactivity:'sectionMyActivity', myaccount:'sectionMyAccount', game:'sectionGame', discord:'sectionDiscord', assigntask:'sectionAssignTask', mytasks:'sectionMyTasks', ann:'sectionAnn', events:'sectionEvents', formbuilder:'sectionFormBuilder', applications:'sectionApplications', banappeals:'sectionBanAppeals', msggen:'sectionMsgGen', discordnotify:'sectionDiscordNotify', siteupdates:'sectionSiteUpdates', staff:'sectionStaff', tickets:'sectionTickets', ledger:'sectionLedger', audit:'sectionAudit', loginsecurity:'sectionLoginSecurity', staffstats:'sectionStaffStats', players:'sectionPlayers', accounts:'sectionAccounts', lookup:'sectionLookup', settings:'sectionSettings', diagnostics:'sectionDiagnostics' };
+  var SECTION_IDS = { dashboard:'sectionDashboard', myactivity:'sectionMyActivity', myaccount:'sectionMyAccount', game:'sectionGame', discord:'sectionDiscord', assigntask:'sectionAssignTask', mytasks:'sectionMyTasks', ann:'sectionAnn', events:'sectionEvents', formbuilder:'sectionFormBuilder', applications:'sectionApplications', banappeals:'sectionBanAppeals', msggen:'sectionMsgGen', discordnotify:'sectionDiscordNotify', siteupdates:'sectionSiteUpdates', staff:'sectionStaff', tickets:'sectionTickets', suggestions:'sectionSuggestions', ledger:'sectionLedger', audit:'sectionAudit', loginsecurity:'sectionLoginSecurity', staffstats:'sectionStaffStats', players:'sectionPlayers', accounts:'sectionAccounts', lookup:'sectionLookup', settings:'sectionSettings', diagnostics:'sectionDiagnostics' };
   var CURRENT_SECTION = 'dashboard';
   function switchSection(target){
     CURRENT_SECTION = target;
@@ -2898,6 +2934,7 @@
       if (el) el.style.display = (key===target) ? 'block' : 'none';
     });
     if (target==='applications' && typeof loadApplications==='function') loadApplications();
+    if (target==='suggestions' && typeof loadSuggestions==='function') loadSuggestions();
     if (target==='audit' && typeof loadServerAuditLog==='function'){ loadServerAuditLog(); }
     if (target==='loginsecurity' && typeof loadLoginAttempts==='function') loadLoginAttempts();
     if (target==='staffstats' && typeof loadStaffStats==='function') loadStaffStats();
@@ -8817,7 +8854,8 @@
     announcements: ['ann','events'],
     players: ['players','lookup'],
     audit: ['audit'],
-    cases: ['ledger']
+    cases: ['ledger'],
+    suggestions: ['suggestions']
   };
   var OWNER_ONLY_SECTIONS = ['settings','diagnostics','accounts','staffstats','loginsecurity','assigntask'];
 
@@ -9053,6 +9091,8 @@
     els.playerUpdatesPanel.style.display = CURRENT_PLAYER_TAB==='updates' ? 'block' : 'none';
     els.playerSupportPanel.style.display = CURRENT_PLAYER_TAB==='support' ? 'block' : 'none';
     els.playerAccountPanel.style.display = CURRENT_PLAYER_TAB==='account' ? 'block' : 'none';
+    els.playerSuggestionsPanel.style.display = CURRENT_PLAYER_TAB==='suggestions' ? 'block' : 'none';
+    if (CURRENT_PLAYER_TAB==='suggestions' && typeof loadMySuggestions==='function') loadMySuggestions();
   });
 
   async function loadPlayerCases(session){
@@ -9127,6 +9167,176 @@
 
   var EXPANDED_PLAYER_TICKET_IDS = {};
   var CURRENT_PLAYER_TICKETS_DATA = [];
+
+  async function loadMySuggestions(){
+    var session = CURRENT_PLAYER_SESSION;
+    if (!session) return;
+    try{
+      var res = await fetch(AUTH_WORKER_URL + '/suggestions/mine', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          submitterUsername: session.username || '',
+          submitterDiscordId: session.discordId || '',
+          submitterSteamId: session.steamId || ''
+        })
+      });
+      var data = await res.json();
+      var suggestions = data.suggestions || [];
+      if (suggestions.length===0){ els.ptSuggestionsList.innerHTML = '<div class="empty-state">You haven\u2019t sent any suggestions yet.</div>'; return; }
+      var STATUS_LABEL = { new:'Submitted', reviewed:'Reviewed', planned:'Planned', declined:'Declined', implemented:'Implemented' };
+      var STATUS_BADGE_CLASS = { new:'status-pending', reviewed:'status-in_progress', planned:'status-in_progress', declined:'status-denied', implemented:'status-accepted' };
+      els.ptSuggestionsList.innerHTML = suggestions.map(function(s){
+        var d = new Date(s.createdAt).toLocaleDateString();
+        var status = s.status || 'new';
+        return '<div class="player-card" style="margin-bottom:8px;">' +
+          '<div class="player-top"><span class="entry-time">'+d+'</span><span class="badge '+(STATUS_BADGE_CLASS[status]||'status-pending')+'">'+(STATUS_LABEL[status]||status)+'</span></div>' +
+          '<div style="font-size:13px;color:var(--text);margin-top:6px;line-height:1.5;">'+escapeHtml(s.text)+'</div>' +
+        '</div>';
+      }).join('');
+    }catch(err){
+      els.ptSuggestionsList.innerHTML = '<div class="empty-state">Could not load your suggestions.</div>';
+    }
+  }
+
+  els.ptSuggestionSubmitBtn.addEventListener('click', async function(){
+    var text = els.ptSuggestionText.value.trim();
+    els.ptSuggestionMsg.textContent = '';
+    if (!text){ els.ptSuggestionMsg.textContent = 'Write your suggestion first.'; els.ptSuggestionMsg.style.color = 'var(--danger)'; return; }
+    var session = CURRENT_PLAYER_SESSION;
+    els.ptSuggestionSubmitBtn.disabled = true;
+    try{
+      var res = await fetch(AUTH_WORKER_URL + '/suggestions/submit', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          text: text,
+          submitterUsername: session.username || '',
+          submitterDiscordId: session.discordId || '',
+          submitterSteamId: session.steamId || ''
+        })
+      });
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not send suggestion.');
+      els.ptSuggestionText.value = '';
+      els.ptSuggestionMsg.textContent = 'Sent! Thanks for the idea.';
+      els.ptSuggestionMsg.style.color = 'var(--success)';
+      loadMySuggestions();
+    }catch(err){
+      els.ptSuggestionMsg.textContent = err.message || 'Could not send suggestion.';
+      els.ptSuggestionMsg.style.color = 'var(--danger)';
+    }finally{
+      els.ptSuggestionSubmitBtn.disabled = false;
+    }
+  });
+
+  // ==================== Suggestions (staff/owner) ====================
+  var SUGGESTIONS_CACHE = [];
+  var SUGGESTIONS_FILTER = 'all';
+  var SUGGESTION_STATUS_LABEL = { new:'New', reviewed:'Reviewed', planned:'Planned', declined:'Declined', implemented:'Implemented' };
+
+  async function loadSuggestions(){
+    els.suggestionsList.innerHTML = '<div class="empty-state">Loading...</div>';
+    try{
+      var data = await staffOrOwnerFetch('/staff/suggestions/list', '/suggestions/list');
+      SUGGESTIONS_CACHE = data.suggestions || [];
+      renderSuggestionsFilterBar();
+      renderSuggestionsList();
+      var newCount = SUGGESTIONS_CACHE.filter(function(s){ return (s.status||'new')==='new'; }).length;
+      if (els.suggestionsNavBadge){
+        if (newCount > 0){ els.suggestionsNavBadge.textContent = newCount > 99 ? '99+' : String(newCount); els.suggestionsNavBadge.style.display = ''; }
+        else { els.suggestionsNavBadge.style.display = 'none'; }
+      }
+    }catch(err){
+      els.suggestionsList.innerHTML = '<div class="empty-state">'+escapeHtml(err.message || 'Could not load suggestions.')+'</div>';
+    }
+  }
+
+  function renderSuggestionsFilterBar(){
+    var counts = { all: SUGGESTIONS_CACHE.length, new:0, reviewed:0, planned:0, declined:0, implemented:0 };
+    SUGGESTIONS_CACHE.forEach(function(s){
+      var st = s.status || 'new';
+      if (counts[st]===undefined) counts[st] = 0;
+      counts[st]++;
+    });
+    els.suggestionsFilterBar.innerHTML = ['all','new','reviewed','planned','declined','implemented'].map(function(key){
+      var label = key==='all' ? 'All' : SUGGESTION_STATUS_LABEL[key];
+      return '<button type="button" class="btn small'+(SUGGESTIONS_FILTER===key?' primary':' ghost')+'" data-sugg-filter="'+key+'">'+label+' ('+(counts[key]||0)+')</button>';
+    }).join('');
+    els.suggestionsFilterBar.querySelectorAll('[data-sugg-filter]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        SUGGESTIONS_FILTER = btn.dataset.suggFilter;
+        renderSuggestionsFilterBar();
+        renderSuggestionsList();
+      });
+    });
+  }
+
+  function renderSuggestionsList(){
+    var filtered = SUGGESTIONS_CACHE.filter(function(s){ return SUGGESTIONS_FILTER==='all' || (s.status||'new')===SUGGESTIONS_FILTER; });
+    if (filtered.length===0){ els.suggestionsList.innerHTML = '<div class="empty-state">No suggestions here.</div>'; return; }
+    var session = getSession();
+    var isOwner = session && session.role==='owner';
+    els.suggestionsList.innerHTML = filtered.map(function(s){
+      var d = new Date(s.createdAt).toLocaleString();
+      var status = s.status || 'new';
+      var statusOptions = Object.keys(SUGGESTION_STATUS_LABEL).map(function(k){
+        return '<option value="'+k+'"'+(k===status?' selected':'')+'>'+SUGGESTION_STATUS_LABEL[k]+'</option>';
+      }).join('');
+      return '<div class="player-card" style="margin-bottom:10px;">' +
+        '<div class="player-top"><div class="player-name" style="font-size:13.5px;">'+escapeHtml(s.submitterUsername||'Anonymous')+'</div><span class="entry-time">'+d+'</span></div>' +
+        '<div style="font-size:13.5px;color:var(--text);margin:8px 0;line-height:1.55;">'+escapeHtml(s.text)+'</div>' +
+        '<select class="status-select" data-sugg-status="'+s.id+'" style="width:auto;">'+statusOptions+'</select>' +
+        (isOwner ? ' <button type="button" class="btn small ghost" data-sugg-delete="'+s.id+'" style="color:var(--ban);margin-left:8px;">Delete</button>' : '') +
+      '</div>';
+    }).join('');
+
+    els.suggestionsList.querySelectorAll('[data-sugg-status]').forEach(function(sel){
+      sel.addEventListener('change', async function(){
+        var id = sel.dataset.suggStatus;
+        var newStatus = sel.value;
+        try{
+          if (isStaffTicketSession()){
+            var sess = getSession();
+            await fetch(AUTH_WORKER_URL + '/staff/suggestions/status', {
+              method:'POST', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ username: sess.username, passwordHash: sess.passwordHash, id: id, status: newStatus })
+            });
+          } else {
+            await fetch(STATE.settings.workerUrl + '/suggestions/status', {
+              method:'POST', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ adminKey: STATE.settings.workerKey, id: id, status: newStatus })
+            });
+          }
+          var s = SUGGESTIONS_CACHE.find(function(x){ return x.id===id; });
+          if (s) s.status = newStatus;
+          showToast('Status updated', 'ok');
+          renderSuggestionsFilterBar();
+        }catch(err){
+          showToast('Could not update status', 'err');
+        }
+      });
+    });
+
+    els.suggestionsList.querySelectorAll('[data-sugg-delete]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var id = btn.dataset.suggDelete;
+        askConfirm('Delete this suggestion?', async function(){
+          try{
+            await fetch(STATE.settings.workerUrl + '/suggestions/delete', {
+              method:'POST', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ adminKey: STATE.settings.workerKey, id: id })
+            });
+            SUGGESTIONS_CACHE = SUGGESTIONS_CACHE.filter(function(x){ return x.id!==id; });
+            renderSuggestionsFilterBar();
+            renderSuggestionsList();
+            showToast('Suggestion deleted', 'ok');
+          }catch(err){
+            showToast('Could not delete', 'err');
+          }
+        }, 'Delete');
+      });
+    });
+  }
+  els.suggestionsRefreshBtn.addEventListener('click', loadSuggestions);
 
   async function loadPlayerTickets(session){
     if (!session) return;
