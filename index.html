@@ -366,9 +366,11 @@
   .entry-proofs a.link-chip{font-size:11px;color:var(--accent);text-decoration:none;background:var(--field);border:1px solid var(--border);padding:6px 8px;border-radius:5px;}  .entry-del{background:none;border:none;color:var(--text-3);cursor:pointer;font-size:16px;line-height:1;padding:2px 4px;flex-shrink:0;}
   .entry-del:hover{color:var(--ban);}
 
+  @keyframes modalOverlayIn{from{opacity:0;}to{opacity:1;}}
+  @keyframes modalBoxIn{from{opacity:0;transform:scale(.96) translateY(6px);}to{opacity:1;transform:scale(1) translateY(0);}}
   .confirm-overlay{position:fixed;inset:0;background:rgba(8,7,5,0.6);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;z-index:1000;padding:20px;}
-  .confirm-overlay.show{display:flex;}
-  .confirm-box{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px;max-width:360px;width:100%;}
+  .confirm-overlay.show{display:flex;animation:modalOverlayIn .15s ease both;}
+  .confirm-box{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px;max-width:360px;width:100%;animation:modalBoxIn .2s cubic-bezier(.2,.8,.2,1) both;}
   .confirm-box p{font-size:13.5px;color:var(--text);line-height:1.6;margin:0 0 16px;}
   .confirm-actions{display:flex;gap:10px;justify-content:flex-end;}  .status-select{width:auto;padding:4px 8px;font-size:11px;font-weight:600;border-radius:20px;border:1px solid var(--border);background:var(--panel-2);color:var(--text-2);}
   .status-select.active{background:rgba(91,141,239,0.12);border-color:var(--accent);color:var(--accent);}
@@ -479,7 +481,7 @@
   .response-card-body{display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border-soft);}
   .response-card.expanded .response-card-body{display:block;}
   .response-card-actions{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap;}
-  .ticket-thread{max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin:12px 0;padding:12px;background:var(--bg);border-radius:var(--radius-sm);border:1px solid var(--border-soft);}
+  .ticket-thread{max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;margin:14px 0;padding:16px;background:var(--field);border-radius:var(--radius);border:1px solid var(--border-soft);}
   .ticket-msg{max-width:82%;min-width:100px;padding:9px 13px;border-radius:14px;font-size:12.5px;line-height:1.5;word-break:break-word;}
   .ticket-msg-user{background:var(--field);border:1px solid var(--border-soft);align-self:flex-start;border-bottom-left-radius:4px;}
   .ticket-msg-staff{background:var(--accent-bg);border:1px solid var(--accent);align-self:flex-end;border-bottom-right-radius:4px;}
@@ -555,7 +557,8 @@
   .player-tab:not(.active):hover{color:var(--text);}
   @media (max-width:700px){.audit-row{grid-template-columns:1fr;gap:2px;}}
 
-  .dash-section{display:block;}
+  @keyframes sectionEnter{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+  .dash-section{display:block;animation:sectionEnter .22s ease both;}
   .dash-hero{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
   .dash-hero-stat{background:var(--surface);border:1px solid var(--border-soft);border-radius:var(--radius);padding:22px 24px;}
   .dash-hero-stat.accent{border-color:var(--accent);background:var(--accent-bg);}
