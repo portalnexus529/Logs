@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The Watchers — Moderation</title>
+<title>Sentinel — Moderation</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%230a0b0e'/%3E%3Crect x='5.3' y='12' width='3.4' height='7' rx='1.7' fill='%23ff5c5c'/%3E%3Crect x='10.3' y='6.5' width='3.4' height='12.5' rx='1.7' fill='%23ffa94d'/%3E%3Crect x='15.3' y='9.5' width='3.4' height='9.5' rx='1.7' fill='%23ffd43b'/%3E%3C/svg%3E">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -726,7 +726,7 @@
     <div id="authNormalView">
     <div class="auth-brand">
       <svg class="auth-logo" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#0a0b0e"/><rect x="5.3" y="12" width="3.4" height="7" rx="1.7" fill="#ff5c5c"/><rect x="10.3" y="6.5" width="3.4" height="12.5" rx="1.7" fill="#ffa94d"/><rect x="15.3" y="9.5" width="3.4" height="9.5" rx="1.7" fill="#ffd43b"/></svg>
-      <h1 id="authBrandName">The Watchers</h1>
+      <h1 id="authBrandName">Sentinel</h1>
       <p>Moderation dashboard &amp; player accounts</p>
     </div>
 
@@ -906,7 +906,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
       <div>
-        <h1 id="serverNameOut">Community server</h1>
+        <h1 id="serverNameOut">Sentinel</h1>
         <p>Moderation log &middot; publishes straight to Discord</p>
       </div>
     </div>
@@ -929,7 +929,7 @@
 
       <div class="side-nav-header">
         <div class="side-nav-brand-block">
-          <div class="side-nav-brand-name" id="sideNavBrand">The Watchers</div>
+          <div class="side-nav-brand-name" id="sideNavBrand">Sentinel</div>
           <div class="side-nav-brand-sub">Moderation Platform</div>
         </div>
         <button type="button" class="icon-btn" id="themeToggleBtn" title="Toggle light/dark theme">
@@ -1609,7 +1609,7 @@
           <div class="two-col">
             <div class="field">
               <label for="annFooter">Footer text (optional)</label>
-              <input type="text" id="annFooter" placeholder="e.g. The Watchers">
+              <input type="text" id="annFooter" placeholder="e.g. Sentinel">
             </div>
             <div>
               <label style="font-size:11.5px;">Include timestamp</label>
@@ -2542,7 +2542,7 @@
 <script>
 (function(){
   var STATE = { action:'ban', durationMode:'perm', appeal:'yes', proofs:[], entries:[], caseSeq:0,
-    settings:{ serverName:'Community server', webhookUrl:'', ticketLink:'https://discord.gg/26UfjmMTA3', investigators:[], webhooks:[], announcementTemplates:[], workerUrl:'', workerKey:'', guildId:'', pinHash:'', appealFormId:'' } };
+    settings:{ serverName:'Sentinel', webhookUrl:'', ticketLink:'https://discord.gg/26UfjmMTA3', investigators:[], webhooks:[], announcementTemplates:[], workerUrl:'', workerKey:'', guildId:'', pinHash:'', appealFormId:'' } };
 
   var els = {};
   ['serverNameInput','webhookInput','ticketLinkInput','appealFormSelect','refreshAppealFormsBtn','saveSettingsBtn','testWebhookBtn','exportBtn','importBtn','importFile',
@@ -2971,9 +2971,9 @@
     els.serverNameInput.value = STATE.settings.serverName || '';
     els.webhookInput.value = STATE.settings.webhookUrl || '';
     els.ticketLinkInput.value = STATE.settings.ticketLink || '';
-    els.serverNameOut.textContent = STATE.settings.serverName || 'Community server';
-    els.sideNavBrand.textContent = STATE.settings.serverName || 'Community server';
-    els.authBrandName.textContent = STATE.settings.serverName || 'Community server';
+    els.serverNameOut.textContent = STATE.settings.serverName || 'Sentinel';
+    els.sideNavBrand.textContent = STATE.settings.serverName || 'Sentinel';
+    els.authBrandName.textContent = STATE.settings.serverName || 'Sentinel';
     els.workerUrlInput.value = STATE.settings.workerUrl || '';
     els.workerKeyInput.value = STATE.settings.workerKey || '';
     els.guildIdInput.value = STATE.settings.guildId || '';
@@ -3079,7 +3079,7 @@
   }
 
   async function saveSettings(){
-    STATE.settings.serverName = els.serverNameInput.value.trim() || 'Community server';
+    STATE.settings.serverName = els.serverNameInput.value.trim() || 'Sentinel';
     STATE.settings.webhookUrl = els.webhookInput.value.trim();
     STATE.settings.ticketLink = els.ticketLinkInput.value.trim();
     STATE.settings.appealFormId = els.appealFormSelect.value;
@@ -4570,8 +4570,8 @@
   els.loginAttemptsRefreshBtn.addEventListener('click', loadLoginAttempts);
 
   // ==================== Staff Stats ====================
-  var STAT_ACTION_LABEL = { ban:'Bans', kick:'Kicks', warn:'Warnings', dban:'Discord bans', dkick:'Discord kicks', dtimeout:'Discord timeouts' };
-  var STAT_ACTION_ORDER = ['ban','kick','warn','dban','dkick','dtimeout'];
+  var STAT_ACTION_LABEL = { ban:'Bans', kick:'Kicks', warn:'Warnings', dban:'Discord bans', dkick:'Discord kicks', dtimeout:'Discord timeouts', dwarn:'Discord warnings' };
+  var STAT_ACTION_ORDER = ['ban','kick','warn','dban','dkick','dtimeout','dwarn'];
   var CURRENT_STAFF_STATS = [];
 
   async function loadStaffStats(){
@@ -5492,7 +5492,7 @@
       url: STATE.settings.ticketLink || undefined,
       color: COLOR_HEX[entry.action],
       fields: buildFields(entry),
-      footer:{ text: STATE.settings.serverName || 'Community server' },
+      footer:{ text: STATE.settings.serverName || 'Sentinel' },
       timestamp: new Date(entry.ts).toISOString()
     };
   }
@@ -6653,7 +6653,7 @@
       denied: { title: 'Your "'+formTitle+'" has been denied', desc: 'After review, your submission has not been accepted at this time.', color: 0xff5c5c }
     };
     var t = STATUS_TEXT[status] || STATUS_TEXT.pending;
-    var embed = { title: t.title, description: t.desc, color: t.color, footer: { text: STATE.settings.serverName || 'Community server' }, timestamp: new Date().toISOString() };
+    var embed = { title: t.title, description: t.desc, color: t.color, footer: { text: STATE.settings.serverName || 'Sentinel' }, timestamp: new Date().toISOString() };
     if (note && note.trim()) embed.fields = [{ name:'Additional note', value: note.trim() }];
     return embed;
   }
@@ -7219,7 +7219,7 @@
       title: els.dnTitle.value.trim() || (meta ? meta.title : ('Message from ' + (STATE.settings.serverName || 'our team'))),
       description: message,
       color: meta ? meta.color : 0x5b8def,
-      footer: { text: STATE.settings.serverName || 'Community server' },
+      footer: { text: STATE.settings.serverName || 'Sentinel' },
       timestamp: new Date().toISOString()
     };
     els.dnSendBtn.disabled = true;
