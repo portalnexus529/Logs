@@ -7478,6 +7478,13 @@
           '<div class="public-field-row"><label>SteamID64</label><span>'+escapeHtml(u.steamId || '\u2014')+'</span></div>' +
           (u.banned ? '<div class="public-field-row"><label>Ban reason</label><span style="text-align:right;max-width:60%;color:var(--ban);">'+escapeHtml(u.banReason||'')+'</span></div>' : '') +
           '<div class="public-field-row"><label>Support tickets</label><span>'+closedTickets.length+' closed'+(closedTickets.length ? ' <button type="button" class="link-msg-btn" data-account-tickets-toggle="'+escapeHtml(u.username)+'" style="margin-left:6px;">View</button>' : '')+'</span></div>' +
+          '<div class="public-field-row"><label>Application file</label><span>' +
+            (u.applicationFile ?
+              escapeHtml(u.applicationFile.fileName) + ' <button type="button" class="link-msg-btn" data-account-file-download="'+escapeHtml(u.username)+'" style="margin-left:6px;">Download</button> <button type="button" class="link-msg-btn" data-account-file-remove="'+escapeHtml(u.username)+'" style="margin-left:6px;color:var(--ban);">Remove</button>' :
+              '<span style="color:var(--text-3);">None uploaded</span> <button type="button" class="link-msg-btn" data-account-file-upload="'+escapeHtml(u.username)+'" style="margin-left:6px;">Upload</button>'
+            ) +
+          '</span></div>' +
+          '<input type="file" data-account-file-input="'+escapeHtml(u.username)+'" style="display:none;">' +
           (closedTickets.length ? '<div id="acTickets-'+escapeHtml(u.username)+'" style="display:none;margin-top:8px;padding:10px;background:var(--field);border-radius:var(--radius-sm);">' +
             closedTickets.map(function(t){
               var d = t.createdAt ? new Date(t.createdAt).toLocaleDateString() : '';
@@ -7511,6 +7518,90 @@
           var username = btn.dataset.accountOwner;
           var t = (CLOSED_TICKETS_BY_USER[username] || []).find(function(x){ return x.id===btn.dataset.accountTicketTranscript; });
           if (t) downloadTicketTranscript(t);
+        });
+      });
+      els.acList.querySelectorAll('[data-account-file-upload]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          var username = btn.dataset.accountFileUpload;
+          var input = els.acList.querySelector('[data-account-file-input="'+username+'"]');
+          if (input) input.click();
+        });
+      });
+      els.acList.querySelectorAll('[data-account-file-input]').forEach(function(input){
+        input.addEventListener('change', function(){
+          var file = input.files[0];
+          if (!file) return;
+          var username = input.dataset.accountFileInput;
+          if (file.size > 8*1024*1024){
+            showToast('File is too large (max 8MB).', 'err');
+            input.value = '';
+            return;
+          }
+          var reader = new FileReader();
+          reader.onload = async function(){
+            var base64 = reader.result.split(',')[1];
+            try{
+              var res = await fetch(STATE.settings.workerUrl + '/accounts/file/upload', {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ adminKey: STATE.settings.workerKey, username: username, fileName: file.name, mimeType: file.type, data: base64 })
+              });
+              var data = await res.json();
+              if (!res.ok) throw new Error(data.error || 'Could not upload file.');
+              showToast('Application uploaded', 'ok');
+              logAudit('Application file uploaded', 'Uploaded a file to <b>'+escapeHtml(username)+'</b>\u2019s account');
+              loadAccounts();
+            }catch(err){
+              showToast(err.message || 'Could not upload file.', 'err');
+            }
+          };
+          reader.readAsDataURL(file);
+        });
+      });
+      els.acList.querySelectorAll('[data-account-file-download]').forEach(function(btn){
+        btn.addEventListener('click', async function(){
+          var username = btn.dataset.accountFileDownload;
+          var originalText = btn.textContent;
+          btn.textContent = 'Loading...';
+          try{
+            var res = await fetch(STATE.settings.workerUrl + '/accounts/file/get', {
+              method:'POST', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ adminKey: STATE.settings.workerKey, username: username })
+            });
+            var data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Could not download file.');
+            var byteChars = atob(data.data);
+            var byteNumbers = new Array(byteChars.length);
+            for (var i=0;i<byteChars.length;i++){ byteNumbers[i] = byteChars.charCodeAt(i); }
+            var byteArray = new Uint8Array(byteNumbers);
+            var blob = new Blob([byteArray], { type: data.mimeType || 'application/octet-stream' });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url; a.download = data.fileName || 'application';
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          }catch(err){
+            showToast(err.message || 'Could not download file.', 'err');
+          }finally{
+            btn.textContent = originalText;
+          }
+        });
+      });
+      els.acList.querySelectorAll('[data-account-file-remove]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          var username = btn.dataset.accountFileRemove;
+          askConfirm('Remove the uploaded file from '+username+'\u2019s account?', async function(){
+            try{
+              var res = await fetch(STATE.settings.workerUrl + '/accounts/file/delete', {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ adminKey: STATE.settings.workerKey, username: username })
+              });
+              if (!res.ok) throw new Error('Could not remove file.');
+              showToast('File removed', 'ok');
+              loadAccounts();
+            }catch(err){
+              showToast(err.message || 'Could not remove file.', 'err');
+            }
+          }, 'Remove');
         });
       });
       els.acList.querySelectorAll('[data-account-ban]').forEach(function(btn){
