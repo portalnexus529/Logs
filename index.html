@@ -1183,6 +1183,13 @@
           </div>
         </div>
 
+        <div class="panel" style="margin-top:20px;">
+          <div class="panel-head"><h2>Currently On Duty</h2><button class="btn ghost small" id="dutyActiveRefreshBtn">Refresh</button></div>
+          <div class="panel-body">
+            <div id="dutyActiveList"><div class="empty-state">Loading...</div></div>
+          </div>
+        </div>
+
         <div class="panel" id="dutyConfigPanel" style="margin-top:20px;display:none;">
           <div class="panel-head"><h2>Duty Log Settings</h2></div>
           <div class="panel-body">
@@ -2665,6 +2672,7 @@
    'playerSuggestionsPanel','ptSuggestionText','ptSuggestionSubmitBtn','ptSuggestionMsg','ptSuggestionsList',
    'suggestionsRefreshBtn','suggestionsFilterBar','suggestionsList','suggestionsNavBadge',
    'dutyStatusDot','dutyStatusLabel','dutyTimer','dutyToggleBtn','dutyMsg','dutyNavBadge',
+   'dutyActiveRefreshBtn','dutyActiveList',
    'dutyConfigPanel','dutyChannelId','dutyFieldStaffName','dutyFieldDuration','dutyFieldStartTime','dutyFieldEndTime','dutyFieldActionsTaken','dutySaveConfigBtn','dutyConfigMsg',
    'applyWrap','applyBody',
    'webhookNameInput','webhookUrlInput','addWebhookBtn','webhookListUI',
@@ -3011,6 +3019,7 @@
       var isDutyOwner = dutySession && dutySession.role==='owner';
       if (els.dutyConfigPanel) els.dutyConfigPanel.style.display = isDutyOwner ? 'block' : 'none';
       if (isDutyOwner && typeof loadDutyConfig==='function') loadDutyConfig();
+      if (typeof loadDutyActive==='function') loadDutyActive();
     }
     if (target==='maintenance' && typeof loadMaintenanceIntoSettings==='function') loadMaintenanceIntoSettings();
     if (target==='mytasks' && typeof loadMyTasks==='function') loadMyTasks();
@@ -3315,6 +3324,31 @@
       }
     }catch(e){ /* leave as-is if unreachable */ }
   }
+
+  async function loadDutyActive(){
+    if (!els.dutyActiveList) return;
+    els.dutyActiveList.innerHTML = '<div class="empty-state">Loading...</div>';
+    try{
+      var data = await staffOrOwnerFetch('/staff/duty/active', '/duty/active');
+      var active = data.active || [];
+      if (active.length===0){ els.dutyActiveList.innerHTML = '<div class="empty-state">Nobody is currently on duty.</div>'; return; }
+      els.dutyActiveList.innerHTML = active.map(function(a){
+        return '<div class="player-card" style="margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">' +
+          '<div style="display:flex;align-items:center;gap:10px;"><span class="duty-status-dot on" style="margin:0;width:9px;height:9px;"></span><span class="player-name" style="font-size:13.5px;">'+escapeHtml(a.username)+'</span></div>' +
+          '<span class="entry-time" data-duty-active-since="'+a.startedAt+'">'+formatDutyElapsed(Date.now()-a.startedAt)+'</span>' +
+        '</div>';
+      }).join('');
+    }catch(err){
+      els.dutyActiveList.innerHTML = '<div class="empty-state">'+escapeHtml(err.message || 'Could not load who\u2019s on duty.')+'</div>';
+    }
+  }
+  if (els.dutyActiveRefreshBtn) els.dutyActiveRefreshBtn.addEventListener('click', loadDutyActive);
+  setInterval(function(){
+    if (!els.dutyActiveList) return;
+    els.dutyActiveList.querySelectorAll('[data-duty-active-since]').forEach(function(el){
+      el.textContent = formatDutyElapsed(Date.now() - Number(el.dataset.dutyActiveSince));
+    });
+  }, 1000);
 
   els.dutyToggleBtn.addEventListener('click', async function(){
     var session = getSession();
@@ -9536,9 +9570,16 @@
       els.ptSuggestionsList.innerHTML = suggestions.map(function(s){
         var d = new Date(s.createdAt).toLocaleDateString();
         var status = s.status || 'new';
+        var replies = s.replies || [];
+        var repliesHtml = replies.length ? '<div style="margin-top:8px;padding:8px 10px;background:var(--field);border-radius:var(--radius-sm);display:flex;flex-direction:column;gap:6px;">' +
+          replies.map(function(r){
+            return '<div style="font-size:12px;"><b style="color:var(--accent);">'+escapeHtml(r.author)+':</b> '+escapeHtml(r.text)+'</div>';
+          }).join('') +
+        '</div>' : '';
         return '<div class="player-card" style="margin-bottom:8px;">' +
           '<div class="player-top"><span class="entry-time">'+d+'</span><span class="badge '+(STATUS_BADGE_CLASS[status]||'status-pending')+'">'+(STATUS_LABEL[status]||status)+'</span></div>' +
           '<div style="font-size:13px;color:var(--text);margin-top:6px;line-height:1.5;">'+escapeHtml(s.text)+'</div>' +
+          repliesHtml +
         '</div>';
       }).join('');
     }catch(err){
@@ -9629,9 +9670,20 @@
       var statusOptions = Object.keys(SUGGESTION_STATUS_LABEL).map(function(k){
         return '<option value="'+k+'"'+(k===status?' selected':'')+'>'+SUGGESTION_STATUS_LABEL[k]+'</option>';
       }).join('');
+      var replies = s.replies || [];
+      var repliesHtml = replies.length ? '<div style="margin:10px 0;padding:10px;background:var(--field);border-radius:var(--radius-sm);display:flex;flex-direction:column;gap:8px;">' +
+        replies.map(function(r){
+          return '<div style="font-size:12.5px;"><b style="color:var(--accent);">'+escapeHtml(r.author)+':</b> '+escapeHtml(r.text)+' <span style="color:var(--text-3);font-size:11px;">('+new Date(r.ts).toLocaleDateString()+')</span></div>';
+        }).join('') +
+      '</div>' : '';
       return '<div class="player-card" style="margin-bottom:10px;">' +
         '<div class="player-top"><div class="player-name" style="font-size:13.5px;">'+escapeHtml(s.submitterUsername||'Anonymous')+'</div><span class="entry-time">'+d+'</span></div>' +
         '<div style="font-size:13.5px;color:var(--text);margin:8px 0;line-height:1.55;">'+escapeHtml(s.text)+'</div>' +
+        repliesHtml +
+        '<div style="display:flex;gap:6px;margin:10px 0;">' +
+          '<input type="text" placeholder="Write a reply..." data-sugg-reply-input="'+s.id+'" style="flex:1;">' +
+          '<button type="button" class="btn small ghost" data-sugg-reply-send="'+s.id+'">Reply</button>' +
+        '</div>' +
         '<select class="status-select" data-sugg-status="'+s.id+'" style="width:auto;">'+statusOptions+'</select>' +
         (isOwner ? ' <button type="button" class="btn small ghost" data-sugg-delete="'+s.id+'" style="color:var(--ban);margin-left:8px;">Delete</button>' : '') +
       '</div>';
@@ -9660,6 +9712,40 @@
           renderSuggestionsFilterBar();
         }catch(err){
           showToast('Could not update status', 'err');
+        }
+      });
+    });
+
+    els.suggestionsList.querySelectorAll('[data-sugg-reply-send]').forEach(function(btn){
+      btn.addEventListener('click', async function(){
+        var id = btn.dataset.suggReplySend;
+        var input = els.suggestionsList.querySelector('[data-sugg-reply-input="'+id+'"]');
+        var text = input ? input.value.trim() : '';
+        if (!text){ showToast('Write a reply first.', 'err'); return; }
+        btn.disabled = true;
+        try{
+          if (isStaffTicketSession()){
+            var sess = getSession();
+            await fetch(AUTH_WORKER_URL + '/staff/suggestions/reply', {
+              method:'POST', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ username: sess.username, passwordHash: sess.passwordHash, id: id, text: text })
+            });
+          } else {
+            await fetch(STATE.settings.workerUrl + '/suggestions/reply', {
+              method:'POST', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ adminKey: STATE.settings.workerKey, id: id, text: text })
+            });
+          }
+          var s = SUGGESTIONS_CACHE.find(function(x){ return x.id===id; });
+          if (s){
+            if (!Array.isArray(s.replies)) s.replies = [];
+            s.replies.push({ author: (getSession()||{}).username || 'Staff', text: text, ts: Date.now() });
+          }
+          showToast('Reply sent', 'ok');
+          renderSuggestionsList();
+        }catch(err){
+          showToast('Could not send reply', 'err');
+          btn.disabled = false;
         }
       });
     });
