@@ -4850,8 +4850,48 @@
           '<div class="player-top"><div class="player-name">'+escapeHtml(s.name)+'</div><span class="entry-time">Last active '+lastActive+'</span></div>' +
           '<div style="font-size:12px;color:var(--text-2);margin:4px 0 10px;">Total actions: <b style="color:var(--text);">'+total+'</b></div>' +
           '<div style="display:flex;gap:8px;flex-wrap:wrap;">'+(chips || '<span style="font-size:11.5px;color:var(--text-3);">No breakdown available</span>')+'</div>' +
+          '<button type="button" class="link-msg-btn" data-duty-history-toggle="'+escapeHtml(s.name)+'" style="margin-top:10px;">View duty history</button>' +
+          '<div id="dutyHist-'+escapeHtml(s.name)+'" style="display:none;margin-top:10px;padding:12px;background:var(--field);border-radius:var(--radius-sm);"><div class="empty-state">Loading...</div></div>' +
         '</div>';
       }).join('');
+      els.statsList.querySelectorAll('[data-duty-history-toggle]').forEach(function(btn){
+        btn.addEventListener('click', async function(){
+          var username = btn.dataset.dutyHistoryToggle;
+          var box = document.getElementById('dutyHist-'+username);
+          if (!box) return;
+          var showing = box.style.display !== 'none';
+          box.style.display = showing ? 'none' : 'block';
+          btn.textContent = showing ? 'View duty history' : 'Hide duty history';
+          if (showing) return;
+          box.innerHTML = '<div class="empty-state">Loading...</div>';
+          try{
+            var res = await fetch(STATE.settings.workerUrl + '/duty/history', {
+              method:'POST', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ adminKey: STATE.settings.workerKey, username: username })
+            });
+            var data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Could not load duty history.');
+            var records = data.records || [];
+            var totalMs = data.totalMs || 0;
+            var totalH = Math.floor(totalMs / 3600000);
+            var totalM = Math.floor((totalMs % 3600000) / 60000);
+            var summary = '<div style="font-size:13px;font-weight:700;margin-bottom:10px;">Total time on duty: '+totalH+'h '+totalM+'m across '+records.length+' shift'+(records.length===1?'':'s')+'</div>';
+            if (records.length===0){ box.innerHTML = summary + '<div class="empty-state" style="padding:14px;">No completed shifts yet.</div>'; return; }
+            var rows = records.map(function(r){
+              var dh = Math.floor((r.durationMs||0)/3600000);
+              var dm = Math.floor(((r.durationMs||0)%3600000)/60000);
+              var dateStr = r.endedAt ? new Date(r.endedAt).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) : '';
+              var actionsStr = (r.deltas||[]).length ? r.deltas.map(function(d){ return d.count+'x '+d.label; }).join(', ') : 'No actions';
+              return '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border-soft);font-size:12px;">' +
+                '<span>'+dateStr+'</span><span style="color:var(--text-2);">'+actionsStr+'</span><span style="font-weight:600;">'+dh+'h '+dm+'m</span>' +
+              '</div>';
+            }).join('');
+            box.innerHTML = summary + rows;
+          }catch(err){
+            box.innerHTML = '<div class="empty-state">'+escapeHtml(err.message || 'Could not load duty history.')+'</div>';
+          }
+        });
+      });
     }catch(err){
       els.statsList.innerHTML = '<div class="empty-state">'+escapeHtml(err.message || 'Could not load staff stats.')+'</div>';
     }
