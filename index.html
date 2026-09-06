@@ -880,11 +880,11 @@
         <input type="password" id="pAccCurrentPassword" placeholder="Required">
       </div>
       <div class="field">
-        <label for="pAccNewUsername">New username <span style="color:var(--text-3);font-weight:400;">(optional \u2014 leave blank to keep it)</span></label>
+        <label for="pAccNewUsername">New username <span style="color:var(--text-3);font-weight:400;">(optional — leave blank to keep it)</span></label>
         <input type="text" id="pAccNewUsername" placeholder="Leave blank to keep your current username">
       </div>
       <div class="field">
-        <label for="pAccNewPassword">New password <span style="color:var(--text-3);font-weight:400;">(optional \u2014 leave blank to keep it)</span></label>
+        <label for="pAccNewPassword">New password <span style="color:var(--text-3);font-weight:400;">(optional — leave blank to keep it)</span></label>
         <input type="password" id="pAccNewPassword" placeholder="Leave blank to keep your current password">
       </div>
       <button class="btn primary" id="pAccSaveBtn">Save changes</button>
@@ -1176,17 +1176,8 @@
             <div class="duty-status-dot" id="dutyStatusDot"></div>
             <div class="duty-status-label" id="dutyStatusLabel">You are off duty</div>
             <div class="duty-timer" id="dutyTimer">00:00:00</div>
-            <p style="font-size:12.5px;color:var(--text-3);margin:0 0 28px;max-width:420px;margin-left:auto;margin-right:auto;">When you go off duty, a summary of your shift \u2014 including anything you did \u2014 gets posted automatically for the owner to see.</p>
+            <p style="font-size:12.5px;color:var(--text-3);margin:0 0 28px;max-width:420px;margin-left:auto;margin-right:auto;">When you go off duty, a summary of your shift &mdash; including anything you did &mdash; gets posted automatically for the owner to see.</p>
             <button type="button" class="btn primary duty-btn" id="dutyToggleBtn" style="width:100%;max-width:280px;">Go On Duty</button>
-
-            <div id="dutyEndNoteBox" style="display:none;margin-top:20px;max-width:420px;margin-left:auto;margin-right:auto;text-align:left;">
-              <div class="field">
-                <label for="dutyEndNote">Add a note to this shift's report? (optional)</label>
-                <textarea id="dutyEndNote" placeholder="Anything worth mentioning about this shift" rows="2"></textarea>
-              </div>
-              <button type="button" class="btn small ghost" id="dutyConfirmEndBtn" style="width:100%;">Confirm \u2014 Go Off Duty</button>
-              <button type="button" class="btn small ghost" id="dutyCancelEndBtn" style="width:100%;margin-top:6px;color:var(--text-3);">Cancel</button>
-            </div>
 
             <div id="dutyMsg" style="font-size:12.5px;margin-top:14px;"></div>
           </div>
@@ -1207,7 +1198,6 @@
               <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" id="dutyFieldStartTime" style="width:auto;" checked> Start time</label>
               <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" id="dutyFieldEndTime" style="width:auto;" checked> End time</label>
               <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" id="dutyFieldActionsTaken" style="width:auto;" checked> Actions taken this shift</label>
-              <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" id="dutyFieldNotes" style="width:auto;" checked> Staff's optional note</label>
             </div>
             <button type="button" class="btn small" id="dutySaveConfigBtn">Save duty log settings</button>
             <div id="dutyConfigMsg" style="font-size:12.5px;margin-top:8px;"></div>
@@ -1235,11 +1225,11 @@
               <input type="password" id="sAccCurrentPassword" placeholder="Required">
             </div>
             <div class="field">
-              <label for="sAccNewUsername">New username <span style="color:var(--text-3);font-weight:400;">(optional \u2014 leave blank to keep it)</span></label>
+              <label for="sAccNewUsername">New username <span style="color:var(--text-3);font-weight:400;">(optional — leave blank to keep it)</span></label>
               <input type="text" id="sAccNewUsername" placeholder="Leave blank to keep your current username">
             </div>
             <div class="field">
-              <label for="sAccNewPassword">New password <span style="color:var(--text-3);font-weight:400;">(optional \u2014 leave blank to keep it)</span></label>
+              <label for="sAccNewPassword">New password <span style="color:var(--text-3);font-weight:400;">(optional — leave blank to keep it)</span></label>
               <input type="password" id="sAccNewPassword" placeholder="Leave blank to keep your current password">
             </div>
             <button class="btn primary" id="sAccSaveBtn">Save changes</button>
@@ -1948,7 +1938,7 @@
                 <textarea id="suDescription" placeholder="Describe the update for visitors" style="min-height:130px;"></textarea>
               </div>
               <div class="field">
-                <label for="suChannelId">Discord channel ID <span style="color:var(--text-3);font-weight:400;">(optional \u2014 also posts a professional embed there)</span></label>
+                <label for="suChannelId">Discord channel ID <span style="color:var(--text-3);font-weight:400;">(optional — also posts a professional embed there)</span></label>
                 <input type="text" id="suChannelId" placeholder="e.g. 123456789012345678">
               </div>
               <div style="display:flex;gap:8px;">
@@ -2674,8 +2664,8 @@
    'playerAccountPanel','pAccCurrentPassword','pAccNewUsername','pAccNewPassword','pAccSaveBtn','pAccMsg',
    'playerSuggestionsPanel','ptSuggestionText','ptSuggestionSubmitBtn','ptSuggestionMsg','ptSuggestionsList',
    'suggestionsRefreshBtn','suggestionsFilterBar','suggestionsList','suggestionsNavBadge',
-   'dutyStatusDot','dutyStatusLabel','dutyTimer','dutyToggleBtn','dutyEndNoteBox','dutyEndNote','dutyConfirmEndBtn','dutyCancelEndBtn','dutyMsg','dutyNavBadge',
-   'dutyConfigPanel','dutyChannelId','dutyFieldStaffName','dutyFieldDuration','dutyFieldStartTime','dutyFieldEndTime','dutyFieldActionsTaken','dutyFieldNotes','dutySaveConfigBtn','dutyConfigMsg',
+   'dutyStatusDot','dutyStatusLabel','dutyTimer','dutyToggleBtn','dutyMsg','dutyNavBadge',
+   'dutyConfigPanel','dutyChannelId','dutyFieldStaffName','dutyFieldDuration','dutyFieldStartTime','dutyFieldEndTime','dutyFieldActionsTaken','dutySaveConfigBtn','dutyConfigMsg',
    'applyWrap','applyBody',
    'webhookNameInput','webhookUrlInput','addWebhookBtn','webhookListUI',
    'workerUrlInput','workerKeyInput','guildIdInput',
@@ -3241,7 +3231,6 @@
       els.dutyFieldStartTime.checked = f.startTime !== false;
       els.dutyFieldEndTime.checked = f.endTime !== false;
       els.dutyFieldActionsTaken.checked = f.actionsTaken !== false;
-      els.dutyFieldNotes.checked = f.notes !== false;
     }catch(e){ /* leave defaults if unreachable */ }
   }
 
@@ -3261,8 +3250,7 @@
             duration: els.dutyFieldDuration.checked,
             startTime: els.dutyFieldStartTime.checked,
             endTime: els.dutyFieldEndTime.checked,
-            actionsTaken: els.dutyFieldActionsTaken.checked,
-            notes: els.dutyFieldNotes.checked
+            actionsTaken: els.dutyFieldActionsTaken.checked
           }
         })
       });
@@ -3332,8 +3320,8 @@
     var session = getSession();
     if (!session) return;
     els.dutyMsg.textContent = '';
+    els.dutyToggleBtn.disabled = true;
     if (!DUTY_STATE.active){
-      els.dutyToggleBtn.disabled = true;
       try{
         var res = await fetch(AUTH_WORKER_URL + '/staff/duty/start', {
           method:'POST', headers:{'Content-Type':'application/json'},
@@ -3353,39 +3341,25 @@
         els.dutyToggleBtn.disabled = false;
       }
     } else {
-      els.dutyEndNoteBox.style.display = 'block';
-    }
-  });
-
-  els.dutyCancelEndBtn.addEventListener('click', function(){
-    els.dutyEndNoteBox.style.display = 'none';
-    els.dutyEndNote.value = '';
-  });
-
-  els.dutyConfirmEndBtn.addEventListener('click', async function(){
-    var session = getSession();
-    if (!session) return;
-    els.dutyConfirmEndBtn.disabled = true;
-    try{
-      var res = await fetch(AUTH_WORKER_URL + '/staff/duty/end', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ username: session.username, passwordHash: session.passwordHash, note: els.dutyEndNote.value.trim() })
-      });
-      var data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Could not go off duty.');
-      DUTY_STATE.active = false;
-      DUTY_STATE.startedAt = null;
-      if (DUTY_STATE.timerInterval) clearInterval(DUTY_STATE.timerInterval);
-      renderDutyState();
-      els.dutyTimer.textContent = '00:00:00';
-      els.dutyEndNoteBox.style.display = 'none';
-      els.dutyEndNote.value = '';
-      showToast('You are now off duty', 'ok');
-      if (!data.posted) showToast('Shift ended, but no duty log channel is configured yet.', 'ok');
-    }catch(err){
-      els.dutyMsg.textContent = err.message || 'Could not go off duty.'; els.dutyMsg.style.color = 'var(--danger)';
-    }finally{
-      els.dutyConfirmEndBtn.disabled = false;
+      try{
+        var res2 = await fetch(AUTH_WORKER_URL + '/staff/duty/end', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ username: session.username, passwordHash: session.passwordHash })
+        });
+        var data2 = await res2.json();
+        if (!res2.ok) throw new Error(data2.error || 'Could not go off duty.');
+        DUTY_STATE.active = false;
+        DUTY_STATE.startedAt = null;
+        if (DUTY_STATE.timerInterval) clearInterval(DUTY_STATE.timerInterval);
+        renderDutyState();
+        els.dutyTimer.textContent = '00:00:00';
+        showToast('You are now off duty', 'ok');
+        if (!data2.posted) showToast('Shift ended, but no duty log channel is configured yet.', 'ok');
+      }catch(err){
+        els.dutyMsg.textContent = err.message || 'Could not go off duty.'; els.dutyMsg.style.color = 'var(--danger)';
+      }finally{
+        els.dutyToggleBtn.disabled = false;
+      }
     }
   });
 
