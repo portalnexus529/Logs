@@ -1105,6 +1105,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M18 8l1.5 1.5L22 7"/></svg>
         Staff List
       </button>
+      <button type="button" class="nav-item" data-section="maintenance">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        Maintenance
+      </button>
       <button type="button" class="nav-item" data-section="settings">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         Settings
@@ -1185,6 +1189,28 @@
             </div>
 
             <div id="dutyMsg" style="font-size:12.5px;margin-top:14px;"></div>
+          </div>
+        </div>
+
+        <div class="panel" id="dutyConfigPanel" style="margin-top:20px;display:none;">
+          <div class="panel-head"><h2>Duty Log Settings</h2></div>
+          <div class="panel-body">
+            <p style="font-size:11.5px;color:var(--text-3);margin:0 0 14px;">When any staff member goes off duty, a summary of their shift posts here automatically. This section is only visible to you.</p>
+            <div class="field">
+              <label for="dutyChannelId">Discord channel ID</label>
+              <input type="text" id="dutyChannelId" placeholder="e.g. 123456789012345678">
+            </div>
+            <label style="font-size:12px;margin-bottom:8px;">Include in the report</label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;margin-bottom:14px;">
+              <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" id="dutyFieldStaffName" style="width:auto;" checked> Staff member name</label>
+              <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" id="dutyFieldDuration" style="width:auto;" checked> Shift duration</label>
+              <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" id="dutyFieldStartTime" style="width:auto;" checked> Start time</label>
+              <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" id="dutyFieldEndTime" style="width:auto;" checked> End time</label>
+              <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" id="dutyFieldActionsTaken" style="width:auto;" checked> Actions taken this shift</label>
+              <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" id="dutyFieldNotes" style="width:auto;" checked> Staff's optional note</label>
+            </div>
+            <button type="button" class="btn small" id="dutySaveConfigBtn">Save duty log settings</button>
+            <div id="dutyConfigMsg" style="font-size:12.5px;margin-top:8px;"></div>
           </div>
         </div>
       </div>
@@ -2276,6 +2302,34 @@
         </div>
       </div>
 
+      <div id="sectionMaintenance" class="dash-section" style="display:none;">
+        <div class="panel">
+          <div class="panel-head"><h2>Maintenance Mode</h2></div>
+          <div class="panel-body">
+            <p style="font-size:12px;color:var(--text-3);margin:0 0 16px;">While on, everyone except the owner account sees this message instead of the login/signup screen. Applies to every visitor immediately, since it's stored on your Worker, not just this browser.</p>
+            <label style="margin-bottom:8px;">Maintenance mode</label>
+            <div class="toggle-row" id="maintenanceToggle" style="margin-bottom:16px;max-width:220px;">
+              <button type="button" data-mt="off" class="active">Off</button>
+              <button type="button" data-mt="on">On</button>
+            </div>
+            <div class="field">
+              <label for="maintTitleInput">Title</label>
+              <input type="text" id="maintTitleInput" placeholder="e.g. Scheduled Maintenance">
+            </div>
+            <div class="field">
+              <label for="maintMessageInput">Message</label>
+              <textarea id="maintMessageInput" placeholder="Let visitors know what's happening and why"></textarea>
+            </div>
+            <div class="field" style="margin-bottom:10px;">
+              <label for="maintReturnInput">Estimated return <span style="color:var(--text-3);font-weight:400;">(optional)</span></label>
+              <input type="text" id="maintReturnInput" placeholder="e.g. Back online within a few hours">
+            </div>
+            <button class="btn primary small" id="saveMaintenanceBtn">Save maintenance settings</button>
+            <span id="maintenanceStatus" style="font-size:12.5px;color:var(--text-2);margin-left:8px;"></span>
+          </div>
+        </div>
+      </div>
+
       <div id="sectionSettings" class="dash-section" style="display:none;">
         <div class="panel">
           <div class="panel-head"><h2>Settings</h2></div>
@@ -2310,24 +2364,6 @@
           <button type="button" class="btn small" id="removePinBtn">Remove PIN</button>
         </div>
         <p style="font-size:11.5px;color:var(--text-3);margin:6px 0 0;">This is a basic deterrent, not real security &mdash; it's checked in this browser's own code, so anyone determined enough could bypass it by reading the page source. It's meant to keep casual visitors out, not to replace a real login system.</p>
-      </div>
-
-      <div class="field" style="border-top:1px solid var(--border-soft);padding-top:16px;margin-top:6px;">
-        <label style="margin-bottom:10px;">Staff Duty Log</label>
-        <p style="font-size:11.5px;color:var(--text-3);margin:0 0 12px;">When a staff member goes off duty, a summary of their shift posts here automatically.</p>
-        <label for="dutyChannelId" style="font-size:12px;">Discord channel ID</label>
-        <input type="text" id="dutyChannelId" placeholder="e.g. 123456789012345678" style="margin-bottom:14px;">
-        <label style="font-size:12px;margin-bottom:8px;">Include in the report</label>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;margin-bottom:14px;">
-          <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" id="dutyFieldStaffName" style="width:auto;" checked> Staff member name</label>
-          <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" id="dutyFieldDuration" style="width:auto;" checked> Shift duration</label>
-          <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" id="dutyFieldStartTime" style="width:auto;" checked> Start time</label>
-          <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" id="dutyFieldEndTime" style="width:auto;" checked> End time</label>
-          <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" id="dutyFieldActionsTaken" style="width:auto;" checked> Actions taken this shift</label>
-          <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" id="dutyFieldNotes" style="width:auto;" checked> Staff's optional note</label>
-        </div>
-        <button type="button" class="btn small" id="dutySaveConfigBtn">Save duty log settings</button>
-        <div id="dutyConfigMsg" style="font-size:12.5px;margin-top:8px;"></div>
       </div>
 
       <div class="settings-actions">
@@ -2386,29 +2422,6 @@
         <p style="font-size:11.5px;color:var(--text-3);margin:0 0 10px;">Devices blocked from the Audit logs page show up here. This is a soft deterrent (tied to browser storage, not a real credential) &mdash; if you suspect a genuine unauthorized login, change OWNER_PASSWORD in Cloudflare instead, which locks out everyone until they re-enter the new password.</p>
         <button type="button" class="btn small ghost" id="refreshBlockedDevicesBtn">Refresh list</button>
         <div class="proof-list" id="blockedDevicesList" style="margin-top:10px;"></div>
-      </div>
-
-      <div class="settings-note" style="border-top:1px solid var(--border-soft);padding-top:12px;">
-        <label style="margin-bottom:8px;">Maintenance mode</label>
-        <div class="toggle-row" id="maintenanceToggle" style="margin-bottom:12px;max-width:220px;">
-          <button type="button" data-mt="off" class="active">Off</button>
-          <button type="button" data-mt="on">On</button>
-        </div>
-        <div class="field">
-          <label for="maintTitleInput">Title</label>
-          <input type="text" id="maintTitleInput" placeholder="e.g. Scheduled Maintenance">
-        </div>
-        <div class="field">
-          <label for="maintMessageInput">Message</label>
-          <textarea id="maintMessageInput" placeholder="Let visitors know what's happening and why"></textarea>
-        </div>
-        <div class="field" style="margin-bottom:10px;">
-          <label for="maintReturnInput">Estimated return <span style="color:var(--text-3);font-weight:400;">(optional)</span></label>
-          <input type="text" id="maintReturnInput" placeholder="e.g. Back online within a few hours">
-        </div>
-        <button class="btn primary small" id="saveMaintenanceBtn">Save maintenance settings</button>
-        <span id="maintenanceStatus" style="font-size:12.5px;color:var(--text-2);margin-left:8px;"></span>
-        <p style="font-size:11.5px;color:var(--text-3);margin:8px 0 0;">While on, everyone except the owner account sees this message instead of the login/signup screen. Applies to every visitor immediately, since it's stored on your Worker, not just this browser.</p>
       </div>
 
       <div class="settings-note" style="border-top:1px solid var(--border-soft);padding-top:12px;">
@@ -2662,7 +2675,7 @@
    'playerSuggestionsPanel','ptSuggestionText','ptSuggestionSubmitBtn','ptSuggestionMsg','ptSuggestionsList',
    'suggestionsRefreshBtn','suggestionsFilterBar','suggestionsList','suggestionsNavBadge',
    'dutyStatusDot','dutyStatusLabel','dutyTimer','dutyToggleBtn','dutyEndNoteBox','dutyEndNote','dutyConfirmEndBtn','dutyCancelEndBtn','dutyMsg','dutyNavBadge',
-   'dutyChannelId','dutyFieldStaffName','dutyFieldDuration','dutyFieldStartTime','dutyFieldEndTime','dutyFieldActionsTaken','dutyFieldNotes','dutySaveConfigBtn','dutyConfigMsg',
+   'dutyConfigPanel','dutyChannelId','dutyFieldStaffName','dutyFieldDuration','dutyFieldStartTime','dutyFieldEndTime','dutyFieldActionsTaken','dutyFieldNotes','dutySaveConfigBtn','dutyConfigMsg',
    'applyWrap','applyBody',
    'webhookNameInput','webhookUrlInput','addWebhookBtn','webhookListUI',
    'workerUrlInput','workerKeyInput','guildIdInput',
@@ -2968,7 +2981,7 @@
     els.linkInlineInput.value=''; els.linkInlineRow.classList.remove('show');
   });
 
-  var SECTION_IDS = { dashboard:'sectionDashboard', myactivity:'sectionMyActivity', myaccount:'sectionMyAccount', game:'sectionGame', discord:'sectionDiscord', assigntask:'sectionAssignTask', mytasks:'sectionMyTasks', ann:'sectionAnn', events:'sectionEvents', formbuilder:'sectionFormBuilder', applications:'sectionApplications', banappeals:'sectionBanAppeals', msggen:'sectionMsgGen', discordnotify:'sectionDiscordNotify', siteupdates:'sectionSiteUpdates', staff:'sectionStaff', tickets:'sectionTickets', suggestions:'sectionSuggestions', duty:'sectionDuty', ledger:'sectionLedger', audit:'sectionAudit', loginsecurity:'sectionLoginSecurity', staffstats:'sectionStaffStats', players:'sectionPlayers', accounts:'sectionAccounts', lookup:'sectionLookup', settings:'sectionSettings', diagnostics:'sectionDiagnostics' };
+  var SECTION_IDS = { dashboard:'sectionDashboard', myactivity:'sectionMyActivity', myaccount:'sectionMyAccount', game:'sectionGame', discord:'sectionDiscord', assigntask:'sectionAssignTask', mytasks:'sectionMyTasks', ann:'sectionAnn', events:'sectionEvents', formbuilder:'sectionFormBuilder', applications:'sectionApplications', banappeals:'sectionBanAppeals', msggen:'sectionMsgGen', discordnotify:'sectionDiscordNotify', siteupdates:'sectionSiteUpdates', staff:'sectionStaff', tickets:'sectionTickets', suggestions:'sectionSuggestions', duty:'sectionDuty', maintenance:'sectionMaintenance', ledger:'sectionLedger', audit:'sectionAudit', loginsecurity:'sectionLoginSecurity', staffstats:'sectionStaffStats', players:'sectionPlayers', accounts:'sectionAccounts', lookup:'sectionLookup', settings:'sectionSettings', diagnostics:'sectionDiagnostics' };
   var CURRENT_SECTION = 'dashboard';
   function switchSection(target){
     CURRENT_SECTION = target;
@@ -3003,6 +3016,13 @@
     if (target==='staff' && typeof loadStaffRoster==='function') loadStaffRoster();
     if (target==='assigntask' && typeof loadTaskAssigneeOptions==='function'){ loadTaskAssigneeOptions(); loadAdminTaskList(); }
     if (target==='ledger' && typeof loadTaskCasesList==='function') loadTaskCasesList();
+    if (target==='duty'){
+      var dutySession = getSession();
+      var isDutyOwner = dutySession && dutySession.role==='owner';
+      if (els.dutyConfigPanel) els.dutyConfigPanel.style.display = isDutyOwner ? 'block' : 'none';
+      if (isDutyOwner && typeof loadDutyConfig==='function') loadDutyConfig();
+    }
+    if (target==='maintenance' && typeof loadMaintenanceIntoSettings==='function') loadMaintenanceIntoSettings();
     if (target==='mytasks' && typeof loadMyTasks==='function') loadMyTasks();
     if (target==='accounts' && typeof loadAccounts==='function') loadAccounts();
     if (target==='tickets' && typeof loadSupportTicketsAdmin==='function') loadSupportTicketsAdmin();
@@ -3679,7 +3699,7 @@
       'Double check there are no extra spaces at the start or end when pasting either value.'
     ],
     maintenance: [
-      'Settings &rarr; "Maintenance mode" section.',
+      '"Maintenance" in the sidebar (under Administration).',
       'Toggle it to <b>Off</b>.',
       'Click "Save maintenance settings".'
     ],
@@ -9171,7 +9191,7 @@
     cases: ['ledger'],
     suggestions: ['suggestions']
   };
-  var OWNER_ONLY_SECTIONS = ['settings','diagnostics','accounts','staffstats','loginsecurity','assigntask'];
+  var OWNER_ONLY_SECTIONS = ['settings','diagnostics','accounts','staffstats','loginsecurity','assigntask','maintenance'];
 
   function applyStaffPermissionGating(session){
     var perms = session.permissions || {};
@@ -9290,8 +9310,6 @@
       adminWrapEl.style.display = 'block';
       resetPermissionGating();
       checkLock();
-      loadMaintenanceIntoSettings();
-      loadDutyConfig();
       loadAppealFormOptions();
       loadServerStatusIntoSettings();
       loadBlockedDevices();
