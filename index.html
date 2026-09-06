@@ -681,6 +681,17 @@
   .diag-icon.info{background:var(--accent-bg);color:var(--accent);}
   @keyframes diagSpin{to{transform:rotate(360deg);}}
   @keyframes livePulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(1.3);}}
+
+  /* ---------- STAFF DUTY ---------- */
+  .duty-status-dot{width:14px;height:14px;border-radius:50%;background:var(--text-3);margin:0 auto 14px;transition:background .2s ease;}
+  .duty-status-dot.on{background:var(--success);animation:livePulse 1.6s ease-in-out infinite;box-shadow:0 0 24px var(--success);}
+  .duty-status-label{font-size:13px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:20px;}
+  .duty-status-label.on{color:var(--success);}
+  .duty-timer{font-family:'JetBrains Mono',monospace;font-size:56px;font-weight:700;letter-spacing:-0.01em;color:var(--text);margin-bottom:28px;line-height:1;}
+  .duty-timer.on{color:var(--success);}
+  button.btn.duty-btn{padding:14px 24px;font-size:15px;}
+  button.btn.duty-btn.on{background:var(--danger);border-color:var(--danger);color:#fff;}
+  button.btn.duty-btn.on:hover{background:#dc2626;border-color:#dc2626;}
   .diag-body{flex:1;min-width:0;}
   .diag-label{font-size:13.5px;font-weight:600;color:var(--text);}
   .diag-detail{font-size:12px;color:var(--text-2);margin-top:2px;line-height:1.5;}
@@ -1046,6 +1057,11 @@
         <svg class="nav-group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
       </div>
       <div class="nav-group-items" data-navgroup-items="activity">
+      <button type="button" class="nav-item" data-section="duty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Staff Duty
+        <span id="dutyNavBadge" class="nav-badge" style="display:none;background:var(--success);"></span>
+      </button>
       <button type="button" class="nav-item" data-section="myactivity">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/></svg>
         My Activity
@@ -1146,6 +1162,29 @@
                 <div class="empty-state">No follow-ups set.</div>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="sectionDuty" class="dash-section" style="display:none;">
+        <div class="panel duty-panel">
+          <div class="panel-body" style="text-align:center;padding:48px 24px;">
+            <div class="duty-status-dot" id="dutyStatusDot"></div>
+            <div class="duty-status-label" id="dutyStatusLabel">You are off duty</div>
+            <div class="duty-timer" id="dutyTimer">00:00:00</div>
+            <p style="font-size:12.5px;color:var(--text-3);margin:0 0 28px;max-width:420px;margin-left:auto;margin-right:auto;">When you go off duty, a summary of your shift \u2014 including anything you did \u2014 gets posted automatically for the owner to see.</p>
+            <button type="button" class="btn primary duty-btn" id="dutyToggleBtn" style="width:100%;max-width:280px;">Go On Duty</button>
+
+            <div id="dutyEndNoteBox" style="display:none;margin-top:20px;max-width:420px;margin-left:auto;margin-right:auto;text-align:left;">
+              <div class="field">
+                <label for="dutyEndNote">Add a note to this shift's report? (optional)</label>
+                <textarea id="dutyEndNote" placeholder="Anything worth mentioning about this shift" rows="2"></textarea>
+              </div>
+              <button type="button" class="btn small ghost" id="dutyConfirmEndBtn" style="width:100%;">Confirm \u2014 Go Off Duty</button>
+              <button type="button" class="btn small ghost" id="dutyCancelEndBtn" style="width:100%;margin-top:6px;color:var(--text-3);">Cancel</button>
+            </div>
+
+            <div id="dutyMsg" style="font-size:12.5px;margin-top:14px;"></div>
           </div>
         </div>
       </div>
@@ -2273,6 +2312,24 @@
         <p style="font-size:11.5px;color:var(--text-3);margin:6px 0 0;">This is a basic deterrent, not real security &mdash; it's checked in this browser's own code, so anyone determined enough could bypass it by reading the page source. It's meant to keep casual visitors out, not to replace a real login system.</p>
       </div>
 
+      <div class="field" style="border-top:1px solid var(--border-soft);padding-top:16px;margin-top:6px;">
+        <label style="margin-bottom:10px;">Staff Duty Log</label>
+        <p style="font-size:11.5px;color:var(--text-3);margin:0 0 12px;">When a staff member goes off duty, a summary of their shift posts here automatically.</p>
+        <label for="dutyChannelId" style="font-size:12px;">Discord channel ID</label>
+        <input type="text" id="dutyChannelId" placeholder="e.g. 123456789012345678" style="margin-bottom:14px;">
+        <label style="font-size:12px;margin-bottom:8px;">Include in the report</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;margin-bottom:14px;">
+          <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" id="dutyFieldStaffName" style="width:auto;" checked> Staff member name</label>
+          <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" id="dutyFieldDuration" style="width:auto;" checked> Shift duration</label>
+          <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" id="dutyFieldStartTime" style="width:auto;" checked> Start time</label>
+          <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" id="dutyFieldEndTime" style="width:auto;" checked> End time</label>
+          <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" id="dutyFieldActionsTaken" style="width:auto;" checked> Actions taken this shift</label>
+          <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" id="dutyFieldNotes" style="width:auto;" checked> Staff's optional note</label>
+        </div>
+        <button type="button" class="btn small" id="dutySaveConfigBtn">Save duty log settings</button>
+        <div id="dutyConfigMsg" style="font-size:12.5px;margin-top:8px;"></div>
+      </div>
+
       <div class="settings-actions">
         <button class="btn primary small" id="saveSettingsBtn">Save settings</button>
         <button class="btn small" id="testWebhookBtn">Send test message</button>
@@ -2604,6 +2661,8 @@
    'playerAccountPanel','pAccCurrentPassword','pAccNewUsername','pAccNewPassword','pAccSaveBtn','pAccMsg',
    'playerSuggestionsPanel','ptSuggestionText','ptSuggestionSubmitBtn','ptSuggestionMsg','ptSuggestionsList',
    'suggestionsRefreshBtn','suggestionsFilterBar','suggestionsList','suggestionsNavBadge',
+   'dutyStatusDot','dutyStatusLabel','dutyTimer','dutyToggleBtn','dutyEndNoteBox','dutyEndNote','dutyConfirmEndBtn','dutyCancelEndBtn','dutyMsg','dutyNavBadge',
+   'dutyChannelId','dutyFieldStaffName','dutyFieldDuration','dutyFieldStartTime','dutyFieldEndTime','dutyFieldActionsTaken','dutyFieldNotes','dutySaveConfigBtn','dutyConfigMsg',
    'applyWrap','applyBody',
    'webhookNameInput','webhookUrlInput','addWebhookBtn','webhookListUI',
    'workerUrlInput','workerKeyInput','guildIdInput',
@@ -2909,7 +2968,7 @@
     els.linkInlineInput.value=''; els.linkInlineRow.classList.remove('show');
   });
 
-  var SECTION_IDS = { dashboard:'sectionDashboard', myactivity:'sectionMyActivity', myaccount:'sectionMyAccount', game:'sectionGame', discord:'sectionDiscord', assigntask:'sectionAssignTask', mytasks:'sectionMyTasks', ann:'sectionAnn', events:'sectionEvents', formbuilder:'sectionFormBuilder', applications:'sectionApplications', banappeals:'sectionBanAppeals', msggen:'sectionMsgGen', discordnotify:'sectionDiscordNotify', siteupdates:'sectionSiteUpdates', staff:'sectionStaff', tickets:'sectionTickets', suggestions:'sectionSuggestions', ledger:'sectionLedger', audit:'sectionAudit', loginsecurity:'sectionLoginSecurity', staffstats:'sectionStaffStats', players:'sectionPlayers', accounts:'sectionAccounts', lookup:'sectionLookup', settings:'sectionSettings', diagnostics:'sectionDiagnostics' };
+  var SECTION_IDS = { dashboard:'sectionDashboard', myactivity:'sectionMyActivity', myaccount:'sectionMyAccount', game:'sectionGame', discord:'sectionDiscord', assigntask:'sectionAssignTask', mytasks:'sectionMyTasks', ann:'sectionAnn', events:'sectionEvents', formbuilder:'sectionFormBuilder', applications:'sectionApplications', banappeals:'sectionBanAppeals', msggen:'sectionMsgGen', discordnotify:'sectionDiscordNotify', siteupdates:'sectionSiteUpdates', staff:'sectionStaff', tickets:'sectionTickets', suggestions:'sectionSuggestions', duty:'sectionDuty', ledger:'sectionLedger', audit:'sectionAudit', loginsecurity:'sectionLoginSecurity', staffstats:'sectionStaffStats', players:'sectionPlayers', accounts:'sectionAccounts', lookup:'sectionLookup', settings:'sectionSettings', diagnostics:'sectionDiagnostics' };
   var CURRENT_SECTION = 'dashboard';
   function switchSection(target){
     CURRENT_SECTION = target;
@@ -3144,6 +3203,170 @@
       checkLock();
       showToast('PIN removed', 'ok');
     }, 'Remove');
+  });
+
+  async function loadDutyConfig(){
+    if (!STATE.settings.workerUrl || !STATE.settings.workerKey) return;
+    try{
+      var res = await fetch(STATE.settings.workerUrl + '/duty/config/get', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ adminKey: STATE.settings.workerKey })
+      });
+      var data = await res.json();
+      var config = data.config || {};
+      var f = config.fields || {};
+      els.dutyChannelId.value = config.channelId || '';
+      els.dutyFieldStaffName.checked = f.staffName !== false;
+      els.dutyFieldDuration.checked = f.duration !== false;
+      els.dutyFieldStartTime.checked = f.startTime !== false;
+      els.dutyFieldEndTime.checked = f.endTime !== false;
+      els.dutyFieldActionsTaken.checked = f.actionsTaken !== false;
+      els.dutyFieldNotes.checked = f.notes !== false;
+    }catch(e){ /* leave defaults if unreachable */ }
+  }
+
+  els.dutySaveConfigBtn.addEventListener('click', async function(){
+    if (!STATE.settings.workerUrl || !STATE.settings.workerKey){
+      els.dutyConfigMsg.textContent = 'Configure Worker URL and admin key first.'; els.dutyConfigMsg.style.color='var(--danger)'; return;
+    }
+    els.dutySaveConfigBtn.disabled = true;
+    try{
+      var res = await fetch(STATE.settings.workerUrl + '/duty/config/save', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          adminKey: STATE.settings.workerKey,
+          channelId: els.dutyChannelId.value.trim(),
+          fields: {
+            staffName: els.dutyFieldStaffName.checked,
+            duration: els.dutyFieldDuration.checked,
+            startTime: els.dutyFieldStartTime.checked,
+            endTime: els.dutyFieldEndTime.checked,
+            actionsTaken: els.dutyFieldActionsTaken.checked,
+            notes: els.dutyFieldNotes.checked
+          }
+        })
+      });
+      if (!res.ok) throw new Error('Could not save duty log settings.');
+      els.dutyConfigMsg.textContent = 'Saved.'; els.dutyConfigMsg.style.color = 'var(--success)';
+      showToast('Duty log settings saved', 'ok');
+    }catch(err){
+      els.dutyConfigMsg.textContent = err.message || 'Could not save.'; els.dutyConfigMsg.style.color = 'var(--danger)';
+    }finally{
+      els.dutySaveConfigBtn.disabled = false;
+    }
+  });
+
+  // ==================== Staff Duty (staff-side timer) ====================
+  var DUTY_STATE = { active: false, startedAt: null, timerInterval: null };
+
+  function formatDutyElapsed(ms){
+    var totalSeconds = Math.max(0, Math.floor(ms / 1000));
+    var h = Math.floor(totalSeconds / 3600);
+    var m = Math.floor((totalSeconds % 3600) / 60);
+    var s = totalSeconds % 60;
+    function pad(n){ return String(n).padStart(2,'0'); }
+    return pad(h) + ':' + pad(m) + ':' + pad(s);
+  }
+
+  function renderDutyState(){
+    els.dutyStatusDot.classList.toggle('on', DUTY_STATE.active);
+    els.dutyStatusLabel.classList.toggle('on', DUTY_STATE.active);
+    els.dutyStatusLabel.textContent = DUTY_STATE.active ? 'You are on duty' : 'You are off duty';
+    els.dutyTimer.classList.toggle('on', DUTY_STATE.active);
+    els.dutyToggleBtn.textContent = DUTY_STATE.active ? 'Go Off Duty' : 'Go On Duty';
+    els.dutyToggleBtn.classList.toggle('on', DUTY_STATE.active);
+    if (els.dutyNavBadge){
+      if (DUTY_STATE.active){ els.dutyNavBadge.textContent = 'ON'; els.dutyNavBadge.style.display = ''; }
+      else { els.dutyNavBadge.style.display = 'none'; }
+    }
+  }
+
+  function startDutyTimerDisplay(){
+    if (DUTY_STATE.timerInterval) clearInterval(DUTY_STATE.timerInterval);
+    DUTY_STATE.timerInterval = setInterval(function(){
+      if (!DUTY_STATE.active || !DUTY_STATE.startedAt) return;
+      els.dutyTimer.textContent = formatDutyElapsed(Date.now() - DUTY_STATE.startedAt);
+    }, 1000);
+  }
+
+  async function checkDutyStatus(){
+    var session = getSession();
+    if (!session || !session.username) return;
+    try{
+      var res = await fetch(AUTH_WORKER_URL + '/staff/duty/status', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ username: session.username, passwordHash: session.passwordHash })
+      });
+      var data = await res.json();
+      DUTY_STATE.active = !!data.active;
+      DUTY_STATE.startedAt = data.startedAt || null;
+      renderDutyState();
+      if (DUTY_STATE.active){
+        els.dutyTimer.textContent = formatDutyElapsed(Date.now() - DUTY_STATE.startedAt);
+        startDutyTimerDisplay();
+      }
+    }catch(e){ /* leave as-is if unreachable */ }
+  }
+
+  els.dutyToggleBtn.addEventListener('click', async function(){
+    var session = getSession();
+    if (!session) return;
+    els.dutyMsg.textContent = '';
+    if (!DUTY_STATE.active){
+      els.dutyToggleBtn.disabled = true;
+      try{
+        var res = await fetch(AUTH_WORKER_URL + '/staff/duty/start', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ username: session.username, passwordHash: session.passwordHash })
+        });
+        var data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Could not go on duty.');
+        DUTY_STATE.active = true;
+        DUTY_STATE.startedAt = data.startedAt;
+        renderDutyState();
+        els.dutyTimer.textContent = '00:00:00';
+        startDutyTimerDisplay();
+        showToast('You are now on duty', 'ok');
+      }catch(err){
+        els.dutyMsg.textContent = err.message || 'Could not go on duty.'; els.dutyMsg.style.color = 'var(--danger)';
+      }finally{
+        els.dutyToggleBtn.disabled = false;
+      }
+    } else {
+      els.dutyEndNoteBox.style.display = 'block';
+    }
+  });
+
+  els.dutyCancelEndBtn.addEventListener('click', function(){
+    els.dutyEndNoteBox.style.display = 'none';
+    els.dutyEndNote.value = '';
+  });
+
+  els.dutyConfirmEndBtn.addEventListener('click', async function(){
+    var session = getSession();
+    if (!session) return;
+    els.dutyConfirmEndBtn.disabled = true;
+    try{
+      var res = await fetch(AUTH_WORKER_URL + '/staff/duty/end', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ username: session.username, passwordHash: session.passwordHash, note: els.dutyEndNote.value.trim() })
+      });
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not go off duty.');
+      DUTY_STATE.active = false;
+      DUTY_STATE.startedAt = null;
+      if (DUTY_STATE.timerInterval) clearInterval(DUTY_STATE.timerInterval);
+      renderDutyState();
+      els.dutyTimer.textContent = '00:00:00';
+      els.dutyEndNoteBox.style.display = 'none';
+      els.dutyEndNote.value = '';
+      showToast('You are now off duty', 'ok');
+      if (!data.posted) showToast('Shift ended, but no duty log channel is configured yet.', 'ok');
+    }catch(err){
+      els.dutyMsg.textContent = err.message || 'Could not go off duty.'; els.dutyMsg.style.color = 'var(--danger)';
+    }finally{
+      els.dutyConfirmEndBtn.disabled = false;
+    }
   });
 
   var MAINT_FORM_ENABLED = false;
@@ -8952,7 +9175,7 @@
 
   function applyStaffPermissionGating(session){
     var perms = session.permissions || {};
-    var allowedSections = { dashboard:true, myactivity:true, myaccount:true, mytasks:true };
+    var allowedSections = { dashboard:true, myactivity:true, myaccount:true, mytasks:true, duty:true };
     if (perms.ban || perms.kick || perms.timeout || perms.warn) allowedSections.discord = true;
     Object.keys(PERMISSION_SECTION_MAP).forEach(function(permKey){
       if (perms[permKey]){
@@ -9068,6 +9291,7 @@
       resetPermissionGating();
       checkLock();
       loadMaintenanceIntoSettings();
+      loadDutyConfig();
       loadAppealFormOptions();
       loadServerStatusIntoSettings();
       loadBlockedDevices();
@@ -9080,6 +9304,7 @@
       prefillAdminNameFields(session);
       pollTicketNavBadge();
       if (typeof loadMyTasks==='function') loadMyTasks();
+      if (typeof checkDutyStatus==='function') checkDutyStatus();
     } else {
       adminWrapEl.style.display = 'none';
       els.playerWrap.style.display = 'block';
