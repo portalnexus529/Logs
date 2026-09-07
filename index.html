@@ -1109,6 +1109,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
         Maintenance
       </button>
+      <button type="button" class="nav-item" data-section="serverstatus">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="4" width="20" height="6" rx="1.5"/><rect x="2" y="14" width="20" height="6" rx="1.5"/><line x1="6" y1="7" x2="6.01" y2="7"/><line x1="6" y1="17" x2="6.01" y2="17"/></svg>
+        Server Status
+      </button>
       <button type="button" class="nav-item" data-section="settings">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         Settings
@@ -2327,6 +2331,38 @@
         </div>
       </div>
 
+      <div id="sectionServerStatus" class="dash-section" style="display:none;">
+        <div class="panel">
+          <div class="panel-head"><h2>Game Server Status</h2></div>
+          <div class="panel-body">
+            <p style="font-size:12px;color:var(--text-3);margin:0 0 16px;">Separate from maintenance mode &mdash; this is about your DayZ server, not this website. Posts a status message to Discord that updates in place (never spams a new message), plus a public web page anyone can check.</p>
+            <div class="field">
+              <label style="font-size:11.5px;">Status</label>
+              <div class="toggle-row" id="serverStatusToggle">
+                <button type="button" data-ss="online" class="active">🟢 Online</button>
+                <button type="button" data-ss="maintenance">🟡 Maintenance</button>
+                <button type="button" data-ss="offline">🔴 Offline</button>
+              </div>
+            </div>
+            <div class="field">
+              <label style="font-size:11.5px;" for="serverStatusTitleInput">Title <span style="color:var(--text-3);font-weight:400;">(optional, auto-generated if blank)</span></label>
+              <input type="text" id="serverStatusTitleInput" placeholder="e.g. Server Status: Online">
+            </div>
+            <div class="field">
+              <label style="font-size:11.5px;" for="serverStatusMessageInput">What's going on</label>
+              <textarea id="serverStatusMessageInput" placeholder="e.g. Server is up and running normally. / Restarting for a scheduled update, back in ~15 minutes."></textarea>
+            </div>
+            <div class="field">
+              <label style="font-size:11.5px;" for="serverStatusChannelInput">Discord channel ID</label>
+              <input type="text" id="serverStatusChannelInput" placeholder="Channel to post/update the status message in">
+            </div>
+            <button class="btn primary small" id="saveServerStatusBtn">Update status</button>
+            <button type="button" class="btn small ghost" id="copyStatusLinkBtn">Copy public status link</button>
+            <span id="serverStatusMsg" style="font-size:12.5px;color:var(--text-2);margin-left:8px;"></span>
+          </div>
+        </div>
+      </div>
+
       <div id="sectionSettings" class="dash-section" style="display:none;">
         <div class="panel">
           <div class="panel-head"><h2>Settings</h2></div>
@@ -2421,33 +2457,6 @@
         <div class="proof-list" id="blockedDevicesList" style="margin-top:10px;"></div>
       </div>
 
-      <div class="settings-note" style="border-top:1px solid var(--border-soft);padding-top:12px;">
-        <label style="margin-bottom:8px;">Game server status</label>
-        <p style="font-size:11.5px;color:var(--text-3);margin:0 0 10px;">Separate from maintenance mode above &mdash; this is about your DayZ server, not this website. Posts a status message to Discord that updates in place (never spams a new message), plus a public web page anyone can check.</p>
-        <div class="field">
-          <label style="font-size:11.5px;">Status</label>
-          <div class="toggle-row" id="serverStatusToggle">
-            <button type="button" data-ss="online" class="active">\ud83d\udfe2 Online</button>
-            <button type="button" data-ss="maintenance">\ud83d\udfe1 Maintenance</button>
-            <button type="button" data-ss="offline">\ud83d\udd34 Offline</button>
-          </div>
-        </div>
-        <div class="field">
-          <label style="font-size:11.5px;" for="serverStatusTitleInput">Title <span style="color:var(--text-3);font-weight:400;">(optional, auto-generated if blank)</span></label>
-          <input type="text" id="serverStatusTitleInput" placeholder="e.g. Server Status: Online">
-        </div>
-        <div class="field">
-          <label style="font-size:11.5px;" for="serverStatusMessageInput">What's going on</label>
-          <textarea id="serverStatusMessageInput" placeholder="e.g. Server is up and running normally. / Restarting for a scheduled update, back in ~15 minutes."></textarea>
-        </div>
-        <div class="field">
-          <label style="font-size:11.5px;" for="serverStatusChannelInput">Discord channel ID</label>
-          <input type="text" id="serverStatusChannelInput" placeholder="Channel to post/update the status message in">
-        </div>
-        <button class="btn primary small" id="saveServerStatusBtn">Update status</button>
-        <button type="button" class="btn small ghost" id="copyStatusLinkBtn">Copy public status link</button>
-        <span id="serverStatusMsg" style="font-size:12.5px;color:var(--text-2);margin-left:8px;"></span>
-      </div>
       <p class="settings-note">
         The webhook URL and ledger are stored in this browser only (localStorage) &mdash; a static site like Netlify has no shared database behind it, so each admin's device keeps its own local copy. Every publish still posts to your Discord channel, which stays the permanent shared record for the whole team. Use export/import to back up or move your local ledger between devices.
       </p>
@@ -2979,7 +2988,7 @@
     els.linkInlineInput.value=''; els.linkInlineRow.classList.remove('show');
   });
 
-  var SECTION_IDS = { dashboard:'sectionDashboard', myactivity:'sectionMyActivity', myaccount:'sectionMyAccount', game:'sectionGame', discord:'sectionDiscord', assigntask:'sectionAssignTask', mytasks:'sectionMyTasks', ann:'sectionAnn', events:'sectionEvents', formbuilder:'sectionFormBuilder', applications:'sectionApplications', banappeals:'sectionBanAppeals', msggen:'sectionMsgGen', discordnotify:'sectionDiscordNotify', siteupdates:'sectionSiteUpdates', staff:'sectionStaff', tickets:'sectionTickets', suggestions:'sectionSuggestions', duty:'sectionDuty', maintenance:'sectionMaintenance', ledger:'sectionLedger', audit:'sectionAudit', loginsecurity:'sectionLoginSecurity', staffstats:'sectionStaffStats', players:'sectionPlayers', accounts:'sectionAccounts', lookup:'sectionLookup', settings:'sectionSettings', diagnostics:'sectionDiagnostics' };
+  var SECTION_IDS = { dashboard:'sectionDashboard', myactivity:'sectionMyActivity', myaccount:'sectionMyAccount', game:'sectionGame', discord:'sectionDiscord', assigntask:'sectionAssignTask', mytasks:'sectionMyTasks', ann:'sectionAnn', events:'sectionEvents', formbuilder:'sectionFormBuilder', applications:'sectionApplications', banappeals:'sectionBanAppeals', msggen:'sectionMsgGen', discordnotify:'sectionDiscordNotify', siteupdates:'sectionSiteUpdates', staff:'sectionStaff', tickets:'sectionTickets', suggestions:'sectionSuggestions', duty:'sectionDuty', maintenance:'sectionMaintenance', serverstatus:'sectionServerStatus', ledger:'sectionLedger', audit:'sectionAudit', loginsecurity:'sectionLoginSecurity', staffstats:'sectionStaffStats', players:'sectionPlayers', accounts:'sectionAccounts', lookup:'sectionLookup', settings:'sectionSettings', diagnostics:'sectionDiagnostics' };
   var CURRENT_SECTION = 'dashboard';
   function switchSection(target){
     CURRENT_SECTION = target;
@@ -3022,6 +3031,7 @@
       if (typeof loadDutyActive==='function') loadDutyActive();
     }
     if (target==='maintenance' && typeof loadMaintenanceIntoSettings==='function') loadMaintenanceIntoSettings();
+    if (target==='serverstatus' && typeof loadServerStatusIntoSettings==='function') loadServerStatusIntoSettings();
     if (target==='mytasks' && typeof loadMyTasks==='function') loadMyTasks();
     if (target==='accounts' && typeof loadAccounts==='function') loadAccounts();
     if (target==='tickets' && typeof loadSupportTicketsAdmin==='function') loadSupportTicketsAdmin();
@@ -3712,7 +3722,7 @@
       'Click "Save maintenance settings".'
     ],
     serverstatus: [
-      'Settings &rarr; "Game server status" section.',
+      '"Server Status" in the sidebar (under Administration).',
       'Update the status, title, and message to reflect what\'s actually happening.',
       'Click "Update status" &mdash; this edits the same Discord message in place and updates the public status page immediately.'
     ],
@@ -9239,7 +9249,7 @@
     cases: ['ledger'],
     suggestions: ['suggestions']
   };
-  var OWNER_ONLY_SECTIONS = ['settings','diagnostics','accounts','staffstats','loginsecurity','assigntask','maintenance'];
+  var OWNER_ONLY_SECTIONS = ['settings','diagnostics','accounts','staffstats','loginsecurity','assigntask','maintenance','serverstatus'];
 
   function applyStaffPermissionGating(session){
     var perms = session.permissions || {};
@@ -9359,7 +9369,6 @@
       resetPermissionGating();
       checkLock();
       loadAppealFormOptions();
-      loadServerStatusIntoSettings();
       loadBlockedDevices();
       prefillAdminNameFields(session);
       pollTicketNavBadge();
