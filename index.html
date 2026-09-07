@@ -1097,6 +1097,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.3 4.3a18 18 0 0 0-4.5-1.4l-.3.6a16 16 0 0 1 3.8 1.3M8.5 3.5a18 18 0 0 0-4.5 1.4M3.5 5.8C1.8 10 1.4 14.1 2.1 18.1a18 18 0 0 0 5.5 2.8l1-1.6M20.5 5.8c1.7 4.2 2.1 8.3 1.4 12.3a18 18 0 0 1-5.5 2.8l-1-1.6"/><circle cx="9" cy="13" r="1.3"/><circle cx="15" cy="13" r="1.3"/><path d="M12 16.5v2"/></svg>
         Notify on Discord
       </button>
+      <button type="button" class="nav-item" data-section="menus">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 9l4-4 4 4M8 15l4 4 4-4"/></svg>
+        Option Menus
+      </button>
       <button type="button" class="nav-item" data-section="siteupdates">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
         Site Updates
@@ -1915,6 +1919,47 @@
         </div>
       </div>
 
+      <div id="sectionMenus" class="dash-section" style="display:none;">
+        <div class="panel">
+          <div class="panel-head"><h2 id="menuFormTitle">Create Option Menu</h2></div>
+          <div class="panel-body">
+            <p style="font-size:12px;color:var(--text-3);margin:0 0 16px;">Post a dropdown menu in any Discord channel. Whatever the user picks, the bot DMs them exactly what you set for that option below \u2014 a language, a set of rules, anything.</p>
+            <input type="hidden" id="menuEditId" value="">
+            <div class="two-col">
+              <div class="field">
+                <label for="menuTitle">Menu title <span style="color:var(--text-3);font-weight:400;">(shown as the embed title and dropdown placeholder)</span></label>
+                <input type="text" id="menuTitle" placeholder="e.g. Select Your Language">
+              </div>
+              <div class="field">
+                <label for="menuChannelId">Discord channel ID</label>
+                <input type="text" id="menuChannelId" placeholder="Where this menu gets posted">
+              </div>
+            </div>
+            <div class="field">
+              <label for="menuDescription">Embed description <span style="color:var(--text-3);font-weight:400;">(optional)</span></label>
+              <textarea id="menuDescription" placeholder="Extra context shown above the dropdown" rows="2"></textarea>
+            </div>
+
+            <label style="margin-bottom:8px;">Options</label>
+            <div id="menuOptionsContainer"></div>
+            <button type="button" class="btn small ghost" id="menuAddOptionBtn" style="margin-bottom:16px;">+ Add option</button>
+
+            <div style="display:flex;gap:8px;">
+              <button type="button" class="btn primary" id="menuSaveBtn">Save menu</button>
+              <button type="button" class="btn small ghost" id="menuCancelEditBtn" style="display:none;">Cancel edit</button>
+            </div>
+            <div id="menuFormMsg" style="font-size:12.5px;margin-top:8px;"></div>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-top:20px;">
+          <div class="panel-head"><h2>Your Menus</h2><button class="btn ghost small" id="menusRefreshBtn">Refresh</button></div>
+          <div class="panel-body">
+            <div id="menusList"><div class="empty-state">Loading...</div></div>
+          </div>
+        </div>
+      </div>
+
       <div id="sectionSiteUpdates" class="dash-section" style="display:none;">
         <div class="grid">
           <div class="panel">
@@ -2252,6 +2297,7 @@
                   <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" data-perm="audit" style="width:auto;"> Audit Log</label>
                   <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" data-perm="cases" style="width:auto;"> Cases (full ledger)</label>
                   <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" data-perm="suggestions" style="width:auto;"> Suggestions</label>
+                  <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;"><input type="checkbox" data-perm="menus" style="width:auto;"> Option Menus</label>
                 </div>
                 <p style="font-size:11px;color:var(--text-3);margin:8px 0 0;line-height:1.5;">Settings, Diagnostics, and Accounts always stay owner-only, no matter what's checked here.</p>
               </div>
@@ -2680,6 +2726,7 @@
    'playerAccountPanel','pAccCurrentPassword','pAccNewUsername','pAccNewPassword','pAccSaveBtn','pAccMsg',
    'playerSuggestionsPanel','ptSuggestionText','ptSuggestionSubmitBtn','ptSuggestionMsg','ptSuggestionsList',
    'suggestionsRefreshBtn','suggestionsFilterBar','suggestionsList','suggestionsNavBadge',
+   'menuFormTitle','menuEditId','menuTitle','menuChannelId','menuDescription','menuOptionsContainer','menuAddOptionBtn','menuSaveBtn','menuCancelEditBtn','menuFormMsg','menusRefreshBtn','menusList',
    'dutyStatusDot','dutyStatusLabel','dutyTimer','dutyToggleBtn','dutyMsg','dutyNavBadge',
    'dutyActiveRefreshBtn','dutyActiveList',
    'dutyConfigPanel','dutyChannelId','dutyFieldStaffName','dutyFieldDuration','dutyFieldStartTime','dutyFieldEndTime','dutyFieldActionsTaken','dutySaveConfigBtn','dutyConfigMsg',
@@ -2988,7 +3035,7 @@
     els.linkInlineInput.value=''; els.linkInlineRow.classList.remove('show');
   });
 
-  var SECTION_IDS = { dashboard:'sectionDashboard', myactivity:'sectionMyActivity', myaccount:'sectionMyAccount', game:'sectionGame', discord:'sectionDiscord', assigntask:'sectionAssignTask', mytasks:'sectionMyTasks', ann:'sectionAnn', events:'sectionEvents', formbuilder:'sectionFormBuilder', applications:'sectionApplications', banappeals:'sectionBanAppeals', msggen:'sectionMsgGen', discordnotify:'sectionDiscordNotify', siteupdates:'sectionSiteUpdates', staff:'sectionStaff', tickets:'sectionTickets', suggestions:'sectionSuggestions', duty:'sectionDuty', maintenance:'sectionMaintenance', serverstatus:'sectionServerStatus', ledger:'sectionLedger', audit:'sectionAudit', loginsecurity:'sectionLoginSecurity', staffstats:'sectionStaffStats', players:'sectionPlayers', accounts:'sectionAccounts', lookup:'sectionLookup', settings:'sectionSettings', diagnostics:'sectionDiagnostics' };
+  var SECTION_IDS = { dashboard:'sectionDashboard', myactivity:'sectionMyActivity', myaccount:'sectionMyAccount', game:'sectionGame', discord:'sectionDiscord', assigntask:'sectionAssignTask', mytasks:'sectionMyTasks', ann:'sectionAnn', events:'sectionEvents', formbuilder:'sectionFormBuilder', applications:'sectionApplications', banappeals:'sectionBanAppeals', msggen:'sectionMsgGen', discordnotify:'sectionDiscordNotify', menus:'sectionMenus', siteupdates:'sectionSiteUpdates', staff:'sectionStaff', tickets:'sectionTickets', suggestions:'sectionSuggestions', duty:'sectionDuty', maintenance:'sectionMaintenance', serverstatus:'sectionServerStatus', ledger:'sectionLedger', audit:'sectionAudit', loginsecurity:'sectionLoginSecurity', staffstats:'sectionStaffStats', players:'sectionPlayers', accounts:'sectionAccounts', lookup:'sectionLookup', settings:'sectionSettings', diagnostics:'sectionDiagnostics' };
   var CURRENT_SECTION = 'dashboard';
   function switchSection(target){
     CURRENT_SECTION = target;
@@ -3014,6 +3061,10 @@
     });
     if (target==='applications' && typeof loadApplications==='function') loadApplications();
     if (target==='suggestions' && typeof loadSuggestions==='function') loadSuggestions();
+    if (target==='menus'){
+      if (typeof loadMenus==='function') loadMenus();
+      if (typeof resetMenuForm==='function' && els.menuOptionsContainer && !els.menuOptionsContainer.children.length) resetMenuForm();
+    }
     if (target==='audit' && typeof loadServerAuditLog==='function'){ loadServerAuditLog(); }
     if (target==='loginsecurity' && typeof loadLoginAttempts==='function') loadLoginAttempts();
     if (target==='staffstats' && typeof loadStaffStats==='function') loadStaffStats();
@@ -9247,7 +9298,8 @@
     players: ['players','lookup'],
     audit: ['audit'],
     cases: ['ledger'],
-    suggestions: ['suggestions']
+    suggestions: ['suggestions'],
+    menus: ['menus']
   };
   var OWNER_ONLY_SECTIONS = ['settings','diagnostics','accounts','staffstats','loginsecurity','assigntask','maintenance','serverstatus'];
 
@@ -9780,6 +9832,195 @@
     });
   }
   els.suggestionsRefreshBtn.addEventListener('click', loadSuggestions);
+
+  // ==================== Option Menus ====================
+  var MENU_OPTION_COUNT = 0;
+
+  function addMenuOptionRow(data){
+    data = data || {};
+    var idx = MENU_OPTION_COUNT++;
+    var row = document.createElement('div');
+    row.className = 'panel';
+    row.style.cssText = 'background:var(--field);padding:14px;margin-bottom:10px;position:relative;';
+    row.dataset.menuOptionRow = idx;
+    row.innerHTML =
+      '<button type="button" class="icon-btn" data-menu-option-remove style="position:absolute;top:8px;right:8px;">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+      '</button>' +
+      '<div class="two-col" style="margin-bottom:10px;">' +
+        '<div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Emoji</label><input type="text" data-menu-opt="emoji" placeholder="e.g. 🇺🇸" value="'+escapeHtml(data.emoji||'')+'"></div>' +
+        '<div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Label</label><input type="text" data-menu-opt="label" placeholder="e.g. English" value="'+escapeHtml(data.label||'')+'"></div>' +
+      '</div>' +
+      '<div class="field" style="margin-bottom:10px;"><label style="font-size:11px;">Dropdown description (optional)</label><input type="text" data-menu-opt="description" placeholder="Shown under the label in Discord" value="'+escapeHtml(data.description||'')+'"></div>' +
+      '<div class="field" style="margin-bottom:10px;"><label style="font-size:11px;">DM title</label><input type="text" data-menu-opt="dmTitle" placeholder="e.g. Server Rules (English)" value="'+escapeHtml(data.dmTitle||'')+'"></div>' +
+      '<div class="field" style="margin-bottom:0;"><label style="font-size:11px;">DM message</label><textarea data-menu-opt="dmMessage" placeholder="What gets sent to their DMs when they pick this option" rows="3">'+escapeHtml(data.dmMessage||'')+'</textarea></div>';
+    els.menuOptionsContainer.appendChild(row);
+    row.querySelector('[data-menu-option-remove]').addEventListener('click', function(){ row.remove(); });
+  }
+
+  els.menuAddOptionBtn.addEventListener('click', function(){ addMenuOptionRow(); });
+
+  function collectMenuOptions(){
+    var rows = els.menuOptionsContainer.querySelectorAll('[data-menu-option-row]');
+    var options = [];
+    rows.forEach(function(row){
+      var get = function(key){ var el = row.querySelector('[data-menu-opt="'+key+'"]'); return el ? el.value.trim() : ''; };
+      var label = get('label');
+      if (!label) return;
+      options.push({ emoji: get('emoji'), label: label, description: get('description'), dmTitle: get('dmTitle'), dmMessage: get('dmMessage') });
+    });
+    return options;
+  }
+
+  function resetMenuForm(){
+    els.menuEditId.value = '';
+    els.menuFormTitle.textContent = 'Create Option Menu';
+    els.menuTitle.value = '';
+    els.menuChannelId.value = '';
+    els.menuDescription.value = '';
+    els.menuOptionsContainer.innerHTML = '';
+    MENU_OPTION_COUNT = 0;
+    addMenuOptionRow();
+    addMenuOptionRow();
+    els.menuCancelEditBtn.style.display = 'none';
+    els.menuFormMsg.textContent = '';
+  }
+  els.menuCancelEditBtn.addEventListener('click', resetMenuForm);
+
+  els.menuSaveBtn.addEventListener('click', async function(){
+    els.menuFormMsg.textContent = '';
+    var title = els.menuTitle.value.trim();
+    var channelId = els.menuChannelId.value.trim();
+    var options = collectMenuOptions();
+    if (!title){ els.menuFormMsg.textContent = 'Give this menu a title.'; els.menuFormMsg.style.color='var(--danger)'; return; }
+    if (options.length===0){ els.menuFormMsg.textContent = 'Add at least one option with a label.'; els.menuFormMsg.style.color='var(--danger)'; return; }
+    els.menuSaveBtn.disabled = true;
+    try{
+      var payload = { id: els.menuEditId.value || undefined, title: title, description: els.menuDescription.value.trim(), channelId: channelId, options: options };
+      var res;
+      if (isStaffTicketSession()){
+        var session = getSession();
+        res = await fetch(AUTH_WORKER_URL + '/staff/menus/save', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify(Object.assign({ username: session.username, passwordHash: session.passwordHash }, payload))
+        });
+      } else {
+        res = await fetch(STATE.settings.workerUrl + '/menus/save', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify(Object.assign({ adminKey: STATE.settings.workerKey }, payload))
+        });
+      }
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not save menu.');
+      showToast('Menu saved', 'ok');
+      resetMenuForm();
+      loadMenus();
+    }catch(err){
+      els.menuFormMsg.textContent = err.message || 'Could not save menu.'; els.menuFormMsg.style.color = 'var(--danger)';
+    }finally{
+      els.menuSaveBtn.disabled = false;
+    }
+  });
+
+  var MENUS_CACHE = [];
+  async function loadMenus(){
+    els.menusList.innerHTML = '<div class="empty-state">Loading...</div>';
+    try{
+      var data = await staffOrOwnerFetch('/staff/menus/list', '/menus/list');
+      MENUS_CACHE = data.menus || [];
+      if (MENUS_CACHE.length===0){ els.menusList.innerHTML = '<div class="empty-state">No menus created yet.</div>'; return; }
+      els.menusList.innerHTML = MENUS_CACHE.map(function(m){
+        return '<div class="player-card" style="margin-bottom:10px;">' +
+          '<div class="player-top"><div class="player-name" style="font-size:13.5px;">'+escapeHtml(m.title)+'</div><span class="entry-time">'+m.options.length+' option'+(m.options.length===1?'':'s')+'</span></div>' +
+          (m.channelId ? '<div style="font-size:11.5px;color:var(--text-3);margin-top:4px;">Channel: '+escapeHtml(m.channelId)+'</div>' : '<div style="font-size:11.5px;color:var(--warning);margin-top:4px;">No channel set yet</div>') +
+          '<div style="display:flex;gap:8px;margin-top:10px;">' +
+            '<button type="button" class="btn small primary" data-menu-post="'+m.id+'">Post to Discord</button>' +
+            '<button type="button" class="btn small ghost" data-menu-edit="'+m.id+'">Edit</button>' +
+            '<button type="button" class="btn small ghost" data-menu-delete="'+m.id+'" style="color:var(--ban);">Delete</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+
+      els.menusList.querySelectorAll('[data-menu-post]').forEach(function(btn){
+        btn.addEventListener('click', async function(){
+          var id = btn.dataset.menuPost;
+          var originalText = btn.textContent;
+          btn.disabled = true; btn.textContent = 'Posting...';
+          try{
+            var res;
+            if (isStaffTicketSession()){
+              var session = getSession();
+              res = await fetch(AUTH_WORKER_URL + '/staff/menus/post', {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ username: session.username, passwordHash: session.passwordHash, id: id })
+              });
+            } else {
+              res = await fetch(STATE.settings.workerUrl + '/menus/post', {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ adminKey: STATE.settings.workerKey, id: id })
+              });
+            }
+            var data2 = await res.json();
+            if (!res.ok) throw new Error(data2.error || 'Could not post to Discord.');
+            showToast('Menu posted to Discord', 'ok');
+          }catch(err){
+            showToast(err.message || 'Could not post to Discord.', 'err');
+          }finally{
+            btn.disabled = false; btn.textContent = originalText;
+          }
+        });
+      });
+
+      els.menusList.querySelectorAll('[data-menu-edit]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          var m = MENUS_CACHE.find(function(x){ return x.id===btn.dataset.menuEdit; });
+          if (!m) return;
+          els.menuEditId.value = m.id;
+          els.menuFormTitle.textContent = 'Edit Option Menu';
+          els.menuTitle.value = m.title;
+          els.menuChannelId.value = m.channelId || '';
+          els.menuDescription.value = m.description || '';
+          els.menuOptionsContainer.innerHTML = '';
+          MENU_OPTION_COUNT = 0;
+          (m.options||[]).forEach(function(opt){ addMenuOptionRow(opt); });
+          if ((m.options||[]).length===0) addMenuOptionRow();
+          els.menuCancelEditBtn.style.display = '';
+          window.scrollTo({top:0, behavior:'smooth'});
+        });
+      });
+
+      els.menusList.querySelectorAll('[data-menu-delete]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          var id = btn.dataset.menuDelete;
+          askConfirm('Delete this menu? Any already-posted Discord message will stop working.', async function(){
+            try{
+              var res;
+              if (isStaffTicketSession()){
+                var session = getSession();
+                res = await fetch(AUTH_WORKER_URL + '/staff/menus/delete', {
+                  method:'POST', headers:{'Content-Type':'application/json'},
+                  body: JSON.stringify({ username: session.username, passwordHash: session.passwordHash, id: id })
+                });
+              } else {
+                res = await fetch(STATE.settings.workerUrl + '/menus/delete', {
+                  method:'POST', headers:{'Content-Type':'application/json'},
+                  body: JSON.stringify({ adminKey: STATE.settings.workerKey, id: id })
+                });
+              }
+              if (!res.ok) throw new Error('Could not delete menu.');
+              showToast('Menu deleted', 'ok');
+              loadMenus();
+            }catch(err){
+              showToast(err.message || 'Could not delete menu.', 'err');
+            }
+          }, 'Delete');
+        });
+      });
+    }catch(err){
+      els.menusList.innerHTML = '<div class="empty-state">'+escapeHtml(err.message || 'Could not load menus.')+'</div>';
+    }
+  }
+  els.menusRefreshBtn.addEventListener('click', loadMenus);
 
   async function loadPlayerTickets(session){
     if (!session) return;
