@@ -2078,7 +2078,7 @@
 
       <div id="sectionLedger" class="dash-section" style="display:none;">
         <div class="panel">
-      <div class="panel-head"><h2>Cases</h2><button class="btn ghost small" id="clearAllBtn">Clear all</button></div>
+      <div class="panel-head"><h2>Cases</h2><div style="display:flex;gap:8px;"><button class="btn small" id="syncCasesBtn">Sync with shared ledger</button><button class="btn ghost small" id="clearAllBtn">Clear all</button></div></div>
       <div class="panel-body">
         <div class="search-row" style="flex-wrap:wrap;">
           <input type="text" id="searchInput" placeholder="Search by player, admin or reason" style="flex:2;min-width:200px;">
@@ -2692,7 +2692,7 @@
    'playerName','steamId','steamIdLabel','acctCreatedLabel','steamStatsRow','gameDiscordId','gameDiscordLookupLink','categorySelect','historyBox','joinTime','acctCreated','vacBans','gameBans','daysSinceBan','bgNotes',
    'reasonInput','templateRow','resolutionBlock','scopeField','banScope','appealToggle',
    'addImageBtn','addLinkBtn','linkInlineRow','linkInlineInput','linkInlineAdd','linkInlineCancel','fileInput','proofList',
-   'internalNotes','adminInput','publishBtn','formMsg','searchInput','filterSelect','categoryFilterSelect','sortSelect','ledgerList','clearAllBtn',
+   'internalNotes','adminInput','publishBtn','formMsg','searchInput','filterSelect','categoryFilterSelect','sortSelect','ledgerList','clearAllBtn','syncCasesBtn',
    'bulkBar','selectAllCheck','bulkCount','bulkStatusSelect','bulkApplyStatusBtn','bulkDeleteBtn',
    'statBan','statKick','statWarn','statDban','statDkick','toast','toastMsg','caseTag','confirmOverlay','confirmMsg','confirmCancel','confirmOk',
    'discActionToggle','discPlayerName','discUserId','discCategorySelect','discReasonInput','discTemplateRow','discResolutionBlock',
@@ -2879,6 +2879,7 @@
 
     saveLedger();
     renderLedger();
+    staffOrOwnerFetch('/staff/cases/save', '/cases/save', { entry: entry }).catch(function(){});
 
     if (!entry.discordMessageId){
       els.editOverlay.classList.remove('show');
@@ -3074,6 +3075,7 @@
     if (target==='staff' && typeof loadStaffRoster==='function') loadStaffRoster();
     if (target==='assigntask' && typeof loadTaskAssigneeOptions==='function'){ loadTaskAssigneeOptions(); loadAdminTaskList(); }
     if (target==='ledger' && typeof loadTaskCasesList==='function') loadTaskCasesList();
+    if (target==='ledger' && typeof mergeCasesFromServer==='function') mergeCasesFromServer(false);
     if (target==='duty'){
       var dutySession = getSession();
       var isDutyOwner = dutySession && dutySession.role==='owner';
@@ -4513,6 +4515,67 @@
     try{ localStorage.setItem('modlog:entries', JSON.stringify(STATE.entries)); }catch(e){}
   }
 
+  // Pulls cases from the shared server into this browser's local view. This is a pure MERGE,
+  // never an overwrite: any case already sitting in this browser stays exactly as it is; the
+  // only thing this can ever do is ADD cases from the server that aren't here yet. Nothing is
+  // ever deleted or replaced by this function, so it's always safe to run.
+  var CASES_SYNCING = false;
+  async function mergeCasesFromServer(showFeedback){
+    if (CASES_SYNCING) return;
+    CASES_SYNCING = true;
+    try{
+      var data = await staffOrOwnerFetch('/staff/cases/list', '/cases/list');
+      var serverEntries = data.entries || [];
+      var existingIds = {};
+      STATE.entries.forEach(function(e){ existingIds[e.id] = true; });
+      var added = 0;
+      serverEntries.forEach(function(e){
+        if (!existingIds[e.id]){
+          STATE.entries.push(e);
+          added++;
+        }
+      });
+      if (added > 0){
+        saveLedger();
+        renderSidePanels();
+        renderLedger();
+        showToast('Added ' + added + ' case(s) from the shared ledger', 'ok');
+      } else if (showFeedback){
+        showToast('Already up to date', 'ok');
+      }
+    }catch(e){
+      if (showFeedback) showToast('Could not reach the shared ledger', 'err');
+    }finally{
+      CASES_SYNCING = false;
+    }
+  }
+
+  // Pushes any local-only cases up to the shared server, so other staff/devices can see them too.
+  async function pushLocalCasesToServer(){
+    if (STATE.entries.length === 0) return;
+    var pushed = 0;
+    for (var i = 0; i < STATE.entries.length; i++){
+      try{
+        await staffOrOwnerFetch('/staff/cases/save', '/cases/save', { entry: STATE.entries[i] });
+        pushed++;
+      }catch(e){ /* fine — will just try again next time this runs */ }
+    }
+    return pushed;
+  }
+
+  els.syncCasesBtn.addEventListener('click', async function(){
+    els.syncCasesBtn.disabled = true;
+    var originalText = els.syncCasesBtn.textContent;
+    els.syncCasesBtn.textContent = 'Syncing...';
+    try{
+      await mergeCasesFromServer(true);
+      await pushLocalCasesToServer();
+    }finally{
+      els.syncCasesBtn.disabled = false;
+      els.syncCasesBtn.textContent = originalText;
+    }
+  });
+
   // ---------- player directory ----------
   var PLAYERS = [];
   var EDIT_PLAYER_ID = null;
@@ -5373,11 +5436,13 @@
     if (ids.length===0) return;
     askConfirm('Set status to "'+newStatus+'" for '+ids.length+' selected case(s)?', async function(){
       var updated = 0;
+      var updatedEntries = [];
       for (var i=0;i<ids.length;i++){
         var entry = STATE.entries.find(function(x){ return x.id===ids[i]; });
         if (!entry) continue;
         entry.status = newStatus;
         updated++;
+        updatedEntries.push(entry);
         if (entry.discordMessageId){
           try{ await editDiscordMessage(entry); }catch(e){ /* keep going even if one message fails to update */ }
         }
@@ -5388,18 +5453,24 @@
       logAudit('Bulk status change', 'Set '+updated+' case(s) to <b>'+newStatus+'</b>');
       SELECTED_CASES.clear();
       updateBulkBar();
+      updatedEntries.forEach(function(e){
+        staffOrOwnerFetch('/staff/cases/save', '/cases/save', { entry: e }).catch(function(){});
+      });
     }, 'Apply');
   });
 
   els.bulkDeleteBtn.addEventListener('click', function(){
     var ids = Array.from(SELECTED_CASES);
     if (ids.length===0) return;
-    askConfirm('Delete '+ids.length+' selected case(s) from the local ledger? This only removes them here, not from Discord.', function(){
+    askConfirm('Delete '+ids.length+' selected case(s) from the shared ledger? This only removes them here, not from Discord.', function(){
       STATE.entries = STATE.entries.filter(function(x){ return !SELECTED_CASES.has(x.id); });
       saveLedger();
       renderLedger();
       showToast(ids.length+' case(s) deleted', 'ok');
       logAudit('Bulk delete', 'Deleted '+ids.length+' selected case(s)');
+      ids.forEach(function(id){
+        staffOrOwnerFetch('/staff/cases/delete', '/cases/delete', { id: id }).catch(function(){});
+      });
       SELECTED_CASES.clear();
       updateBulkBar();
     }, 'Delete');
@@ -5688,6 +5759,7 @@
             entry.status = 'solved';
             saveLedger();
             renderLedger();
+            staffOrOwnerFetch('/staff/cases/save', '/cases/save', { entry: entry }).catch(function(){});
             if (entry.discordMessageId){
               try{ await editDiscordMessage(entry); }catch(e){ /* local state still updated even if Discord edit fails */ }
             }
@@ -5722,12 +5794,13 @@
         var id = btn.dataset.del;
         var entry = STATE.entries.find(function(x){ return x.id===id; });
         var label = entry ? ('case #'+entry.caseNo+' ('+entry.player+')') : 'this entry';
-        askConfirm('Delete '+label+' from the local ledger? This only removes it here, not from Discord.', function(){
+        askConfirm('Delete '+label+' from the shared ledger? This only removes it here, not from Discord.', function(){
           STATE.entries = STATE.entries.filter(function(x){ return x.id!==id; });
           saveLedger();
           renderLedger();
           showToast('Entry deleted', 'ok');
           logAudit('Case deleted', 'Deleted '+label);
+          staffOrOwnerFetch('/staff/cases/delete', '/cases/delete', { id: id }).catch(function(){});
         }, 'Delete');
       });
     });
@@ -5982,6 +6055,7 @@
       syncCaseToPlayerProfile(entry, true);
       syncCaseToWorker(entry);
       logStaffStat(entry.admin, entry.action);
+      staffOrOwnerFetch('/staff/cases/save', '/cases/save', { entry: entry }).catch(function(){});
       onSuccess();
     }catch(err){
       STATE.caseSeq -= 1; try{ localStorage.setItem('modlog:caseSeq', String(STATE.caseSeq)); }catch(e){} updateCaseTag();
@@ -9424,6 +9498,7 @@
       loadBlockedDevices();
       prefillAdminNameFields(session);
       pollTicketNavBadge();
+      if (typeof mergeCasesFromServer==='function') mergeCasesFromServer(false);
     } else if (['moderator','admin','staffowner'].indexOf(session.role) !== -1){
       els.playerWrap.style.display = 'none';
       adminWrapEl.style.display = 'block';
@@ -9432,6 +9507,7 @@
       pollTicketNavBadge();
       if (typeof loadMyTasks==='function') loadMyTasks();
       if (typeof checkDutyStatus==='function') checkDutyStatus();
+      if (typeof currentUserCan==='function' && currentUserCan('cases') && typeof mergeCasesFromServer==='function') mergeCasesFromServer(false);
     } else {
       adminWrapEl.style.display = 'none';
       els.playerWrap.style.display = 'block';
