@@ -1,6 +1,6 @@
 {
-  "name": "The Watchers — Moderation",
-  "short_name": "The Watchers",
+  "name": "Watchtower — Moderation",
+  "short_name": "Watchtower",
   "description": "Moderation log and incident management, publishing straight to Discord.",
   "start_url": "./index.html",
   "scope": "./",
