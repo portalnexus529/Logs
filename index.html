@@ -2592,11 +2592,16 @@
         <div class="panel">
           <div class="panel-head"><h2>Maintenance Mode</h2></div>
           <div class="panel-body">
-            <p style="font-size:12px;color:var(--text-3);margin:0 0 16px;">While on, everyone except the owner account sees this message instead of the login/signup screen. Applies to every visitor immediately, since it's stored on your Worker, not just this browser.</p>
+            <p style="font-size:12px;color:var(--text-3);margin:0 0 16px;">While on, this message shows instead of the login/signup screen, for anyone not allowed to bypass it below. Applies to every visitor immediately, since it's stored on your Worker, not just this browser.</p>
             <label style="margin-bottom:8px;">Maintenance mode</label>
             <div class="toggle-row" id="maintenanceToggle" style="margin-bottom:16px;max-width:220px;">
               <button type="button" data-mt="off" class="active">Off</button>
               <button type="button" data-mt="on">On</button>
+            </div>
+            <label style="margin-bottom:8px;">Who can still log in?</label>
+            <div class="toggle-row" id="maintenanceBypassToggle" style="margin-bottom:16px;max-width:280px;">
+              <button type="button" data-mtb="owner" class="active">Owner only</button>
+              <button type="button" data-mtb="staff">Owner and staff</button>
             </div>
             <div class="field">
               <label for="maintTitleInput">Title</label>
@@ -2921,7 +2926,7 @@
    'authOverlay','authTabLogin','authTabSignup','authBrandName','authBackHomeBtn','loginFormBox','signupFormBox',
    'maintenanceView','authNormalView','maintTitleOut','maintMessageOut','maintReturnOut','staffLoginLink',
    'bannedView','bannedReasonOut','bannedAtOut','bannedBackBtn',
-   'maintenanceToggle','maintTitleInput','maintMessageInput','maintReturnInput','saveMaintenanceBtn','maintenanceStatus',
+   'maintenanceToggle','maintenanceBypassToggle','maintTitleInput','maintMessageInput','maintReturnInput','saveMaintenanceBtn','maintenanceStatus',
    'serverStatusToggle','serverStatusTitleInput','serverStatusMessageInput','serverStatusChannelInput','saveServerStatusBtn','copyStatusLinkBtn','serverStatusMsg',
    'sweepTempBansBtn','sweepResultOut',
    'diagRunBtn','diagProgressTrack','diagProgressFill','diagResultsList','downloadBackupBtn',
@@ -3738,6 +3743,7 @@
   }
   els.refreshAppealFormsBtn.addEventListener('click', loadAppealFormOptions);
 
+  var MAINT_FORM_STAFF_BYPASS = false;
   async function loadMaintenanceIntoSettings(){
     if (!STATE.settings.workerUrl) return;
     try{
@@ -3745,12 +3751,20 @@
       if (!res.ok) return;
       var data = await res.json();
       MAINT_FORM_ENABLED = !!data.enabled;
+      MAINT_FORM_STAFF_BYPASS = !!data.staffBypass;
       els.maintenanceToggle.querySelectorAll('button').forEach(function(x){ x.classList.toggle('active', (x.dataset.mt==='on')===MAINT_FORM_ENABLED); });
+      els.maintenanceBypassToggle.querySelectorAll('button').forEach(function(x){ x.classList.toggle('active', (x.dataset.mtb==='staff')===MAINT_FORM_STAFF_BYPASS); });
       els.maintTitleInput.value = data.title || '';
       els.maintMessageInput.value = data.message || '';
       els.maintReturnInput.value = data.returnEta || '';
     }catch(e){ /* leave form blank if unreachable */ }
   }
+
+  els.maintenanceBypassToggle.addEventListener('click', function(e){
+    var btn = e.target.closest('button[data-mtb]'); if (!btn) return;
+    MAINT_FORM_STAFF_BYPASS = btn.dataset.mtb === 'staff';
+    els.maintenanceBypassToggle.querySelectorAll('button').forEach(function(x){ x.classList.toggle('active', x===btn); });
+  });
 
   els.saveMaintenanceBtn.addEventListener('click', async function(){
     if (!STATE.settings.workerUrl || !STATE.settings.workerKey){
@@ -3766,6 +3780,7 @@
         body: JSON.stringify({
           adminKey: STATE.settings.workerKey,
           enabled: MAINT_FORM_ENABLED,
+          staffBypass: MAINT_FORM_STAFF_BYPASS,
           title: els.maintTitleInput.value.trim(),
           message: els.maintMessageInput.value.trim(),
           returnEta: els.maintReturnInput.value.trim()
@@ -9568,7 +9583,13 @@
     return !!(session.permissions && session.permissions[permKey]);
   }
 
-  var MAINTENANCE_STATE = { enabled: false, title:'', message:'', returnEta:'' };
+  var MAINTENANCE_STATE = { enabled: false, title:'', message:'', returnEta:'', staffBypass: false };
+
+  function maintenanceAllowsRole(role){
+    if (role === 'owner') return true;
+    if (MAINTENANCE_STATE.staffBypass && STAFF_ROLES.indexOf(role) !== -1) return true;
+    return false;
+  }
 
   async function fetchMaintenanceState(){
     try{
@@ -9780,7 +9801,7 @@
     var session = getSession();
     var adminWrapEl = document.getElementById('adminWrap');
 
-    if (MAINTENANCE_STATE.enabled && (!session || STAFF_ROLES.indexOf(session.role) === -1)){
+    if (MAINTENANCE_STATE.enabled && (!session || !maintenanceAllowsRole(session.role))){
       showMaintenanceScreen();
       return;
     }
@@ -9864,8 +9885,8 @@
         }
         throw new Error(data.error || 'Login failed.');
       }
-      if (MAINTENANCE_STATE.enabled && data.role !== 'owner'){
-        throw new Error('The site is under maintenance. Only staff can log in right now.');
+      if (MAINTENANCE_STATE.enabled && !maintenanceAllowsRole(data.role)){
+        throw new Error(MAINTENANCE_STATE.staffBypass ? 'The site is under maintenance. Only the owner and staff can log in right now.' : 'The site is under maintenance. Only the owner can log in right now.');
       }
       if (data.role === 'owner'){
         var existingLabel = null;
